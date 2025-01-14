@@ -2,25 +2,43 @@
 //!
 //! 这是一个简单的 Bevy 示例，它会向你展示如何创建一个简单的 Bevy 应用程序。
 //! 效果是每隔 2 秒打印一次问候消息（在终端）。
+//! Entities, Components, Systems
 
 use bevy::prelude::*;
 
+// --------------------------------------------------
+// 与一些传统设计观念不一样的是，Bevy 并不是基于面向对象的设计模式。
+// Component 是 Bevy 中的一个重要概念，它是一种数据类型，用于描述实体的属性。
+// 而这仿佛是满天的星星,你可以先为星星明确一个名字.
+// 当你觉得有必要时,你可以把一组星星编组成为一个星座.
+// 所在在这里 Person 为是在描述一个实体,而只是一个实体的属性(可以理解为,"人性")
 #[derive(Component)]
 struct Person;
 
+// --------------------------------------------------
+// Name 描述的是一个名字
 #[derive(Component)]
 struct Name(String);
 
+// --------------------------------------------------
+// 一个对实体生成的封装,这种封装的 "类型" 为 "system"
+// 通常,不同个数的 system 都会封装到 Plugin(插件) 里
 fn add_people(mut commands: Commands) {
+    // 下面生产了三个实体,它们都拥有 `Person` 组件，但是每个实体都有不同的 `Name` 组件。
+    // commands.spawn(()); 用于创建一个实体，它会返回一个 `EntityCommands` 类型的值。
+    // () 在 bevy 是被 macro_rules! tuple_impl 实现了 Bundle
     commands.spawn((Person, Name("Elaina Proctor".to_string())));
     commands.spawn((Person, Name("Renzo Hume".to_string())));
     commands.spawn((Person, Name("Zayna Nieves".to_string())));
 }
 
-/// time: 在每一帧中，Bevy 会传递一个 `Time` 类型的资源，它包含了一些时间相关的信息(系统资源)。
-/// timer: 我们创建了一个 `GreetTimer` 资源，它包含了一个 `Timer` 类型的值，用于计时。(定义在Plugin中，明确了间隔/重复)
-/// query: 我们使用了一个 `Query` 类型的值，它用于查询所有拥有 `Name` 组件的实体。
-/// 参数没有顺序要求
+// --------------------------------------------------
+// system (无修改 Query)
+// **********
+// time: 在每一帧中，Bevy 会传递一个 `Time` 类型的资源，它包含了一些时间相关的信息(系统资源)。
+// timer: 我们创建了一个 `GreetTimer` 资源，它包含了一个 `Timer` 类型的值，用于计时。(定义在Plugin中，明确了间隔/重复)
+// query: 我们使用了一个 `Query` 类型的值，它用于查询所有拥有 `Name` 组件的实体。
+// 参数没有顺序要求
 fn greet_people(mut timer: ResMut<GreetTimer>, query: Query<&Name, With<Person>>, time: Res<Time>) {
     // `time.delta()` 返回一个 `Duration` 类型的值，表示从上一帧到当前帧的时间差。
     // 这个时间差通常用于游戏的更新逻辑，例如移动物体或者更新动画。
@@ -37,10 +55,27 @@ fn greet_people(mut timer: ResMut<GreetTimer>, query: Query<&Name, With<Person>>
     }
 }
 
+// --------------------------------------------------
+// System (可修改 Query)
+// **********
+// --------------------------------------------------
+
+fn update_people(mut query: Query<&mut Name, With<Person>>) {
+    for mut name in &mut query {
+        if name.0 == "Elaina Proctor" {
+            name.0 = "Elaina Hume".to_string();
+            break;
+        }
+    }
+}
+
 // 自定义插件
 pub struct HelloPlugin;
 
+// --------------------------------------------------
 // 自定义资源(时间)
+// Timer 仅管 GreetTimer 在这里显得多此一举,
+// 实际上是通过 derive(Resource) 将一个计时器转换成为一个名为 GreetTimer 的资源
 #[derive(Resource)]
 struct GreetTimer(Timer);
 
@@ -48,36 +83,17 @@ impl Plugin for HelloPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(GreetTimer(Timer::from_seconds(2.0, TimerMode::Repeating))) // 插入资源
             .add_systems(Startup, add_people) // 添加启动系统
-            .add_systems(Update, greet_people); // 添加更新系统
+            .add_systems(Update, (greet_people, update_people).chain()); // 添加更新系统
     }
 }
 
-/// 程序入口点
+// 程序入口点
 fn main() {
     // App 是 [`bevy::app::App`]
     App::new()
-        .add_plugins((DefaultPlugins, HelloPlugin)) // 默认插件 （UI系统，资源管理，2D/3D渲然）
+        // 可用(, , ,) 一次性加入,也可以单独加入
+        //.add_plugins((DefaultPlugins, HelloPlugin))
+        .add_plugins(DefaultPlugins) // 默认插件 （UI系统，资源管理，2D/3D渲然）
+        .add_plugins(HelloPlugin)
         .run();
 }
-
-// --
-// -- 如果不定义GreetTimer,是否可以正常运行？
-// -- 不可以正常运行，Timer类型，无法直接插入资源，需要通过自定义资源包装一下
-//
-// fn greet_people(mut timer: ResMut<Timer>, query: Query<&Name, With<Person>>, time: Res<Time>) {
-//     if timer.tick(time.delta()).just_finished() {
-//         for name in &query {
-//             println!("hello {}!", name.0);
-//         }
-//     }
-// }
-
-// pub struct HelloPlugin;
-
-// impl Plugin for HelloPlugin {
-//     fn build(&self, app: &mut App) {
-//         app.insert_resource(Timer::from_seconds(2.0, TimerMode::Repeating)) // 插入资源
-//             .add_systems(Startup, add_people) // 添加启动系统
-//             .add_systems(Update, greet_people); // 添加更新系统
-//     }
-// }
