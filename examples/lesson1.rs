@@ -3,6 +3,7 @@
 //! 这是一个简单的 Bevy 示例，它会向你展示如何创建一个简单的 Bevy 应用程序。
 //! 效果是每隔 2 秒打印一次问候消息（在终端）。
 //! Entities, Components, Systems
+//! bevy 有一个核心准则,<模块化>,未来不知道,但是现在对于开发人员(程序员)来说是十分友好的.所以 bevy 提倡高度插件(Plugin)化
 
 use bevy::prelude::*;
 
@@ -39,14 +40,17 @@ fn add_people(mut commands: Commands) {
 // timer: 我们创建了一个 `GreetTimer` 资源，它包含了一个 `Timer` 类型的值，用于计时。(定义在Plugin中，明确了间隔/重复)
 // query: 我们使用了一个 `Query` 类型的值，它用于查询所有拥有 `Name` 组件的实体。
 // 参数没有顺序要求
-fn greet_people(mut timer: ResMut<GreetTimer>, query: Query<&Name, With<Person>>, time: Res<Time>) {
+fn greet_people(mut timer: ResMut<GreetTimer>, time: Res<Time>, query: Query<&Name, With<Person>>) {
     // `time.delta()` 返回一个 `Duration` 类型的值，表示从上一帧到当前帧的时间差。
     // 这个时间差通常用于游戏的更新逻辑，例如移动物体或者更新动画。
     // 这个时间差是以秒为单位的，所以如果你的游戏运行在 60 帧每秒的帧率下，那么 `time.delta()` 大约会返回 0.01667 秒（即 1/60 秒）。
 
     // timer: 就是 GreetTimer 资源，它包含了一个 `Timer` 类型的值，用于计时。
-    // timer.0: 通过 `timer.0` 访问 `Timer` 类型的值。(Timer，明确了2秒间隔，不断重复)
-    // timeer.0.tick: 通过一个 (Duration) 时间差来更新计时器的状态,just_finished() 表示计时器是否刚刚完成。
+    // timeer.0.tick: 通过一个 (Duration) 时间推进 timer,
+    // 如果是一个非循环的 timer 将会被钳停止
+    // 如果是一个循环的 timer 将会标记后继续推进,不会暂停
+    // just_finished() 表示计时器是否刚刚完成(tick)。
+    // timer 会更新自已的进度与状态,所以需要 mut 与 ResMut
     if timer.0.tick(time.delta()).just_finished() {
         // 遍例查询到的所有实体，并打印问候消息。
         for name in &query {
