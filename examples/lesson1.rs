@@ -66,6 +66,8 @@ fn greet_people(mut timer: ResMut<GreetTimer>, time: Res<Time>, query: Query<&Na
 
 fn update_people(mut query: Query<&mut Name, With<Person>>) {
     for mut name in &mut query {
+        // Elaina Proctor 不会是显示的,因为 greet_people 中的计时器,跳过了
+        // 当 just_finished() == true 时,已经被没有计时器的 update_people 更改了
         if name.0 == "Elaina Proctor" {
             name.0 = "Elaina Hume".to_string();
             break;
