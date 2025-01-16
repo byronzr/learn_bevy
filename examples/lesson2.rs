@@ -21,7 +21,7 @@ fn main() {
         )
         // Add a global observer that will emit a line whenever an attack hits an entity.
         // 一个全局的监视器用于显示受到攻击的部位
-        // add_observer 全局监视器
+        // add_observer 全局监视器(最优先传播)
         // observe (局部)监视器
         .add_observer(attack_hits)
         .run();
