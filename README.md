@@ -16,5 +16,6 @@
 > 事件 (Event) 的监视(observe)与传播(propagate),模拟一个身着盔甲的哥布林,承受伤害的过程
 
 - lesson2_1 每个 system 都有一个 Local<T> 局布变量
+- lesson2_2 component 与 resource 变更侦测
 
 

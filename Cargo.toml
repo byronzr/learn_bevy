@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = "0.15.1"
+bevy = { version = "0.15.1" ,features = ["track_change_detection"] }
 rand = "0.8.5"
