@@ -17,5 +17,6 @@
 
 - lesson2_1 每个 system 都有一个 Local<T> 局布变量
 - lesson2_2 component 与 resource 变更侦测
+- lesson2_3 component hook,组件的 "勾子"
 
 
