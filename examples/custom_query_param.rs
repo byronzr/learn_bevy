@@ -26,12 +26,12 @@ fn main() {
         .add_systems(
             Update,
             (
-                //print_components_read_only,
+                print_components_read_only,
                 print_components_iter_mut,
-                //print_components_iter,
-                //print_components_tuple,
+                print_components_iter,
+                print_components_tuple,
             )
-                //                .run_if(on_timer(Duration::from_secs(1))) // 为了测试 CustomFilter Add 与 Changed 加入的
+                //                .run_if(1on_timer(Duration::from_secs(1))) // 为了测试 CustomFilter Add 与 Changed 加入的
                 .chain(),
         )
         .run();
