@@ -17,6 +17,23 @@
   * (✓) change_detection / component 与 resource 变更侦测,通过 Query 得到 Component 的引用
   * (✓) component_hooks / component hook,组件的 "勾子",一种在组织结构上优于 event 的监视模式
   * (✓) custom_query_param /	自定义 Query 结构,实现结果与条件集成简单化
-  * ( ) custom_schedule / 自定义 schedule 
+  * (□) custom_schedule / 自定义 schedule 
   * (✓) dynamic / 动态的 component,entity,query
+  * (✓) fallible_params / 不可靠的参数,除了Query以外,还有 Populated 与 Single 两个极为有用的查询
+  * generic_system.rs
+  * hierarchy.rs
+  * iter_combinations.rs
+  * nondeterministic_system_order.rs
+  * observer_propagation.rs
+  * observers.rs
+  * one_shot_systems.rs
+  * parallel_query.rs
+  * removal_detection.rs
+  * run_conditions.rs
+  * send_and_receive_events.rs
+  * startup_system.rs
+  * system_closure.rs
+  * system_param.rs
+  * system_piping.rs
+  * system_stepping.rs
 
