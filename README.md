@@ -17,16 +17,19 @@
 	在控制台用短字符交互,描述一个 FixedUpdate / Update 还有各种 Time 的关系
   
 ## ecs/event
-	Event / Observe / Propagate
+	Event / Observe / Propagate / Entity 嵌套
 	事件 (Event) 的监视(observe)与传播(propagate),模拟一个身着盔甲的哥布林,承受伤害的过程
 
 ## ecs/fixed_timestep
 	每个 system 都有一个 Local<T> 局布变量
 	
 ## ecs/change_detection 
-	component 与 resource 变更侦测
+	component 与 resource 变更侦测,通过 Query 得到 Component 的引用
 	
-## component_hooks
-	component hook,组件的 "勾子"
+## ecs/component_hooks
+	component hook,组件的 "勾子",一种在组织结构上优于 event 的监视模式
+	
+## ecs/custom_query_param
+	自定义 Query 结构,实现结果与条件集成简单化
 
 
