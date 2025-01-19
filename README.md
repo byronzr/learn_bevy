@@ -20,7 +20,7 @@
   * (□) custom_schedule / 自定义 schedule 
   * (✓) dynamic / 动态的 component,entity,query
   * (✓) fallible_params / 不可靠的参数,除了Query以外,还有 Populated 与 Single 两个极为有用的查询
-  * generic_system.rs
+  * (✓) generic_system / 泛型 system 的用例
   * hierarchy.rs
   * iter_combinations.rs
   * nondeterministic_system_order.rs
