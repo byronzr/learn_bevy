@@ -25,7 +25,7 @@
   * (✓) iter_combinations / Query 结果成对组合
   * (□) nondeterministic_system_order / system 并行的不确定性
   * (✓) event / 简单的 event 发送与接收
-  * observers.rs
+  * (✓) observers / 一个随机分部多枚地雷,连琐爆炸的例子,使用 Trigger 触发器
   * one_shot_systems.rs
   * parallel_query.rs
   * removal_detection.rs
