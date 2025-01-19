@@ -1,5 +1,3 @@
-//! source: https://bevyengine.org/examples/ecs-entity-component-system/observer-propagation/
-
 //! Demonstrates how to propagate events through the hierarchy with observers.
 
 use std::time::Duration;
