@@ -24,7 +24,7 @@
   * (✓) hierarchy / Entity 的组织嵌套与实际影响
   * (✓) iter_combinations / Query 结果成对组合
   * (□) nondeterministic_system_order / system 并行的不确定性
-  * observer_propagation.rs
+  * (✓) event / 简单的 event 发送与接收
   * observers.rs
   * one_shot_systems.rs
   * parallel_query.rs
