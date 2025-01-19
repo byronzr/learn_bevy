@@ -23,7 +23,7 @@
   * (✓) generic_system / 泛型 system 的用例
   * (✓) hierarchy / Entity 的组织嵌套与实际影响
   * (✓) iter_combinations / Query 结果成对组合
-  * nondeterministic_system_order.rs
+  * (□) nondeterministic_system_order / system 并行的不确定性
   * observer_propagation.rs
   * observers.rs
   * one_shot_systems.rs
