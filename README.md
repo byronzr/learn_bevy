@@ -22,7 +22,7 @@
   * (✓) fallible_params / 不可靠的参数,除了Query以外,还有 Populated 与 Single 两个极为有用的查询
   * (✓) generic_system / 泛型 system 的用例
   * (✓) hierarchy / Entity 的组织嵌套与实际影响
-  * iter_combinations.rs
+  * (✓) iter_combinations / Query 结果成对组合
   * nondeterministic_system_order.rs
   * observer_propagation.rs
   * observers.rs
