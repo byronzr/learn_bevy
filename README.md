@@ -27,7 +27,7 @@
   * (✓) event / 简单的 event 发送与接收
   * (✓) observers / 一个随机分部多枚地雷,连琐爆炸的例子,使用 Trigger 触发器
   * (✓) one_shot_systems / 展示了如何将 system 包装到 Component 中等待用户输入触发
-  * parallel_query.rs
+  * (✓) parallel_query.rs / 高性能的并行迭代器(多用于物理性,巨量的 entity 运算)
   * removal_detection.rs
   * run_conditions.rs
   * send_and_receive_events.rs
