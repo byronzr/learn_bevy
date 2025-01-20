@@ -33,7 +33,7 @@
   * (✓) send_and_receive_events / 在一个相同的 system 作用域内,完成 Event 的读写
   * (□) startup_system.rs
   * (✓) system_closure / 如何用闭包构建 system
-  * system_param.rs
+  * (✓) system_param / 为 system 添加可直接访问的自定义的参数
   * system_piping.rs
   * system_stepping.rs
 
