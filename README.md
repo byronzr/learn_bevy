@@ -30,7 +30,7 @@
   * (✓) parallel_query.rs / 高性能的并行迭代器(多用于物理性,巨量的 entity 运算)
   * (✓) removal_detection.rs / Bevy 内建的 Component OnRemove 事件触发器的用例
   * (✓) run_conditions.rs / system 运行条件(run_if) 与闭包的结合
-  * send_and_receive_events.rs
+  * (✓) send_and_receive_events / 在一个相同的 system 作用域内,完成 Event 的读写
   * (□) startup_system.rs
   * (✓) system_closure / 如何用闭包构建 system
   * system_param.rs
