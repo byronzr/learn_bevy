@@ -10,7 +10,7 @@
   * (✓) timers / 计时器的应用,一个文本进度报告终端. 
   * (✓) virtual_time / 在同一环境中两个 Sprite 分别互不影响的应用 Time<Real> 与 Time<Virtual> 速度.
   * (✓) time / 在控制台用短字符交互,描述一个 FixedUpdate / Update 还有各种 Time 的关系
-* ecs	
+* ECS	
   * (✓) ecs_guide /	更完整 ECS 用例,一个模拟游戏得分的终端用例,包括 SystemSet 对 Update 的细分.
   * (✓) observer_propagation /Entity 嵌套,事件 (Event) 的监视(observe)与传播(propagate),模拟一个身着盔甲的哥布林,承受伤害的过程
   * (✓) fixed_timestep / 每个 system 都有一个 Local<T> 局布变量
@@ -26,13 +26,13 @@
   * (□) nondeterministic_system_order / system 并行的不确定性
   * (✓) event / 简单的 event 发送与接收
   * (✓) observers / 一个随机分部多枚地雷,连琐爆炸的例子,使用 Trigger 触发器
-  * one_shot_systems.rs
+  * (✓) one_shot_systems / 展示了如何将 system 包装到 Component 中等待用户输入触发
   * parallel_query.rs
   * removal_detection.rs
   * run_conditions.rs
   * send_and_receive_events.rs
-  * startup_system.rs
-  * system_closure.rs
+  * (□) startup_system.rs
+  * (✓) system_closure / 如何用闭包构建 system
   * system_param.rs
   * system_piping.rs
   * system_stepping.rs
