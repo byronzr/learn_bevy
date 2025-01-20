@@ -29,7 +29,7 @@
   * (✓) one_shot_systems / 展示了如何将 system 包装到 Component 中等待用户输入触发
   * (✓) parallel_query.rs / 高性能的并行迭代器(多用于物理性,巨量的 entity 运算)
   * (✓) removal_detection.rs / Bevy 内建的 Component OnRemove 事件触发器的用例
-  * run_conditions.rs
+  * (✓) run_conditions.rs / system 运行条件(run_if) 与闭包的结合
   * send_and_receive_events.rs
   * (□) startup_system.rs
   * (✓) system_closure / 如何用闭包构建 system
