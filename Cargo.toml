@@ -4,5 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-bevy = { version = "0.15.1" ,features = ["track_change_detection"] }
+bevy = { version = "0.15.1", features = ["track_change_detection"] }
 rand = "0.8.5"
+rand_chacha = "0.3.1"
+thiserror = "2.0.11"

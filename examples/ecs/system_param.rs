@@ -47,3 +47,5 @@ fn count_players(mut counter: PlayerCounter) {
     // PlayerCounter 定义在本模块中,直接访问 counter 的字段
     println!("{} players in the game", counter.count.0);
 }
+
+//end

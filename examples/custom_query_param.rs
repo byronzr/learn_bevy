@@ -15,13 +15,11 @@
 use bevy::{
     ecs::query::{QueryData, QueryFilter},
     prelude::*,
-    time::common_conditions::on_timer,
 };
-use std::{fmt::Debug, time::Duration};
+use std::fmt::Debug;
 
 fn main() {
     App::new()
-        //.add_plugins(DefaultPlugins) // 为了测试 CustomFilter Add 与 Changed 加入的
         .add_systems(Startup, spawn)
         .add_systems(
             Update,
@@ -31,7 +29,6 @@ fn main() {
                 print_components_iter,
                 print_components_tuple,
             )
-                //                .run_if(1on_timer(Duration::from_secs(1))) // 为了测试 CustomFilter Add 与 Changed 加入的
                 .chain(),
         )
         .run();

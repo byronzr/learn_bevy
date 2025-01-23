@@ -75,3 +75,5 @@ fn data_pipe_system(message: Res<Message>) -> String {
 fn warning_pipe_system(message: Res<OptionalWarning>) -> Result<(), String> {
     message.0.clone()
 }
+
+// end

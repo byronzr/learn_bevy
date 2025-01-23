@@ -181,9 +181,11 @@ fn main() {
     stepping.set_breakpoint(Update, update_system_two);
     stepping.continue_frame();
     app.update();
+
     let mut stepping = app.world_mut().resource_mut::<Stepping>();
     stepping.step_frame();
     app.update();
+
     let mut stepping = app.world_mut().resource_mut::<Stepping>();
     stepping.continue_frame();
     app.update();
@@ -228,3 +230,5 @@ fn update_system_three() {
 fn update_system_four() {
     println!("▶ update_system_four");
 }
+
+// end
