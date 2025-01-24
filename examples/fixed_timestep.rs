@@ -6,6 +6,7 @@ fn main() {
     std::env::set_var("NO_COLOR", "1");
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_systems(PreUpdate, pre_update)
         // this system will run once every update (it should match your screen's refresh rate)
         .add_systems(Update, frame_update)
         // add our system to the fixed timestep schedule
@@ -13,7 +14,20 @@ fn main() {
         // configure our fixed timestep schedule to run twice a second
         // 一秒内执行两次(0.5 * 2)
         .insert_resource(Time::<Fixed>::from_seconds(0.5))
+        //.insert_resource(Time::<Real>::from_seconds(0.5))             // error
+        //.insert_resource(Time::<Virtual>::from_seconds(0.5))          // error
         .run();
+}
+
+fn pre_update(mut last_time: Local<f32>, time: Res<Time>) {
+    // Default `Time` is `Time<Real>` here
+    info!(
+        "time since last pre_update: {} / {:?} / {:?}",
+        time.elapsed_secs() - *last_time,
+        time.delta_secs(),
+        time.context(),
+    );
+    *last_time = time.elapsed_secs();
 }
 
 // 使用 system 关联的 Local 局部存储计算出来的 delta 和 delta_secs() 相差无几

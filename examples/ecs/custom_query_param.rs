@@ -46,7 +46,6 @@ struct ComponentD;
 struct ComponentZ;
 
 // QueryData 的目的,是集成查询结果到一个自定义结构体.
-// Query的本质是: 查询某些 Entity ,条件是拥有 某些 Component
 // 所以,如果 Query 中的 Entity 不包含(非Option集成)某个 Component 时,就不会有结果
 #[derive(QueryData)]
 #[query_data(derive(Debug))]

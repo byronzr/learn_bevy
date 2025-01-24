@@ -17,7 +17,7 @@
   * (✓) change_detection / component 与 resource 变更侦测,通过 Query 得到 Component 的引用
   * (✓) component_hooks / component hook,组件的 "勾子",一种在组织结构上优于 event 的监视模式
   * (✓) custom_query_param /	自定义 Query 结构,实现结果与条件集成简单化
-  * (□) custom_schedule / 自定义 schedule 
+  * (✓) custom_schedule / 自定义 schedule 
   * (✓) dynamic / 动态的 component,entity,query
   * (✓) fallible_params / 不可靠的参数,除了Query以外,还有 Populated 与 Single 两个极为有用的查询
   * (✓) generic_system / 泛型 system 的用例
@@ -36,4 +36,16 @@
   * (✓) system_param / 为 system 添加可直接访问的自定义的参数
   * (✓) system_piping / system 的串联
   * (✓) system_stepping / system 的执行细节 Stepping 的应用(单步调试)
+* 2D
+  * (✓) 2d_shapes 绘制基础几何图形
+  * (✓) 2d_viewport_to_world 坐标系转换的意义
+  * (□) bloom_2d.rs 光晕细节
+  * (□) bounding_2d.rs 碰撞与切线的用例
+  * (□) cpu_draw.rs
+  * (□) custom_gltf_vertex_attribute.rs
+  * (□) mesh2d_alpha_mode.rs
+  * (□) mesh2d_arcs.rs UV贴图的一些细节
+  * (□) mesh2d_manual.rs 自定义渲染
+  * (□) mesh2d_vertex_color_texture.rs 顶点渲染?
+  * (□) mesh2d.rs 
 

@@ -136,6 +136,7 @@ fn generate_bodies(
 
 // 组合查询到的所有 Entity 然后,成对组合
 // A,B,C => (A,B) / (A,C) / (B,C)
+// A,B,C,D ==> (A,B) / (A,C) / (B,C) / (A,D) / (B,D) / (C,D)
 // 然后成对的,进行重力影响,该 system 不作任得渲染
 fn interact_bodies(mut query: Query<(&Mass, &GlobalTransform, &mut Acceleration)>) {
     let mut iter = query.iter_combinations_mut();
