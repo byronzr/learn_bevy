@@ -12,6 +12,7 @@ fn main() {
         .run();
 }
 
+// 生成三个 sprite
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2d);
     let texture = asset_server.load("branding/icon.png");
@@ -70,8 +71,8 @@ fn rotate(
     // Children 不是一个 Component 所以无法放在 With 中
     // 但在 Query 的第一个参数中,同样可以作为一个限制,
     // 本例中,符合条件(拥有Sprite component 与 &Children ) 的 Entity,只有一个
-    mut parents_query: Query<(Entity, &Children), With<Sprite>>,
-    mut transform_query: Query<&mut Transform, With<Sprite>>,
+    mut parents_query: Query<(Entity, &Children), With<Sprite>>, // only root
+    mut transform_query: Query<&mut Transform, With<Sprite>>,    // all entity
 ) {
     for (parent, children) in &mut parents_query {
         // 因为 Entity 作了嵌套,每个 children 的 transform 都会受 parent 影响

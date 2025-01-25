@@ -20,7 +20,10 @@ fn main() {
             Startup,
             (
                 setup_ui,
+                // commands.spawn
                 setup_with_commands,
+                // world.spawn
+                // 因为在 system 中有用到 world.run_system_once,所以需要在 setup_ui 之后
                 setup_with_world.after(setup_ui), // since we run `system_b` once in world it needs to run after `setup_ui`
             ),
         )
@@ -28,12 +31,14 @@ fn main() {
         .run();
 }
 
+// Callback 作为一个 system_id 的包装器
 #[derive(Component)]
 struct Callback(SystemId);
 
 #[derive(Component)]
 struct Triggered;
 
+// 在这里 A/B 作来一个 Entity 的标识
 #[derive(Component)]
 struct A;
 #[derive(Component)]
@@ -55,6 +60,7 @@ fn setup_with_world(world: &mut World) {
 
     // 用 world.run_system_once 执行一次
     // commands 没有 run_system_once 方法,因为 commands 是一个缓冲区
+    // 所以默认屏启动时 Last B 高亮
     world.run_system_once(system_b).unwrap();
 
     // Or with a Callback
