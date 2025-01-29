@@ -32,6 +32,8 @@ use std::collections::HashMap;
 struct MyComponent(KeyCode);
 
 impl Component for MyComponent {
+    // Table ,迭代更快
+    // SparseSet, 增删更快
     const STORAGE_TYPE: StorageType = StorageType::Table;
 
     /// Hooks can also be registered during component initialization by
@@ -52,9 +54,13 @@ fn main() {
     std::env::set_var("NO_COLOR", "1");
     App::new()
         .add_plugins(DefaultPlugins)
+        // 注册 hook closure
         .add_systems(Startup, setup)
+        // 模拟 component 的动态添加与删除,以触发 hook
         .add_systems(Update, trigger_hooks)
+        // 在 on_add 中触发 hook 需要更新的索引
         .init_resource::<MyComponentIndex>()
+        // 模拟在 hook 中发送事件(但并没有实际意义)
         .add_event::<MyEvent>()
         .run();
 }

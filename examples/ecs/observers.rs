@@ -15,6 +15,7 @@ fn main() {
         .add_systems(Update, (draw_shapes, handle_click))
         // Observers are systems that run when an event is "triggered". This observer runs whenever
         // `ExplodeMines` is triggered.
+        // 连环爆炸事件
         .add_observer(
             |trigger: Trigger<ExplodeMines>,
              mines: Query<&Mine>,
@@ -45,6 +46,7 @@ fn main() {
         .run();
 }
 
+// 地雷的组件与属性
 #[derive(Component)]
 struct Mine {
     pos: Vec2,
@@ -64,17 +66,21 @@ impl Mine {
 }
 
 /// 这个事件的触发器,在 main 函数中,以闭包的方式注册了一个观察者
+/// 爆炸传播事件
 #[derive(Event)]
 struct ExplodeMines {
     pos: Vec2,
     radius: f32,
 }
 
+/// 爆炸触发事件
 #[derive(Event)]
 struct Explode;
 
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
+
+    // 描述文本
     commands.spawn((
         Text::new(
             "Click on a \"Mine\" to trigger it.\n\
@@ -212,6 +218,8 @@ fn handle_click(
         .map(|ray| ray.origin.truncate())
     {
         // 如果点击左键
+        // 指定第一次爆炸范围(鼠标触发)
+        // main > add_observer(||)
         if mouse_button_input.just_pressed(MouseButton::Left) {
             // 触发 `ExplodeMines` 事件
             commands.trigger(ExplodeMines { pos, radius: 1.0 });

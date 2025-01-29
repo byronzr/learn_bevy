@@ -140,6 +140,8 @@ fn take_damage(
 ) {
     let attack = trigger.event();
     let (mut hp, name) = hp.get_mut(trigger.entity()).unwrap();
+    // wrapping_sub  环绕运算 u32::Max +1 -n
+    // saturating_sub 防止下溢的减法
     **hp = hp.saturating_sub(attack.damage);
 
     if **hp > 0 {

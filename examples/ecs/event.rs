@@ -14,7 +14,7 @@ struct DealDamage {
 // This event should be sent when an entity receives damage.
 #[derive(Event, Debug, Default)]
 struct DamageReceived;
-
+    
 // This event should be sent when an entity blocks damage with armor.
 #[derive(Event, Debug, Default)]
 struct ArmorBlockedDamage;

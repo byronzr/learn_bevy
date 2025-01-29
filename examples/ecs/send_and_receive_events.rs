@@ -111,7 +111,8 @@ fn debug_events(mut events: EventReader<DebugEvent>) {
 }
 
 /// A system that both sends and receives events using [`ParamSet`].
-// 利用 ParamSet 将同一类型的 EventWriter 和 EventReader 在一个 scope 中分开
+///使用 ParamSet 实现同时发送和接收事件在同一系统中
+// 使用 Paramset 将同一类型的 Eventwriter 和 Eventreader 进行分离
 fn send_and_receive_param_set(
     mut param_set: ParamSet<(EventReader<DebugEvent>, EventWriter<DebugEvent>)>,
     frame_count: Res<FrameCount>,
@@ -144,12 +145,11 @@ fn send_and_receive_param_set(
 }
 
 /// A system that both sends and receives events using a [`Local`] [`EventCursor`].
+/// 使用 [`Local`] [`EventCursor`] 完成同时发送与接收事件的系统
 fn send_and_receive_manual_event_reader(
     // The `Local` `SystemParam` stores state inside the system itself, rather than in the world.
     // `EventCursor<T>` is the internal state of `EventReader<T>`, which tracks which events have been seen.
     // EventCursor , 可以理解为 是 EventReader 的读取 "游标/指针"
-    // 可能 Local<T> 进行了类似 Arc<Mutex<T>> 的封装,
-    // 这样,就符合 RUST 同一 scope 中不能同时存在可变引用和不可变引用的规则
     mut local_event_reader: Local<EventCursor<DebugEvent>>,
     // We can access the `Events` resource mutably, allowing us to both read and write its contents.
     // 一个可以被修改的 Events 资源
