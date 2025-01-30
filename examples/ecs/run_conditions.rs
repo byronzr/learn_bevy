@@ -1,4 +1,10 @@
 //! This example demonstrates how to use run conditions to control when systems run.
+//!
+//! crates.io
+//! https://docs.rs/bevy/latest/bevy/ecs/prelude/trait.Condition.html?search=condition
+//!
+//! Shell
+//! grep -rn "run_if" --include="*.rs" ./examples
 
 use bevy::prelude::*;
 
