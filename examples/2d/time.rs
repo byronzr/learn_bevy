@@ -11,9 +11,9 @@ fn banner() {
     println!("This example is meant to intuitively demonstrate how Time works in Bevy.");
     println!();
     println!("Time will be printed in three different schedules in the app:");
-    println!("- PreUpdate: real time is printed");
-    println!("- FixedUpdate: fixed time step time is printed, may be run zero or multiple times");
-    println!("- Update: virtual game time is printed");
+    println!("- PreUpdate: real time is printed"); // Time<Real>
+    println!("- FixedUpdate: fixed time step time is printed, may be run zero or multiple times"); // Time<Fixed>
+    println!("- Update: virtual game time is printed"); // Time<Virtual>
     println!();
     println!("Max delta time is set to 5 seconds. Fixed timestep is set to 1 second.");
     println!();
@@ -43,34 +43,39 @@ fn runner(mut app: App) -> AppExit {
             println!("read err: {err:#}");
             break;
         }
+        // 只有用户输入才会响应
         match line.unwrap().as_str() {
             "" => {
                 // 非控制字符,执行所有 schedule(PreUpdate/Update/FixedUpdate/......)
                 app.update();
             }
-            // 在游戏世界里,除了 Time<Virtual> 有变更调整的必要, Time<Real> 与 Time<Fixed> 并不需要频繁修改
+            // 将 Time<Virtual> 的相对速度设置为 2x
             "f" => {
                 println!("FAST: setting relative speed to 2x");
                 app.world_mut()
                     .resource_mut::<Time<Virtual>>()
                     .set_relative_speed(2.0);
             }
+            // 将 Time<Virtual> 的相对速度设置为 1x
             "n" => {
                 println!("NORMAL: setting relative speed to 1x");
                 app.world_mut()
                     .resource_mut::<Time<Virtual>>()
                     .set_relative_speed(1.0);
             }
+            // 将 Time<Virtual> 的相对速度设置为 0.5x
             "s" => {
                 println!("SLOW: setting relative speed to 0.5x");
                 app.world_mut()
                     .resource_mut::<Time<Virtual>>()
                     .set_relative_speed(0.5);
             }
+            // 暂停 Time<Virtual>
             "p" => {
                 println!("PAUSE: pausing virtual clock");
                 app.world_mut().resource_mut::<Time<Virtual>>().pause();
             }
+            // 恢复 Time<Virtual>
             "u" => {
                 println!("UNPAUSE: resuming virtual clock");
                 app.world_mut().resource_mut::<Time<Virtual>>().unpause();
@@ -88,10 +93,7 @@ fn runner(mut app: App) -> AppExit {
     AppExit::Success
 }
 
-// Time<Real>
-// time.delta() 显示上一桢到此刻的 delta 的值,
-// time.elapsed() app,实际运行时间
-// 该方法每 app.update() 只会运行一次,由 PreUpdate 调度
+// Time<Real> 为真实时间,需要显示申明获取
 fn print_real_time(time: Res<Time<Real>>) {
     println!(
         "PreUpdate: this is real time clock, delta is {:?} and elapsed is {:?}",
@@ -100,11 +102,7 @@ fn print_real_time(time: Res<Time<Real>>) {
     );
 }
 
-// Time == Time<Fixed>
-// 因为 FixedUpdate 在调用它
-// 该方法受 Virtual 钳制最大 delta 与 自身 Duration 影响
-// 在调用 app.update 时,会计算至上一桢至此的 delta 值,如果超过 Virtual 设置的 max_delta ,则 delta 值为 max_delta
-// 按自身 Duration 长度进行分切,FixedUpdate,会按分切个数调用该方法
+// 所有 Fixed 前缀的 Schedule 的 Time 都是 Time<Fixed>
 fn print_fixed_time(time: Res<Time>) {
     println!(
         "FixedUpdate: this is generic time clock inside fixed, delta is {:?} and elapsed is {:?}",
@@ -113,11 +111,7 @@ fn print_fixed_time(time: Res<Time>) {
     );
 }
 
-// Time == Time<Virtual>
-// 未指定 Res 时,默认使用 Virtual 会让游戏速度更灵活
-// 该方法每 app.update() 只会运行一次
-// time.delta() 最大只会是 5s
-// time.elapsed() 的增量累积也会受到 time.delta() 影响
+// 除了 Fixed 前缀的 Schedule 的 Time 都是 Time<Virtual>
 fn print_time(time: Res<Time>) {
     println!(
         "Update: this is generic time clock, delta is {:?} and elapsed is {:?}",
@@ -127,14 +121,14 @@ fn print_time(time: Res<Time>) {
 }
 
 fn main() {
+    // Time<Real> 不会受到影响
+
     App::new()
         .add_plugins(MinimalPlugins)
-        // 钳制最大 delta 为 5 秒,这会影响到 FixedUpdate
-        // 在本例中,如果超过 5 秒后再输入, FixedUpdate 只会调用 5 次,因为 FixedUpdate 每秒只会调用一次
+        // 钳制最大 delta 为 5 秒,超过 5 秒的 delta 会被截断
+        // Virtual 设置了主循环(单桢)时间的步长,会影响到 Time<Fixed>
         .insert_resource(Time::<Virtual>::from_max_delta(Duration::from_secs(5)))
-        // FixedUpdate 每秒只会调用一次,但 Update 默认情况下是 1/60 次,也就是桢率
-        // Update 更多的时候服务视觉需求
-        // FixedUpdate 更多时间服务于游戏逻辑
+        // 受主循环(单桢)时间的步长影响,
         .insert_resource(Time::<Fixed>::from_duration(Duration::from_secs(1)))
         .add_systems(PreUpdate, print_real_time)
         .add_systems(FixedUpdate, print_fixed_time)
