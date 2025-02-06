@@ -10,15 +10,13 @@ fn main() {
         .run();
 }
 
+// Transform 相对坐标系(Entity嵌套)
+// GlobalTransform 绝对坐标系(世界坐标系),脱离父子关系
 fn draw_cursor(
     camera_query: Single<(&Camera, &GlobalTransform, &Transform)>,
     windows: Query<&Window>,
     mut gizmos: Gizmos,
 ) {
-    // 如果 entity(camera) 没有父级, transform 就以 global_transform 为相对坐标
-    // 所以我们可以看到 transform 很多默认值,并不是我们想像中的,如果不存在父级,坐标就是 GlobalTransform 的坐标
-    // global_transform: GlobalTransform(Affine3A { matrix3: Mat3A { x_axis: Vec3A(1.0, 0.0, 0.0), y_axis: Vec3A(0.0, 1.0, 0.0), z_axis: Vec3A(0.0, 0.0, 1.0) }, translation: Vec3A(0.0, 0.0, 0.0) })
-    // local_transform: Transform { translation: Vec3(0.0, 0.0, 0.0), rotation: Quat(0.0, 0.0, 0.0, 1.0), scale: Vec3(1.0, 1.0, 1.0) }
     let (camera, camera_transform, local_transform) = *camera_query;
     warn_once!("global_transform: {camera_transform:?}");
     warn_once!("local_transform: {local_transform:?}");
@@ -37,13 +35,10 @@ fn draw_cursor(
     };
 
     // Calculate a world position based on the cursor's position.
-    // camera 是可以移动的, world 的可视泛围是相对于 camera 取景框的
-    // 如果 camera 对准 Vec2:Zero 那么转换意义就不大了
-    // 如果 camera 对准 Vec2(-100,-100),鼠标指向视窗(viewport) 中心点的时候,实际在世界坐标系中是偏移的
-    // 所以通常,默认 camera 就是偏移的,每次都进行视窗转换,保证鼠标指向的是世界坐标系中的点
-    // ---
-    // camera.world_to_viewport 是世界坐标系到视窗坐标系的转换,这个方法只有 3D ,也只有 3D 有远近才需要转换成平面 UI
-
+    // 将视窗坐标系转换成世界坐标系
+    // 如果有 viewport_to_world_2d 方法,当然就会有 world_to_viewport 方法
+    // 注意: 没有 world_to_viewport_2d 方法,因为 2d 是不需要转换的,因为没有深度(z)
+    // 在 2d 场景中,如果鼠标(或其它)超出屏幕,则不需要转换,而未超出屏幕的部分,其本身就是世界坐标系
     let Ok(point) = camera.viewport_to_world_2d(camera_transform, cursor_position) else {
         warn!("viewport_to_world_2d failed");
         return;
