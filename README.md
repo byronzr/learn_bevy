@@ -54,4 +54,6 @@
 * state
   * (✓) states / 关于 state 的基本用法
   * (✓) computed_states / state 的转换运算与 entity 自动回收
+  * (□) custom_transitions / 自定义 state 转换触发点
+  * (✓) sub_states / state 的嵌套与扩展
 
