@@ -48,8 +48,9 @@
   * (□) mesh2d_manual.rs 自定义渲染
   * (□) mesh2d_vertex_color_texture.rs 顶点渲染?
   * (□) mesh2d.rs 
+  * (✓) texture_atlas / 纹理集的基本用法
 * scene
   * (✓) scene 场景载入与保存
 * state
-  * states / 关于 state 的基本用法
+  * (✓) states / 关于 state 的基本用法
 
