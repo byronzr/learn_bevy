@@ -53,4 +53,5 @@
   * (✓) scene 场景载入与保存
 * state
   * (✓) states / 关于 state 的基本用法
+  * (✓) computed_states / state 的转换运算与 entity 自动回收
 
