@@ -48,6 +48,8 @@
   * (□) mesh2d_manual.rs 自定义渲染
   * (□) mesh2d_vertex_color_texture.rs 顶点渲染?
   * (□) mesh2d.rs 
+  * sprite_sheet / Sprite 动画实现
+  * (✓) sprite_slice / 九宫贴片模式
   * (✓) sprite_tile / 平铺模式
   * (□) sprite / 构建精灵的例子
   * (✓) text2d / 适用于游戏场景的字体文本
