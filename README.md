@@ -48,7 +48,12 @@
   * (□) mesh2d_manual.rs 自定义渲染
   * (□) mesh2d_vertex_color_texture.rs 顶点渲染?
   * (□) mesh2d.rs 
+  * (✓) sprite_tile / 平铺模式
+  * (□) sprite / 构建精灵的例子
+  * (✓) text2d / 适用于游戏场景的字体文本
   * (✓) texture_atlas / 纹理集的基本用法
+  * (✓) transparency_2d / (Sprite) 如何使用透明度
+  * (□) wireframe_2d.rs / 调试 2d 渲染的用例
 * scene
   * (✓) scene 场景载入与保存
 * state
@@ -56,4 +61,5 @@
   * (✓) computed_states / state 的转换运算与 entity 自动回收
   * (□) custom_transitions / 自定义 state 转换触发点
   * (✓) sub_states / state 的嵌套与扩展
+
 

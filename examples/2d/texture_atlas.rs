@@ -6,6 +6,10 @@
 //!
 //! Only one padded and one unpadded texture atlas are rendered to the screen.
 //! An upscaled sprite from each of the four atlases are rendered to the screen.
+//!
+//! 1. Atlas 编排的基本操作
+//! 2. 采样方式的视觉效果
+//! 3. 如何在 Atlas 中获取(某个)纹理
 
 use bevy::{asset::LoadedFolder, image::ImageSampler, prelude::*, winit::WinitSettings};
 

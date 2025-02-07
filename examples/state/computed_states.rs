@@ -52,6 +52,7 @@ struct InGame;
 
 impl ComputedStates for InGame {
     // Our computed state depends on `AppState`, so we need to specify it as the SourceStates type.
+    // 用于记录源状态,以方便计算
     type SourceStates = AppState;
 
     // The compute function takes in the `SourceStates`
