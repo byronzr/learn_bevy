@@ -40,7 +40,7 @@
   * (✓) 2d_shapes / 绘制基础几何图形
   * (✓) 2d_viewport_to_world / 坐标系转换的意义
   * (□) bloom_2d.rs / 光晕细节
-  * (□) bounding_2d.rs / 碰撞与切线的用例
+  * (✓) bounding_2d.rs / 碰撞与切线的用例
   * (□) cpu_draw.rs / CPU纹理绘制
   * (□) custom_gltf_vertex_attribute.rs / WGSL渲染用例
   * (□) mesh2d_alpha_mode / 透明与混合
@@ -48,6 +48,7 @@
   * (□) mesh2d_manual.rs / 自定义渲染
   * (□) mesh2d_vertex_color_texture.rs 顶点渲染与纹理混合
   * (✓) mesh2d.rs / mesh2d与material2d的基本用法
+  * (✓) move_sprite.rs / Sprite 移动基本用法
   * (□) pixel_grid_snap / 像素网格渲染
   * (✓) rotation / 两种常用的旋转索敌用例(咬住敌人与炮塔瞄准)
   * (✓) sprite_animation / 计时器在 Sprite 动画中的应用
