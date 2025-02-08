@@ -48,7 +48,11 @@
   * (□) mesh2d_manual.rs 自定义渲染
   * (□) mesh2d_vertex_color_texture.rs 顶点渲染?
   * (□) mesh2d.rs 
-  * sprite_sheet / Sprite 动画实现
+  * pixel_grid_snap / 像素网格渲染
+  * (✓) rotation / 两种常用的旋转索敌用例(咬住敌人与炮塔瞄准)
+  * (✓) sprite_animation / 计时器在 Sprite 动画中的应用
+  * (✓) sprite_flipping / Sprite 图片镜像(翻转)
+  * (✓) sprite_sheet / Sprite 动画实现
   * (✓) sprite_slice / 九宫贴片模式
   * (✓) sprite_tile / 平铺模式
   * (□) sprite / 构建精灵的例子

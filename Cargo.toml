@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 bevy = { version = "0.15.1", features = ["track_change_detection"] }
+log = "0.4.25"
 rand = "0.8.5"
 rand_chacha = "0.3.1"
 thiserror = "2.0.11"
