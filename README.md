@@ -37,18 +37,18 @@
   * (✓) system_piping / system 的串联
   * (✓) system_stepping / system 的执行细节 Stepping 的应用(单步调试)
 * 2D
-  * (✓) 2d_shapes 绘制基础几何图形
-  * (✓) 2d_viewport_to_world 坐标系转换的意义
-  * (□) bloom_2d.rs 光晕细节
-  * (□) bounding_2d.rs 碰撞与切线的用例
-  * (□) cpu_draw.rs
-  * (□) custom_gltf_vertex_attribute.rs
-  * (□) mesh2d_alpha_mode.rs
-  * (□) mesh2d_arcs.rs UV贴图的一些细节
-  * (□) mesh2d_manual.rs 自定义渲染
-  * (□) mesh2d_vertex_color_texture.rs 顶点渲染?
-  * (□) mesh2d.rs 
-  * pixel_grid_snap / 像素网格渲染
+  * (✓) 2d_shapes / 绘制基础几何图形
+  * (✓) 2d_viewport_to_world / 坐标系转换的意义
+  * (□) bloom_2d.rs / 光晕细节
+  * (□) bounding_2d.rs / 碰撞与切线的用例
+  * (□) cpu_draw.rs / CPU纹理绘制
+  * (□) custom_gltf_vertex_attribute.rs / WGSL渲染用例
+  * (□) mesh2d_alpha_mode / 透明与混合
+  * (□) mesh2d_arcs.rs / UV贴图的一些细节
+  * (□) mesh2d_manual.rs / 自定义渲染
+  * (□) mesh2d_vertex_color_texture.rs 顶点渲染与纹理混合
+  * (✓) mesh2d.rs / mesh2d与material2d的基本用法
+  * (□) pixel_grid_snap / 像素网格渲染
   * (✓) rotation / 两种常用的旋转索敌用例(咬住敌人与炮塔瞄准)
   * (✓) sprite_animation / 计时器在 Sprite 动画中的应用
   * (✓) sprite_flipping / Sprite 图片镜像(翻转)
