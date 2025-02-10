@@ -13,6 +13,7 @@ fn main() {
             FixedUpdate,
             (
                 player_movement_system,
+                frigate_following_system,
                 snap_to_player_system,
                 rotate_to_player_system,
             ),
@@ -27,6 +28,11 @@ struct Player {
     movement_speed: f32,
     /// rotation speed in radians per second
     rotation_speed: f32,
+}
+
+#[derive(Component)]
+struct Frigate {
+    movement_speed: f32,
 }
 
 /// snap to player ship behavior
@@ -66,10 +72,23 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     // player controlled ship
     commands.spawn((
-        Sprite::from_image(ship_handle),
+        Sprite::from_image(ship_handle.clone()),
         Player {
             movement_speed: 500.0,                  // meters per second
             rotation_speed: f32::to_radians(360.0), // degrees per second
+        },
+    ));
+
+    // player controlled ship
+    commands.spawn((
+        Sprite {
+            image: ship_handle,
+            color: Color::srgb(0.0, 1.0, 0.0), // green
+            custom_size: Some(Vec2::new(32.0, 32.0)),
+            ..default()
+        },
+        Frigate {
+            movement_speed: 100.0, // meters per second
         },
     ));
 
@@ -111,13 +130,55 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     ));
 }
 
+/// ** 护卫舰跟随
+fn frigate_following_system(
+    player: Single<&Transform, (With<Player>, Without<Frigate>)>,
+    frigate: Single<(&mut Transform, &Frigate), (With<Frigate>, Without<Player>)>,
+    time: Res<Time>,
+) {
+    // ** Player的坐标
+    let player_translation = player.translation.xy();
+    // ** Frigate参数
+    let (mut frigate_transform, frigate) = frigate.into_inner();
+    // ** Frigate与Player的向量
+    let to_player = player_translation - frigate_transform.translation.xy();
+    // ** Frigate与Player的距离
+    let distance = to_player.length();
+    // ** Frigate 朝向 Player 的方向
+    let front = to_player / distance;
+    // ** 最大可接近距离
+    let max_step = distance - 50.0;
+    // ** 旋转到 Player 的方向
+    let rotate_to_player = Quat::from_rotation_arc(Vec3::Y, to_player.extend(0.).normalize());
+    frigate_transform.rotation = rotate_to_player;
+
+    // ** 尝试接近 Player
+    if 0.0 < max_step {
+        let velocity = (frigate.movement_speed * time.delta_secs()).min(max_step);
+        // ** ranslate 无论是2D还是3D,都是Vec3,只不过Z轴不用
+        frigate_transform.translation += front.extend(0.0) * velocity;
+    }
+}
+
 /// Demonstrates applying rotation and movement based on keyboard input.
 /// ** 左右控制旋转,上是油门,没有刹车与倒车
 fn player_movement_system(
+    mut gizmos: Gizmos,
     time: Res<Time>,
     keyboard_input: Res<ButtonInput<KeyCode>>,
     query: Single<(&Player, &mut Transform)>,
 ) {
+    // 网格 (1280x720)
+    gizmos
+        .grid_2d(
+            Isometry2d::IDENTITY, // 投影模式
+            UVec2::new(16, 9),    // 单元格数量
+            Vec2::new(80., 80.),  // 单元格大小
+            // Dark gray
+            LinearRgba::gray(0.05), // 网格颜色
+        )
+        .outer_edges();
+
     let (ship, mut transform) = query.into_inner();
 
     // 一个旋转因子和一个移动因子 默认值
@@ -306,5 +367,23 @@ fn rotate_to_player_system(
         // rotate the enemy to face the player
         // ** 转起来
         enemy_transform.rotate_z(rotation_angle);
+
+        let speed = 80.0;
+        let delta = player_translation - enemy_transform.translation.xy();
+        let distance = delta.length();
+        let front = delta / distance;
+        let max_step = distance - 50.0;
+
+        // 移动条件不苛刻,但行为怪异
+        // if 0.0 < max_step
+
+        // 大至为前方就跟随,还是有点怪
+        // if 0.0 < max_step && forward_dot_player > 0.0 {
+
+        // 小夹角时跟随,大夹角时原地旋转
+        if 0.0 < max_step && (forward_dot_player - 1.0).abs() < 0.2 {
+            let velocity = (speed * time.delta_secs()).min(max_step);
+            enemy_transform.translation += front.extend(0.0) * velocity;
+        }
     }
 }
