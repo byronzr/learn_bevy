@@ -52,7 +52,6 @@ struct InGame;
 
 impl ComputedStates for InGame {
     // Our computed state depends on `AppState`, so we need to specify it as the SourceStates type.
-    // 用于记录源状态,以方便计算
     type SourceStates = AppState;
 
     // The compute function takes in the `SourceStates`
@@ -130,7 +129,10 @@ enum Tutorial {
     MovementInstructions,
     PauseInstructions,
 }
-
+/// * ComputedStates 的意义在于,将多个State的组合状态,转换为一个新的State
+/// * 组合的意义又在于 StateScoped 只能作用于一个State
+/// * 例如: 两个主场景中(A,B),分别都有多个子场景(A1,A2,A3 / B1,B2,B3),
+/// * 当从 A1/A2/A3 跳转到 B 场景时,需要一个单一的状态.
 impl ComputedStates for Tutorial {
     // We can also use tuples of types that implement [`States`] as our [`SourceStates`].
     // That includes other [`ComputedStates`] - though circular dependencies are not supported
@@ -150,8 +152,12 @@ impl ComputedStates for Tutorial {
     // ComputedState will just not exist in that situation.
     fn compute(
         (tutorial_state, _in_game, is_paused): (TutorialState, InGame, Option<IsPaused>),
+        // args: Self::SourceStates,
     ) -> Option<Self> {
+        //let (tutorial_state, _in_game, is_paused) = args;
+
         // If the tutorial is inactive we don't need to worry about it.
+        // * matches! 宏是对 match 的简化,单一匹配
         if !matches!(tutorial_state, TutorialState::Active) {
             return None;
         }
@@ -172,6 +178,7 @@ fn main() {
         .init_state::<AppState>()
         .init_state::<TutorialState>()
         // After initializing the normal states, we'll use `.add_computed_state::<CS>()` to initialize our `ComputedStates`
+        // * (计算)状态与嵌套子状态的初始化,都有不同的方法
         .add_computed_state::<InGame>()
         .add_computed_state::<IsPaused>()
         .add_computed_state::<TurboMode>()
@@ -188,6 +195,8 @@ fn main() {
         // And we only want to run the [`clear_game`] function when we leave the [`AppState::InGame`] state, regardless
         // of whether we're paused.
         // ** 配合 setup_game 中的  StateScoped(InGame) 标记,一起使用
+        // ** 需要注意 StateScoped 使用中 Entity 的嵌套, 只需要在最外层的 Entity 上添加标记
+        // ** enable_*, 没有顺序要求,一一对照,是为了更方便阅读
         .enable_state_scoped_entities::<InGame>()
         // We want the color change, toggle_pause and quit_to_menu systems to ignore the paused condition, so we can use the [`InGame`] derived
         // state here as well.
