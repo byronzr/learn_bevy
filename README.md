@@ -68,5 +68,11 @@
   * (✓) computed_states / state 的转换运算与 entity 自动回收
   * (□) custom_transitions / 自定义 state 转换触发点
   * (✓) sub_states / state 的嵌套与扩展
+  
+* input
+  * char_input_events 简单的字符输入事件示例
+  * keyboard_modifiers 修饰键与组合键的用法
+  * mouse_grab 鼠标(截取)隐藏与释放
+  * text_input 输入法(可中文)事件的示例
 
 
