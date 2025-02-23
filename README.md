@@ -75,4 +75,9 @@
   * text_input / 输入法(可中文)事件的示例
 * picking
   * sprite_picking / sprite与鼠标联动事件
+* ui
+  * flex_layout / Flex 布局方式
+  * grid / Gird 布局方式
+  * overflow / 溢出(遮罩)控制
+  * ui_scaling / UI的缩放
 
