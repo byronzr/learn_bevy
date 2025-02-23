@@ -80,4 +80,6 @@
   * grid / Gird 布局方式
   * overflow / 溢出(遮罩)控制
   * ui_scaling / UI的缩放
+* movement
+  * physics_in_fixed_timestep / 通用的插值平滑运动逻辑
 
