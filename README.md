@@ -69,19 +69,23 @@
   * (□) custom_transitions / 自定义 state 转换触发点
   * (✓) sub_states / state 的嵌套与扩展
 * input
-  * char_input_events / 简单的字符输入事件示例
-  * keyboard_modifiers /修饰键与组合键的用法
-  * mouse_grab / 鼠标(截取)隐藏与释放
-  * text_input / 输入法(可中文)事件的示例
+  * (✓) char_input_events / 简单的字符输入事件示例
+  * (✓) keyboard_modifiers /修饰键与组合键的用法
+  * (✓) mouse_grab / 鼠标(截取)隐藏与释放
+  * (✓) text_input / 输入法(可中文)事件的示例
 * picking
-  * sprite_picking / sprite与鼠标联动事件
+  * (✓) sprite_picking / sprite与鼠标联动事件
 * ui
-  * flex_layout / Flex 布局方式
-  * grid / Gird 布局方式
-  * overflow / 溢出(遮罩)控制
-  * ui_scaling / UI的缩放
-  * relative_cursor_position / 鼠标的相对位置组件 (RelativeCursorPosition)
-  * render_ui_to_texture.rs / 将 UI 绘制成一个纹理(离屏渲染机制)
+  * (✓) flex_layout / Flex 布局方式
+  * (✓) grid / Gird 布局方式
+  * (✓) overflow / 溢出(遮罩)控制
+  * (✓) ui_scaling / UI的缩放
+  * (✓) relative_cursor_position / 鼠标的相对位置组件 (RelativeCursorPosition)
+  * (✓) render_ui_to_texture.rs / 将 UI 绘制成一个纹理(离屏渲染机制)
 * movement
-  * physics_in_fixed_timestep / 通用的插值平滑运动逻辑
+  * (✓) physics_in_fixed_timestep / 通用的插值平滑运动逻辑
+* async_tasks
+  * (✓) async_compute / 高效异步(加载),后台逻辑运行用例
+
+
 
