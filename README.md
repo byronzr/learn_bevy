@@ -80,6 +80,7 @@
   * grid / Gird 布局方式
   * overflow / 溢出(遮罩)控制
   * ui_scaling / UI的缩放
+  * relative_cursor_position / 鼠标的相对位置组件 (RelativeCursorPosition)
 * movement
   * physics_in_fixed_timestep / 通用的插值平滑运动逻辑
 
