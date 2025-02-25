@@ -43,7 +43,6 @@ fn add_assets(
     commands.insert_resource(BoxMaterialHandle(box_material_handle));
 }
 
-
 #[derive(Component)]
 struct ComputeTransform(Task<CommandQueue>);
 
