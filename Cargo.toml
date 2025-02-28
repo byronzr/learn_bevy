@@ -1,11 +1,18 @@
 [package]
 name = "learn_bevy"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+
 
 [dependencies]
-bevy = { version = "0.15.1", features = ["track_change_detection"] }
+bevy = { version = "0.15.3" }
 log = "0.4.25"
-rand = "0.8.5"
-rand_chacha = "0.3.1"
+rand = "0.9.0"
+rand_chacha = "*"
 thiserror = "2.0.11"
+
+
+[[example]]
+name = "camera_renderlayer"
+path = "examples/byronzr/camera_renderlayer.rs"
+doc-scrape-examples = true
