@@ -16,3 +16,9 @@ thiserror = "2.0.11"
 name = "camera_renderlayer"
 path = "examples/byronzr/camera_renderlayer.rs"
 doc-scrape-examples = true
+
+
+[[example]]
+name = "inventory"
+path = "examples/byronzr/inventory.rs"
+doc-scrape-examples = true
