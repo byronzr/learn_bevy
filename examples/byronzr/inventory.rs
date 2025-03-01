@@ -1,9 +1,10 @@
 #![allow(dead_code)]
 
-use std::fmt::Debug;
+use std::{fmt::Debug, sync::LazyLock};
 
 use bevy::{
-    color::palettes::css, prelude::*, sprite::Anchor, utils::HashMap, winit::WinitSettings,
+    color::palettes::css, prelude::*, sprite::Anchor, utils::hashbrown::HashSet,
+    winit::WinitSettings,
 };
 use rand::{rng, seq::IndexedRandom};
 
@@ -25,71 +26,173 @@ const SLOT_GAP: f32 = 1.;
 const SLOT_LAYER: f32 = 1.;
 const ITEM_LAYER: f32 = 2.;
 
-/// * 用于记录物品栏的格子索引,以左上角为起点(0,0)
+// 颜色
+static SLOT_UNUSE: LazyLock<Color> = LazyLock::new(|| Color::from(css::GREY.with_alpha(0.1)));
+static SLOT_USED: LazyLock<Color> = LazyLock::new(|| Color::from(css::DARK_GREEN.with_alpha(0.1)));
+
+/// 用于记录物品栏的格子索引,以左上角为起点(0,0)
 #[derive(Component, Debug)]
 pub struct SlotIndex(pub (usize, usize));
 
-// * 插件使用状态,
-// ! 不直接使用 commands 的原因, 因为 observe 不允许请求 commands 参数,
-// ! 所以需要通过插件的方式传递,让另一个触发器来完成颜色修改
-#[derive(Component, Debug)]
-pub struct SlotUsed(pub bool);
-
-#[derive(Component, Debug, Clone)]
+// 物品栏格子的占用信息
+#[derive(Component, Debug, Clone, Default)]
 pub struct ItemSlots {
     pub path: String,
     pub angle: i32, // 0 度 Y轴开始,每次顺时针旋转 90 度
     pub size: (usize, usize),
-    pub slots: Vec<(usize, usize)>, // size 换算出来的矩形
-    pub unset: Vec<(usize, usize)>, // 使用排除则为异形格子
+    pub slot_metrix: HashSet<(usize, usize)>, // size 换算出来的矩形
+    pub slot_used: HashSet<(usize, usize)>,   // 当前占用的格子(映射库存清单中的格子)
+    pub slot_position: Vec2,                  // 物品栏中的位置
 }
 
 impl ItemSlots {
     pub fn new(size: (usize, usize), path: &str) -> Self {
-        let mut slots = vec![];
-        for x in 0..size.0 {
-            for y in 0..size.1 {
-                slots.push((x, y));
-            }
-        }
-        Self {
+        let mut instance = Self {
             path: path.to_string(),
-            angle: 0,
             size,
-            slots,
-            unset: vec![],
-        }
+            ..default()
+        };
+        instance.calc_slots();
+        instance
     }
 
     pub fn rotate(&mut self) {
-        self.angle = (self.angle + 90) % 360;
+        self.angle = (self.angle + 90) % 180;
+        std::mem::swap(&mut self.size.0, &mut self.size.1);
+        self.calc_slots();
     }
 
-    pub fn unset(&mut self, x: usize, y: usize) {
-        self.unset.push((x, y));
+    fn calc_slots(&mut self) {
+        let mut slots = HashSet::new();
+        for x in 0..self.size.0 {
+            for y in 0..self.size.1 {
+                slots.insert((x, y));
+            }
+        }
+        self.slot_metrix = slots;
     }
 }
 
-/// 库存清单的占用信息
+/// 库存清单格子的占用信息
 #[derive(Resource, Debug, Default)]
-struct InventorySlotMap(pub HashMap<(usize, usize), bool>);
+struct InventorySlotStatus(pub HashSet<(usize, usize)>);
+
+/// 当前拾取的 Entity
+/// 因为 Trigger 的 observe 事件,没有 commands, 所以保存到 Resource 中
+#[derive(Resource, Debug, Default)]
+struct PickedEntity(pub Option<Entity>);
+
+/// 未摆放标记
+#[derive(Component, Debug)]
+struct UnSlotted;
 
 fn main() {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins);
     app.insert_resource(WinitSettings::desktop_app());
-    app.init_resource::<InventorySlotMap>();
+    app.init_resource::<InventorySlotStatus>();
+    app.init_resource::<PickedEntity>();
 
-    // @ 展示了 UI 层遮挡 Sprite 使物品堆叠不可视,所以完全放弃使用 UI 进行物品栏的绘制
-    // app.add_systems(Startup, setup_node_ui);
-
-    // @ 使用 Sprite 进行物品栏的绘制
+    // 使用 Sprite 进行物品栏的绘制
     app.add_systems(Startup, setup_sprite_ui);
 
-    // @ 使用 gizmos 进行调试
-    // @ gizmos 需要多次运行才能可视,所以要写在 Update 系统中
-    app.add_systems(Update, (draw_gizmos, generate_random_item));
+    // 使用 gizmos 进行调试
+    // gizmos 需要多次运行才能可视,所以要写在 Update 系统中
+    app.add_systems(
+        Update,
+        (
+            draw_gizmos,
+            generate_random_item,
+            auto_slot,
+            picked_item_rotate,
+        ),
+    );
+
+    app.add_systems(PostUpdate, update_slot_status);
     app.run();
+}
+
+/// 实时更新 slot 的状态(颜色)
+fn update_slot_status(
+    slot_info: Res<InventorySlotStatus>,
+    mut query: Query<(&mut Sprite, &SlotIndex)>,
+) {
+    for (mut sprite, slot_index) in &mut query {
+        let ref key = slot_index.0;
+        // let used = slot_info.total_used.iter().find(|k| *k == key);
+        let color = if slot_info.0.contains(key) {
+            *SLOT_USED
+        } else {
+            *SLOT_UNUSE
+        };
+        sprite.color = color;
+    }
+}
+
+/// 对新建物品进行第一次排放
+fn auto_slot(
+    mut commands: Commands,
+    mut query: Query<(Entity, &mut Transform, &mut ItemSlots, &UnSlotted)>,
+    slot_query: Query<(&SlotIndex, &Transform), Without<ItemSlots>>,
+    mut slot_info: ResMut<InventorySlotStatus>,
+) {
+    // 构建一个左上角开始的索引
+    let mut idx_iter = vec![];
+    for row in 0..ROWS {
+        for col in 0..COLS {
+            idx_iter.push((col, row));
+        }
+    }
+
+    for (query_entity, mut transform, mut is_item, _) in &mut query {
+        // 寻找可用格子(按左上角开始寻找)
+        for idx in idx_iter.iter() {
+            // 如果有格子被占用,寻找下一个
+            if slot_info.0.contains(idx) {
+                continue;
+            }
+            'slot_iter: for (slot_index, slot_position) in slot_query.iter() {
+                // 如果不是指定的 slot 则跳过
+                if slot_index.0 != *idx {
+                    continue;
+                }
+
+                // 记录将要被占用的格子
+                let mut slots = HashSet::new();
+                // 根据物品的大小,计算出占用的格子
+                for (x, y) in &is_item.slot_metrix {
+                    let x = x + slot_index.0.0;
+                    let y = y + slot_index.0.1;
+                    // 如果有格子被占用,中断退出
+                    if slot_info.0.contains(&(x, y)) {
+                        break 'slot_iter;
+                    }
+                    // 超出边界,中断退出
+                    if x >= COLS || y >= ROWS {
+                        break 'slot_iter;
+                    }
+                    slots.insert((x, y));
+                }
+
+                // 记录占用的格子
+                slot_info.0 = slot_info.0.union(&slots).cloned().collect();
+                is_item.slot_used = slots;
+                is_item.slot_position = slot_position.translation.truncate();
+
+                // 直接完成位移
+                transform.translation = slot_position.translation;
+                transform.translation.z = ITEM_LAYER;
+
+                // 移除未排放标记
+                commands.entity(query_entity).remove::<UnSlotted>();
+
+                return;
+            }
+        }
+        // 如果找到不存储的格子,删除物品
+        //commands.entity(query_entity).despawn();
+        commands.entity(query_entity).try_despawn_recursive();
+    }
 }
 
 /// 创建一个随机物品
@@ -97,16 +200,11 @@ fn generate_random_item(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut interaction_query: Query<
-        (
-            &Interaction,
-            &mut BackgroundColor,
-            &mut BorderColor,
-            &Children,
-        ),
+        (&Interaction, &mut BackgroundColor, &mut BorderColor),
         (Changed<Interaction>, With<Button>),
     >,
 ) {
-    for (it, mut bg, mut bc, children) in &mut interaction_query {
+    for (it, mut bg, mut bc) in &mut interaction_query {
         match *it {
             Interaction::Pressed => {
                 bg.0 = Color::from(css::DARK_SALMON);
@@ -125,14 +223,19 @@ fn generate_random_item(
 
                 commands
                     .spawn((
-                        Sprite::from_image(handle),
-                        item,
+                        //Sprite::from_image(handle),
+                        Sprite {
+                            image: handle,
+                            anchor: Anchor::TopLeft,
+                            ..default()
+                        },
+                        item.clone(),
                         Transform::from_xyz(0., 0., ITEM_LAYER),
+                        UnSlotted, // 标记未排放
                     ))
-                    //.observe(observe_slot::<Pointer<Click>>())
-                    //.observe(observe_slot::<Pointer<DragDrop>>()) // ! 在这里,DragDrop 方法不会产生效果,因为 slot 没有对应的触发器
-                    .observe(observe_item::<Pointer<DragEnd>>())
-                    .observe(observe_item::<Pointer<Drag>>());
+                    .observe(observe_item::<Pointer<DragStart>>()) // ! 处理点击事件开始时,将 item 进行位移到鼠标
+                    .observe(observe_item::<Pointer<DragEnd>>()) // ! 处理点击事件结束时,将 item 进行位移到物品栏对齐
+                    .observe(observe_item::<Pointer<Drag>>()); // ! 移动事件
             }
             Interaction::Hovered => {
                 bg.0 = Color::from(css::DARK_BLUE.with_alpha(0.8));
@@ -144,58 +247,126 @@ fn generate_random_item(
 }
 
 /// slot 响应拖拽事件
-/// ! &ItemSlots 确保了只有物品才会触发
 fn observe_slot(
     trigger: Trigger<Pointer<DragEnter>>,
-    mut query: Query<(Entity, &mut Sprite, &mut Transform, &ItemSlots)>,
-    mut solt_info: ResMut<InventorySlotMap>,
+    mut items_query: Query<&mut ItemSlots>,
+    slot_query: Query<(&SlotIndex, &Transform), Without<ItemSlots>>,
+    mut slot_info: ResMut<InventorySlotStatus>,
 ) {
-    // @ 在 DragEnter 中,dragged 是拾起实体,target 是叠加实体
-    for (query_entity, mut sprite, mut transform, is_item) in &mut query {
-        // ! 仅处理物品, 因为一但出现物品,如果不校验格子,则会出现格子可被拖拽的信息
-        if trigger.dragged != query_entity {
-            continue;
+    // 当前物品
+    let Ok(mut is_item) = items_query.get_mut(trigger.dragged) else {
+        return;
+    };
+
+    // 取出当前格子
+    let Ok((slot_index, slot_position)) = slot_query.get(trigger.target) else {
+        return;
+    };
+
+    // 缓存当前的占用信息,如果物品无法正确放置,则用于恢复
+    let prev = slot_info.0.clone();
+    // 移动时释放物品栏的占用
+    slot_info.0 = slot_info
+        .0
+        .difference(&is_item.slot_used)
+        .cloned()
+        .collect();
+
+    // 根据索引,查看是否有格子被占用
+    if slot_info.0.contains(&slot_index.0) {
+        slot_info.0 = prev;
+        return;
+    }
+
+    // 记录将要被占用的格子
+    let mut slots = HashSet::new();
+
+    // 根据物品的大小,计算出占用的格子
+    for (x, y) in &is_item.slot_metrix {
+        let x = x + slot_index.0.0;
+        let y = y + slot_index.0.1;
+
+        // 如果有格子被占用,中断退出
+        if slot_info.0.contains(&(x, y)) {
+            slot_info.0 = prev;
+            return;
         }
-        info!(
-            "DragEnter: target => {:?} dragged => {:?} ev.entity => {:?},query_entity: {:?},hit_data: {:?}",
-            trigger.target,
-            trigger.dragged,
-            trigger.entity(),
-            query_entity,
-            //trigger.hit,
-            true,
-        );
-        break;
+        // 超出边界,中断退出
+        if x >= COLS || y >= ROWS {
+            slot_info.0 = prev;
+            return;
+        }
+        slots.insert((x, y));
+    }
+
+    // 记录占用的格子
+    slot_info.0 = slot_info.0.union(&slots).cloned().collect();
+    is_item.slot_used = slots;
+    // 记录要对齐的格子
+    is_item.slot_position = slot_position.translation.truncate();
+}
+
+fn picked_item_rotate(
+    input: Res<ButtonInput<KeyCode>>,
+    mut items_query: Query<(&mut Sprite, &mut ItemSlots, &mut Transform)>,
+    picked: Res<PickedEntity>,
+) {
+    // 处理物品旋转
+    if input.just_pressed(KeyCode::KeyR) {
+        let Some(picked_entity) = picked.0 else {
+            return;
+        };
+        let Ok((mut sprite, mut item, mut transform)) = items_query.get_mut(picked_entity) else {
+            return;
+        };
+        item.rotate();
+        sprite.anchor = Anchor::Center;
+        transform.rotation = Quat::from_rotation_z((item.angle as f32).to_radians());
+        sprite.anchor = match item.angle {
+            0 => Anchor::TopLeft,
+            _ => Anchor::TopRight,
+        };
+        return;
     }
 }
 
-/// 支持拖拽事件
-fn observe_item<E: Debug + Reflect + Clone>() -> impl Fn(
-    Trigger<E>,
-    Query<(Entity, &mut Sprite, &mut Transform, &ItemSlots), Without<SlotIndex>>,
-    ResMut<InventorySlotMap>,
-) {
-    move |ev, mut query, mut solt_info| {
-        for (query_entity, mut sprite, mut transform, is_item) in &mut query {
-            // ! 出现多个物体时,只处理当前拖拽的物体
-            if ev.entity() != query_entity {
-                continue;
-            }
+/// item 响应拖拽事件,
+/// 事件是在有鼠标状态变化时触发的,
+/// 所以如果需要实时接收键盘输入,需要将当前拾取的物品的 Entity 保存,在 DragEnd 时释放
+fn observe_item<E: Debug + Reflect + Clone>()
+-> impl Fn(Trigger<E>, Query<(&mut Transform, &mut ItemSlots), Without<SlotIndex>>, ResMut<PickedEntity>)
+{
+    move |ev, mut query, mut picked| {
+        let Ok((mut transform, is_item)) = query.get_mut(ev.entity()) else {
+            return;
+        };
 
-            let reflect = ev.event().try_as_reflect().unwrap();
+        let reflect = ev.event().try_as_reflect().unwrap();
 
-            if let Some(trigger) = reflect.downcast_ref::<Pointer<DragEnd>>() {
-                info!("DragEnd: {:?}", trigger.pointer_location);
-                transform.translation.z = ITEM_LAYER; // ! 结束时,我们需要物品栏保持在最上层
-                break;
-            }
+        // 第一次点击时,将物品(左上角)移动到鼠标位置
+        if let Some(trigger) = reflect.downcast_ref::<Pointer<DragStart>>() {
+            let Some(start) = trigger.event.hit.position else {
+                return;
+            };
+            transform.translation = start;
+            return;
+        }
 
-            if let Some(trigger) = reflect.downcast_ref::<Pointer<Drag>>() {
-                let delta = trigger.delta * Vec2::new(1., -1.);
-                transform.translation += delta.extend(0.);
-                transform.translation.z = SLOT_LAYER; // ! 移动时,我们需要触发 DragEnter 事件,需要与 Slot 在同一层(z轴)
-                break;
-            }
+        // 结束时,我们需要物品栏保持在最上层
+        if let Some(_trigger) = reflect.downcast_ref::<Pointer<DragEnd>>() {
+            transform.translation = is_item.slot_position.extend(ITEM_LAYER);
+            picked.0 = None;
+            return;
+        }
+
+        // 移动时,我们需要触发 DragEnter 事件,需要与 Slot 在同一层(z轴)
+        // Y轴的坐标是反的,所以需要转换
+        if let Some(trigger) = reflect.downcast_ref::<Pointer<Drag>>() {
+            let delta = trigger.delta * Vec2::new(1., -1.);
+            transform.translation += delta.extend(0.);
+            transform.translation.z = SLOT_LAYER;
+            picked.0 = Some(ev.entity());
+            return;
         }
     }
 }
@@ -205,7 +376,6 @@ fn setup_sprite_ui(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     win_query: Single<&Window>,
-    mut solt_map: ResMut<InventorySlotMap>,
 ) {
     // 创建一个 UI 相机
     commands.spawn(Camera2d);
@@ -236,18 +406,16 @@ fn setup_sprite_ui(
                 SLOT_LAYER,
             ));
             // TODO: 还差半格 slot_size 未处理
+            let custom_size = Vec2::splat(SLOT_SIZE - SLOT_GAP);
             let _ = commands
                 .spawn((
-                    // Sprite {
-                    //     color: Color::from(css::GREY.with_alpha(0.1)),
-                    //     custom_size: Some(Vec2::splat(SLOT_SIZE - SLOT_GAP)),
-                    //     anchor: Anchor::TopLeft,
-                    //     ..default()
-                    // },
-                    Sprite::from_color(
-                        Color::from(css::GREY.with_alpha(0.1)),
-                        Vec2::splat(SLOT_SIZE - SLOT_GAP),
-                    ),
+                    // * 也可以使用 Mesh2 ,但 Sprite 相对更简单
+                    Sprite {
+                        color: Color::from(css::GREY.with_alpha(0.1)),
+                        custom_size: Some(custom_size),
+                        anchor: Anchor::TopLeft,
+                        ..default()
+                    },
                     transform,
                     SlotIndex((col, row)),
                     // Anchor::Center,
@@ -258,17 +426,20 @@ fn setup_sprite_ui(
                         font_size: 9.0,
                         ..default()
                     },
+                    // 位移到格子中心,Sprite 的 Anchor 为 TopLeft,所以视觉上不是中心
+                    Transform::from_translation((custom_size / 2. * Vec2::new(1., -1.)).extend(0.)),
                 ))
-                //.observe(observe_slot::<Pointer<Drag>>())
-                //.observe(observe_slot::<Pointer<DragDrop>>())
+                // ! slot 只需一个 DragEnter 事件
                 .observe(observe_slot)
-                //.observe(observe_slot::<Pointer<DragEnd>>())
                 .id();
+
+            // 使用资源对物品栏进行占用记录
+            //solt_map.0.insert((col, row), false);
         }
     }
 
     // 放一个生成按钮
-    // ! 未来可以使用 children![] 宏,简化嵌套
+    // ! 未来可以使用 children![] 宏,简化嵌套, 现在却不行
     commands
         .spawn(Node {
             // * 不是不可以使用 UI 层与 Sprite 配合,
