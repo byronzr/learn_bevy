@@ -432,9 +432,6 @@ fn setup_sprite_ui(
                 // ! slot 只需一个 DragEnter 事件
                 .observe(observe_slot)
                 .id();
-
-            // 使用资源对物品栏进行占用记录
-            //solt_map.0.insert((col, row), false);
         }
     }
 
