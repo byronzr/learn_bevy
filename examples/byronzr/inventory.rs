@@ -376,6 +376,8 @@ fn setup_sprite_ui(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     win_query: Single<&Window>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut material: ResMut<Assets<ColorMaterial>>,
 ) {
     // 创建一个 UI 相机
     commands.spawn(Camera2d);
@@ -420,6 +422,7 @@ fn setup_sprite_ui(
                     SlotIndex((col, row)),
                     // Anchor::Center,
                 ))
+                // 显示坐标索引
                 .with_child((
                     Text2d::new(format!("{},{}", col, row)),
                     TextFont {
@@ -481,20 +484,28 @@ fn setup_sprite_ui(
                     ));
                 });
         });
+    commands
+        .spawn((
+            Sprite::from_image(asset_server.load("items/paper.png")),
+            Mesh2d(meshes.add(Circle::new(20.))),
+            MeshMaterial2d(material.add(Color::srgb(1., 0., 0.))),
+            Transform::from_xyz(300., 300., 0.),
+        ))
+        .observe(observe_circle::<Pointer<Move>>())
+        .observe(observe_circle::<Pointer<Over>>());
 }
 
 /// 支持拖拽事件
-// fn observe_slot<E: Debug + Reflect + Clone>()
-// -> impl Fn(Trigger<E>, Query<(&mut Sprite, &mut Transform), With<SlotIndex>>) {
-//     move |ev, mut query| {
-//         info!("observe_slot: {:?}", ev);
-//         let reflect = ev.event().try_as_reflect().unwrap();
+fn observe_circle<E: Debug + Reflect + Clone>() -> impl Fn(Trigger<E>) {
+    move |ev| {
+        info!("observe_circle: {:?}", ev);
+        let reflect = ev.event().try_as_reflect().unwrap();
 
-//         if let Some(trigger) = reflect.downcast_ref::<Pointer<DragEnd>>() {
-//             info!("DragEnd: {:?}", trigger.pointer_location);
-//         }
-//     }
-// }
+        if let Some(trigger) = reflect.downcast_ref::<Pointer<DragEnd>>() {
+            info!("DragEnd: {:?}", trigger.pointer_location);
+        }
+    }
+}
 
 /// ! 调试用的 gizmos
 fn draw_gizmos(mut gizmos: Gizmos, win_query: Single<&Window>) {
