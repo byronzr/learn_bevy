@@ -22,3 +22,8 @@ doc-scrape-examples = true
 name = "inventory"
 path = "examples/byronzr/inventory.rs"
 doc-scrape-examples = true
+
+[[example]]
+name = "hexagon_tile"
+path = "examples/byronzr/hexagon_tile.rs"
+doc-scrape-examples = true
