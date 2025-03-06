@@ -9,6 +9,7 @@ bevy = { version = "0.15.3" }
 log = "0.4.25"
 rand = "0.9.0"
 rand_chacha = "*"
+serde = "1.0.218"
 thiserror = "2.0.11"
 
 
