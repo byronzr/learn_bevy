@@ -11,7 +11,7 @@ rand = "0.9.0"
 rand_chacha = "*"
 serde = "1.0.218"
 serde_json = "1.0.140"
-thiserror = "2.0.11"
+thiserror = "2.0.12"
 
 
 [[example]]
@@ -27,5 +27,5 @@ doc-scrape-examples = true
 
 [[example]]
 name = "hexagon_tile"
-path = "examples/byronzr/hexagon_tile.rs"
+path = "examples/byronzr/hexagon_tile/main.rs"
 doc-scrape-examples = true

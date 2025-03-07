@@ -1,149 +1,9 @@
-use std::fs;
-
-use bevy::{
-    asset::LoadedFolder,
-    prelude::*,
-    sprite::Anchor,
-    utils::{HashMap, HashSet},
-};
+use bevy::{asset::LoadedFolder, prelude::*, sprite::Anchor, utils::HashSet};
 use rand::{rng, seq::IndexedRandom};
-use serde::{Deserialize, Serialize};
 
-// 分层
-const TERRAIN_LAYER: f32 = 1.; // 地形
-const BUILDING_LAYER: f32 = 2.; // 建筑
-const NPC_LAYER: f32 = 3.; // NPC
-const FOW_LAYER: f32 = 5.; // 雾
-const COORDIANTE_LAYER: f32 = 6.; // 坐标
-const PLAYER_LAYER: f32 = 99.; // 玩家
-
-// 地图块个数
-const COLS: usize = 16; // 列
-const ROWS: usize = 32; // 行
-
-// 地图可能需要偏移
-const MAP_OFFSET: Vec2 = Vec2 { x: 16., y: 16. };
-
-// Hexagon
-const HEXAGON_SIZE: f32 = 32.; // 宽高
-const HEXAGON_HALF_SIZE: f32 = 16.; // 一半
-const HEXAGON_GAP: f32 = 1.; // 间隔
-const HEXAGON_SIDE_LENGTH: f32 = 18.; // 边长
-const HEXAGON_SIDE_WIDTH: f32 = 7.; // 侧边宽度
-
-// 迷雾逐圈数据
-#[derive(Debug, Default, Deserialize, Serialize)]
-pub struct FowRange {
-    // 奇偶行不一样
-    // [奇偶行][等级][坐标]
-    pub range: Vec<Vec<Vec<(i32, i32)>>>,
-}
-
-#[derive(Debug, Default, Deserialize, Serialize)]
-pub struct FowSet {
-    // 奇偶行不一样
-    // [奇偶行][等级][坐标]
-    pub range: Vec<Vec<HashSet<(i32, i32)>>>,
-}
-
-// 可视元素基本信息(AtlasInfo)
-#[derive(Component, Debug, Clone, Default)]
-struct ElementInfo {
-    pub name: String,
-    pub layer: f32,
-    pub sprite: Sprite,
-    pub description: String,
-}
-
-// 玩家状态
-#[derive(Debug, Hash, PartialEq, Eq, Clone, Component)]
-enum PlayerState {
-    Idle,
-    Walk,
-    Run,
-    Attack,
-    Die,
-}
-
-// 配合数据库前期完成载入与归类
-// 用于随机分配的集合(loading完成分配)
-#[derive(Resource, Debug, Default)]
-struct PretreatSet {
-    pub window_size: Vec2,                         // 窗口大小
-    pub terrain: Vec<Option<ElementInfo>>,         // 地形
-    pub building: Vec<Option<ElementInfo>>,        // 建筑
-    pub npc: Vec<Option<ElementInfo>>,             // NPC
-    pub player: HashMap<PlayerState, ElementInfo>, // 玩家
-    pub fow: ElementInfo,                          // 雾
-    pub fow_level: Vec<Vec<(i32, i32)>>,           // 雾等级
-}
-
-// 纹理集中目录
-#[derive(Resource, Debug)]
-struct LoadTexture(Handle<LoadedFolder>);
-
-// 动画指示器(通用)
-#[derive(Component, Debug, Default)]
-struct AnimationIndices {
-    pub first: usize,
-    pub last: usize,
-}
-
-// 玩家动画频率
-#[derive(Component, Debug, Default)]
-struct PlayerTimer(Timer);
-
-// 游戏状态
-#[derive(States, Debug, Hash, PartialEq, Eq, Clone, Default)]
-enum GameState {
-    #[default]
-    Loading, // 加载
-    GenerateWorld, // 创建或读取世界
-    InGame,        // 游戏进行中
-}
-
-// 玩家能力信息
-#[derive(Resource, Debug, Default)]
-struct PlayerInfo {
-    pub coordiate: (usize, usize), // 当前坐标
-    pub movement_range: usize,     // 移动距离
-    pub sight_range: usize,        // 视野距离
-    pub destination: Vec2,         // 目标
-    pub flipping: bool,            // 翻转(记录着最后一次移动方向)
-}
-
-// FOW 坐标
-#[derive(Debug, Component)]
-struct FowCoor(usize, usize);
-
-// FOW 等级
-#[derive(Debug, Component)]
-struct FowLevel(usize);
-
-// 地形标记
-#[derive(Debug, Default, Component)]
-struct TerrainMarker(usize, usize);
-
-// 每个 Tile 的具体信息
-#[derive(Debug, Default)]
-struct TileMap {
-    pub position: Vec2,
-    pub coordinate: (usize, usize),
-    pub terrain: Option<ElementInfo>,
-    pub building: Option<ElementInfo>,
-    pub npc: Option<ElementInfo>,
-    pub player: Option<ElementInfo>,
-    pub description: Option<String>,
-}
-
-// 世界大地图(每个tile)
-#[derive(Resource, Debug, Default)]
-struct WorldMap {
-    pub map: HashMap<(usize, usize), TileMap>,
-    pub destination_coordiate: Option<(usize, usize)>, // 玩家移动目标,缓存至移动完毕
-    pub reachable_coordiate_set: HashSet<(usize, usize)>, // 可达坐标
-    pub fow_range: Option<FowSet>,                     // 雾逐圈数据
-}
+pub mod env;
+pub mod utils;
+use env::*;
 
 fn main() {
     let mut app = App::new();
@@ -186,45 +46,10 @@ fn clear_fow(
 ) {
     // 初始化 fow_range
     if world_map.fow_range.is_none() {
-        let fow_path = "./assets/storage/fow.json";
-        let Ok(content) = fs::read_to_string(fow_path) else {
-            error!("can't read fow.json");
-            return;
-        };
-
-        let Ok(fow) = serde_json::from_str::<FowSet>(&content) else {
-            error!("can't parse fow.json");
-            return;
-        };
-        world_map.fow_range = Some(fow);
+        utils::load_fow(&mut world_map);
     }
 
     let fow = world_map.fow_range.as_ref().unwrap();
-
-    // let mut fow_set = FowSet::default();
-    // for range in fow.range.iter() {
-    //     let mut row = vec![];
-
-    //     for iter in range.iter() {
-    //         let mut set = HashSet::new();
-    //         for v in iter {
-    //             set.insert(*v);
-    //         }
-    //         row.push(set);
-    //     }
-    //     fow_set.range.push(row);
-    // }
-
-    // write to file fow_set.json
-    // let fow_set_path = "./assets/storage/fow_set.json";
-    // let Ok(content) = serde_json::to_string(&fow_set) else {
-    //     error!("can't serialize fow_set.json");
-    //     return;
-    // };
-    // let Ok(_) = fs::write(fow_set_path, content) else {
-    //     error!("can't write fow_set.json");
-    //     return;
-    // };
 
     let mut reachable_set = HashSet::new();
     for (mut sprite, fow_coor, mut fow_level) in query.iter_mut() {
@@ -331,21 +156,6 @@ fn animate_player(
     sprite.flip_x = player_info.flipping;
 }
 
-/// 是否选中平顶六边形
-pub fn point_in_flat_top_hexagon(point: Vec2, hex_center: Vec2, hex_side_length: f32) -> bool {
-    let q2x = f32::abs(point.x - hex_center.x);
-    let q2y = f32::abs(point.y - hex_center.y);
-    let h = hex_side_length * 0.866;
-    if q2x > hex_side_length || q2y > h {
-        return false;
-    }
-    if q2x <= hex_side_length * 0.5 {
-        return true;
-    }
-    let q3x = h - (2. * h / hex_side_length) * (q2x - hex_side_length / 2.);
-    return q2y <= q3x;
-}
-
 // 鼠标点击与移动事件
 fn mouse_action(
     mut events: EventReader<CursorMoved>,
@@ -367,7 +177,7 @@ fn mouse_action(
         return;
     };
     for (mut terrain, transform, marker) in &mut query {
-        if point_in_flat_top_hexagon(
+        if utils::point_in_flat_top_hexagon(
             world_position,
             transform.translation.truncate(),
             HEXAGON_SIDE_LENGTH,
@@ -397,7 +207,7 @@ fn render_map(
     mut player_info: ResMut<PlayerInfo>,
 ) {
     let mut start_position = Vec2::new(0., 0.);
-    let start_coordiante = (8, 15);
+    let start_coordiante = (7, 14);
     for col in 0..COLS {
         for row in 0..ROWS {
             let Some(tm) = world_map.map.get(&(col, row)) else {
@@ -464,7 +274,7 @@ fn render_map(
                             ..default()
                         },
                         //TextColor(Color::BLACK),
-                        //Transform::from_translation(Vec3::new(0., 0., COORDIANTE_LAYER)),
+                        Transform::from_translation(Vec3::new(0., 0., COORDIANTE_LAYER)),
                         //Visibility::Hidden,
                     ));
                 });
