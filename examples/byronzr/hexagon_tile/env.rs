@@ -1,6 +1,7 @@
 use bevy::asset::LoadedFolder;
 use bevy::prelude::*;
-use bevy::utils::{HashMap, HashSet};
+use bevy::utils::HashSet;
+use bevy::utils::hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 
 // 分层
@@ -40,15 +41,6 @@ pub struct FowSet {
     pub range: Vec<Vec<HashSet<(i32, i32)>>>,
 }
 
-// 可视元素基本信息(AtlasInfo)
-#[derive(Component, Debug, Clone, Default)]
-pub struct ElementInfo {
-    pub name: String,
-    pub layer: f32,
-    pub sprite: Sprite,
-    pub description: String,
-}
-
 // 玩家状态
 #[derive(Debug, Hash, PartialEq, Eq, Clone, Component)]
 pub enum PlayerState {
@@ -77,10 +69,11 @@ pub struct PretreatSet {
 pub struct LoadTexture(pub Handle<LoadedFolder>);
 
 // 动画指示器(通用)
+// 起始桢都是 0 所以简化了
 #[derive(Component, Debug, Default)]
 pub struct AnimationIndices {
-    pub first: usize,
-    pub last: usize,
+    pub idle: usize,
+    pub walk: usize,
 }
 
 // 玩家动画频率
@@ -118,8 +111,19 @@ pub struct FowLevel(pub usize);
 #[derive(Debug, Default, Component)]
 pub struct TerrainMarker(pub usize, pub usize);
 
+// 可视元素基本信息(AtlasInfo)
+#[derive(Component, Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ElementInfo {
+    pub name: String,
+    pub path: String,
+    pub layer: f32,
+    #[serde(skip)]
+    pub sprite: Sprite,
+    pub description: String,
+}
+
 // 每个 Tile 的具体信息
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct TileMap {
     pub position: Vec2,
     pub coordinate: (usize, usize),
@@ -137,4 +141,19 @@ pub struct WorldMap {
     pub destination_coordiate: Option<(usize, usize)>, // 玩家移动目标,缓存至移动完毕
     pub reachable_coordiate_set: HashSet<(usize, usize)>, // 可达坐标
     pub fow_range: Option<FowSet>,                     // 雾逐圈数据
+    pub coordiate_combined: Vec<(usize, usize)>,       // 笛卡尔积(Cartesian Product最大组合)
+}
+
+impl WorldMap {
+    pub fn init_coordiate_combined(&mut self) -> Vec<(usize, usize)> {
+        if self.coordiate_combined.len() > 0 {
+            return self.coordiate_combined.clone();
+        }
+        for x in 0..COLS {
+            for y in 0..ROWS {
+                self.coordiate_combined.push((x, y));
+            }
+        }
+        return self.coordiate_combined.clone();
+    }
 }

@@ -1,5 +1,7 @@
-use bevy::{asset::LoadedFolder, prelude::*, sprite::Anchor, utils::HashSet};
+use bevy::{asset::LoadedFolder, prelude::*, utils::HashSet};
 use rand::{rng, seq::IndexedRandom};
+
+// use std::io::{self, Write};
 
 pub mod env;
 pub mod utils;
@@ -15,7 +17,7 @@ fn main() {
     // init player info
     let inf = PlayerInfo {
         coordiate: (7, 14),
-        movement_range: 2,
+        movement_range: 1, // 一格行走,是不需要循路的
         sight_range: 3,
         ..Default::default()
     };
@@ -29,11 +31,15 @@ fn main() {
             mouse_action,
         ),
     );
+
     app.add_systems(
         RunFixedMainLoop,
         animate_player.in_set(RunFixedMainLoopSystem::AfterFixedMainLoop),
     );
+
+    // 构建世界数据
     app.add_systems(OnEnter(GameState::GenerateWorld), generate_map_data);
+    // 渲染世界(包括玩家)
     app.add_systems(OnEnter(GameState::InGame), render_map);
     app.run();
 }
@@ -48,35 +54,43 @@ fn clear_fow(
     if world_map.fow_range.is_none() {
         utils::load_fow(&mut world_map);
     }
-
+    // 迷雾差值数组
     let fow = world_map.fow_range.as_ref().unwrap();
 
     let mut reachable_set = HashSet::new();
-    for (mut sprite, fow_coor, mut fow_level) in query.iter_mut() {
-        let current = (
+
+    for (mut sprite, fow_coor, fow_level) in query.iter_mut() {
+        // 当前扫描坐标与玩家坐标的差值
+        let difference_value = (
             fow_coor.0 as i32 - player_info.coordiate.0 as i32,
             fow_coor.1 as i32 - player_info.coordiate.1 as i32,
         );
+
         // 按玩家所在奇偶行取不同的范围
         let Some(range) = fow.range.get(player_info.coordiate.1 % 2) else {
             continue;
         };
-        for (level, iter) in range.iter().enumerate() {
-            for v in iter {
-                if current == *v {
-                    if level < fow_level.0 {
-                        fow_level.0 = level;
-                        let alpha = fow_level.0 as f32 / player_info.sight_range as f32;
-                        sprite.color = Color::srgba(0., 0., 0., alpha);
-                    }
-                    // sprite.color = Color::srgba(0., 0., 0., 0.);
-                    if level > 0 && level <= player_info.movement_range {
-                        reachable_set.insert((fow_coor.0, fow_coor.1));
-                    }
+
+        for (level, range_set) in range.iter().enumerate() {
+            // 超出玩家视野,不进行检测
+            if level >= player_info.sight_range {
+                break;
+            }
+
+            // 当前坐标包含在差值数组中,则进行处理
+            if range_set.contains(&difference_value) {
+                // 打开迷雾
+                if level < fow_level.0 {
+                    sprite.color = Color::WHITE.with_alpha(0.);
+                }
+                // 收集可到达区域
+                if level > 0 && level <= player_info.movement_range {
+                    reachable_set.insert((fow_coor.0, fow_coor.1));
                 }
             }
         }
     }
+    // 更新可到达区域
     if world_map.reachable_coordiate_set != reachable_set {
         world_map.reachable_coordiate_set = reachable_set;
     }
@@ -109,50 +123,50 @@ fn animate_player(
     let distance = to_direction.length();
     let speed = 100.;
 
+    // Walk
     if distance > 1. {
         // 找到目标方向,不需要转换
         let front = to_direction / distance;
         let step = speed * time.delta_secs() * front;
         transform.translation += step.extend(0.);
-        if *state != PlayerState::Walk {
-            *state = PlayerState::Walk;
+        if state.set_if_neq(PlayerState::Walk) {
             *sprite = pretreat
                 .player
                 .get(&PlayerState::Walk)
                 .unwrap()
                 .sprite
                 .clone();
+            // 确定朝向
             player_info.flipping = if to_direction.x < 0. { true } else { false }
         }
         let Some(atlas) = &mut sprite.texture_atlas else {
             return;
         };
-        atlas.index += 1;
-        if atlas.index > 9 {
-            atlas.index = 0;
-        }
-    } else {
-        if *state != PlayerState::Idle {
-            *state = PlayerState::Idle;
-            *sprite = pretreat
-                .player
-                .get(&PlayerState::Idle)
-                .unwrap()
-                .sprite
-                .clone();
-            transform.translation = player_info.destination.extend(PLAYER_LAYER);
-            if let Some(coor) = world_map.destination_coordiate.take() {
-                player_info.coordiate = coor;
-            }
-        }
-        let Some(atlas) = &mut sprite.texture_atlas else {
-            return;
-        };
-        atlas.index += 1;
-        if atlas.index > indices.last {
-            atlas.index = indices.first;
+        atlas.index = (atlas.index + 1) % (indices.walk + 1);
+        sprite.flip_x = player_info.flipping;
+        return;
+    }
+    // Idle
+    if state.set_if_neq(PlayerState::Idle) {
+        *sprite = pretreat
+            .player
+            .get(&PlayerState::Idle)
+            .unwrap()
+            .sprite
+            .clone();
+        // 接近目地后,完全赋值,使玩家与六边形对齐
+        transform.translation = player_info.destination.extend(PLAYER_LAYER);
+        // 清除 world_map.destination_coordiate,让鼠标可再次进行点击
+        // 并且玩家更新到达坐标
+        if let Some(coor) = world_map.destination_coordiate.take() {
+            player_info.coordiate = coor;
         }
     }
+    let Some(atlas) = &mut sprite.texture_atlas else {
+        return;
+    };
+    atlas.index = (atlas.index + 1) % (indices.idle + 1);
+
     sprite.flip_x = player_info.flipping;
 }
 
@@ -169,36 +183,47 @@ fn mouse_action(
     if world_map.destination_coordiate.is_some() {
         return;
     }
+    // 最后一个鼠标移动事件
     let Some(event) = events.read().last() else {
         return;
     };
+    // 转换坐标系
     let (camera, camera_transform) = *camera;
     let Ok(world_position) = camera.viewport_to_world_2d(camera_transform, event.position) else {
         return;
     };
+
     for (mut terrain, transform, marker) in &mut query {
-        if utils::point_in_flat_top_hexagon(
+        // 当前坐标是否存在于六边形内
+        // 不在六边形内恢复颜色
+        if !utils::point_in_flat_top_hexagon(
             world_position,
             transform.translation.truncate(),
             HEXAGON_SIDE_LENGTH,
         ) {
-            let coor = (marker.0, marker.1);
-            if world_map.reachable_coordiate_set.contains(&coor) {
-                terrain.color = Color::srgba(0., 1., 0., 0.5);
-                if input.just_pressed(MouseButton::Left) {
-                    player_info.destination = transform.translation.truncate();
-                    world_map.destination_coordiate = Some(coor);
-                }
-            } else {
-                terrain.color = Color::srgba(1., 0., 0., 0.5);
-            }
-        } else {
             terrain.color = Color::WHITE;
+            continue;
+        }
+        // 当前坐标
+        let coor = (marker.0, marker.1);
+
+        // 不可到达,显示红色
+        if !world_map.reachable_coordiate_set.contains(&coor) {
+            terrain.color = Color::srgba(1., 0., 0., 0.5);
+            continue;
+        }
+        // 可到达,显示绿色
+        terrain.color = Color::srgba(0., 1., 0., 0.5);
+
+        // released 事件,在这个场景中更符合操作习惯
+        if input.just_released(MouseButton::Left) {
+            player_info.destination = transform.translation.truncate();
+            world_map.destination_coordiate = Some(coor);
         }
     }
 }
 
-// 初始化地图
+// 渲染地图(包括玩家)
 fn render_map(
     asset_server: Res<AssetServer>,
     world_map: Res<WorldMap>,
@@ -206,94 +231,86 @@ fn render_map(
     pretreat: Res<PretreatSet>,
     mut player_info: ResMut<PlayerInfo>,
 ) {
-    let mut start_position = Vec2::new(0., 0.);
-    let start_coordiante = (7, 14);
-    for col in 0..COLS {
-        for row in 0..ROWS {
-            let Some(tm) = world_map.map.get(&(col, row)) else {
-                error!("tile map not found.");
-                return;
-            };
+    for (&(col, row), tm) in world_map.map.iter() {
+        // 地形
+        let Some(ei) = tm.terrain.clone() else {
+            // 地形是必须的
+            return;
+        };
 
-            // 地形
-            let Some(ei) = tm.terrain.clone() else {
-                // 地形是必须的
-                return;
-            };
-
-            if (col, row) == start_coordiante {
-                start_position = tm.position;
-            }
-
-            commands.spawn((
-                ei.sprite,
-                Transform::from_translation(tm.position.extend(TERRAIN_LAYER)),
-                TerrainMarker(col, row),
-            ));
-
-            // 建筑
-            if let Some(building) = tm.building.clone() {
-                commands.spawn((
-                    building.sprite,
-                    Transform::from_translation(tm.position.extend(BUILDING_LAYER)),
-                ));
-            }
-
-            // NPC
-            if let Some(npc) = tm.npc.clone() {
-                commands.spawn((
-                    npc.sprite,
-                    Transform::from_translation(tm.position.extend(NPC_LAYER)),
-                ));
-            };
-
-            // fow
-            let mut fow = pretreat.fow.sprite.clone();
-            fow.color = Color::srgba(0., 0., 0., 1.);
-            commands
-                .spawn((
-                    fow,
-                    FowCoor(col, row),
-                    FowLevel(99),
-                    Transform::from_translation(tm.position.extend(FOW_LAYER)),
-                ))
-                .with_children(|parent| {
-                    // 坐标
-                    parent.spawn((
-                        // 差值坐标
-                        Text2d(format!(
-                            "{},{}",
-                            col as i32 - start_coordiante.0 as i32,
-                            row as i32 - start_coordiante.1 as i32
-                        )),
-                        // 原始坐标
-                        //Text2d(format!("{},{}", col, row)),
-                        TextFont {
-                            font: asset_server.load("fonts/SourceHanSansCN-Normal.otf"),
-                            font_size: 12.0,
-                            ..default()
-                        },
-                        //TextColor(Color::BLACK),
-                        Transform::from_translation(Vec3::new(0., 0., COORDIANTE_LAYER)),
-                        //Visibility::Hidden,
-                    ));
-                });
+        // 初始化玩家起始点
+        if (col, row) == player_info.coordiate {
+            player_info.destination = tm.position;
         }
+        let (scx, scy) = player_info.coordiate;
+
+        commands.spawn((
+            ei.sprite,
+            Transform::from_translation(tm.position.extend(TERRAIN_LAYER)),
+            TerrainMarker(col, row),
+        ));
+
+        // 建筑
+        if let Some(building) = tm.building.clone() {
+            commands.spawn((
+                building.sprite,
+                Transform::from_translation(tm.position.extend(BUILDING_LAYER)),
+            ));
+        }
+
+        // NPC
+        if let Some(npc) = tm.npc.clone() {
+            commands.spawn((
+                npc.sprite,
+                Transform::from_translation(tm.position.extend(NPC_LAYER)),
+            ));
+        };
+
+        // fow
+        let mut fow = pretreat.fow.sprite.clone();
+        fow.color = Color::srgba(0., 0., 0., 1.);
+        commands
+            .spawn((
+                fow,
+                FowCoor(col, row),
+                FowLevel(99),
+                Transform::from_translation(tm.position.extend(FOW_LAYER)),
+            ))
+            .with_children(|parent| {
+                // 坐标
+                parent.spawn((
+                    // 差值坐标
+                    Text2d(format!(
+                        "{},{}",
+                        col as i32 - scx as i32,
+                        row as i32 - scy as i32
+                    )),
+                    // 原始坐标
+                    //Text2d(format!("{},{}", col, row)),
+                    TextFont {
+                        font: asset_server.load("fonts/SourceHanSansCN-Normal.otf"),
+                        font_size: 12.0,
+                        ..default()
+                    },
+                    //TextColor(Color::BLACK),
+                    Transform::from_translation(Vec3::new(0., 0., COORDIANTE_LAYER)),
+                    Visibility::Hidden,
+                ));
+            });
     }
 
     // Player
     if let Some(idle) = pretreat.player.get(&PlayerState::Idle) {
-        let mut transform = Transform::from_translation(start_position.extend(PLAYER_LAYER));
+        let mut transform =
+            Transform::from_translation(player_info.destination.extend(PLAYER_LAYER));
         transform.scale = Vec3::splat(0.75);
         commands.spawn((
             idle.sprite.clone(),
-            AnimationIndices { first: 0, last: 5 },
-            PlayerTimer(Timer::from_seconds(0.05, TimerMode::Repeating)),
+            AnimationIndices { idle: 5, walk: 9 },
+            PlayerTimer(Timer::from_seconds(0.07, TimerMode::Repeating)),
             PlayerState::Idle,
             transform,
         ));
-        player_info.destination = start_position;
-        player_info.coordiate = start_coordiante;
     }
 }
 
@@ -322,121 +339,8 @@ fn check_textures(
 ) {
     for event in event_reader.read() {
         if event.is_loaded_with_dependencies(&texture.0) {
-            // 归纳所有图片
-            // tile 96 x 768 = 3 x 24
-            let atlas_layout = TextureAtlasLayout::from_grid(UVec2::splat(32), 3, 24, None, None);
-            let handle_layout = textures.add(atlas_layout);
-
-            // handle map
-            let handle = asset_server.load("textures/HexTilesetv3.png");
-
-            // 以下定义,应当来自于数据库
-            // ------------- 地形载入 ----------------
-            let terrains = [
-                "mound",
-                "glacier",
-                "snowfield",
-                "grassland",
-                "swamp",
-                "lake",
-            ];
-            for (idx, name) in terrains.iter().enumerate() {
-                pretreat.terrain.push(Some(ElementInfo {
-                    name: name.to_string(),
-                    layer: TERRAIN_LAYER,
-                    sprite: Sprite {
-                        image: handle.clone(),
-                        texture_atlas: Some(TextureAtlas {
-                            layout: handle_layout.clone(),
-                            index: idx,
-                        }),
-                        ..default()
-                    },
-                    ..default()
-                }));
-            }
-
-            // make fow
-            pretreat.fow = ElementInfo {
-                name: "fow".to_string(),
-                layer: FOW_LAYER,
-                sprite: Sprite {
-                    image: handle.clone(),
-                    texture_atlas: Some(TextureAtlas {
-                        layout: handle_layout.clone(),
-                        index: 0,
-                    }),
-                    ..default()
-                },
-                ..default()
-            };
-
-            // ------------- 建筑载入 ---------------- offset = 6
-            let buildings = ["1", "2", "3", "4", "5", "6"];
-            for (idx, name) in buildings.iter().enumerate() {
-                pretreat.building.push(Some(ElementInfo {
-                    name: name.to_string(),
-                    layer: BUILDING_LAYER,
-                    sprite: Sprite {
-                        image: handle.clone(),
-                        texture_atlas: Some(TextureAtlas {
-                            layout: handle_layout.clone(),
-                            index: idx + 6,
-                        }),
-                        ..default()
-                    },
-                    ..default()
-                }));
-            }
-            // 加入 None 使随机时,减少每个地形出现建筑的机率
-            for _ in 0..5 {
-                pretreat.building.push(None);
-            }
-
-            // player idle
-            let player_layout = TextureAtlasLayout::from_grid(UVec2::splat(128), 6, 1, None, None);
-            let handle_player_layout = textures.add(player_layout);
-            let handle_player = asset_server.load("textures/Idle.png");
-            pretreat.player.insert(
-                PlayerState::Idle,
-                ElementInfo {
-                    name: "Idle".to_string(),
-                    layer: PLAYER_LAYER,
-                    sprite: Sprite {
-                        image: handle_player.clone(),
-                        texture_atlas: Some(TextureAtlas {
-                            layout: handle_player_layout.clone(),
-                            index: 0,
-                        }),
-                        anchor: Anchor::BottomCenter,
-                        ..default()
-                    },
-                    ..default()
-                },
-            );
-
-            // player walk
-            let player_layout = TextureAtlasLayout::from_grid(UVec2::splat(128), 10, 1, None, None);
-            let handle_player_layout = textures.add(player_layout);
-            let handle_player = asset_server.load("textures/Walk.png");
-            pretreat.player.insert(
-                PlayerState::Walk,
-                ElementInfo {
-                    name: "Walk".to_string(),
-                    layer: PLAYER_LAYER,
-                    sprite: Sprite {
-                        image: handle_player.clone(),
-                        texture_atlas: Some(TextureAtlas {
-                            layout: handle_player_layout.clone(),
-                            index: 0,
-                        }),
-                        anchor: Anchor::BottomCenter,
-                        ..default()
-                    },
-                    ..default()
-                },
-            );
-
+            // 可用 sprite 进行预处理
+            utils::init_pretreat(&mut textures, &asset_server, &mut pretreat);
             // 推进状态生成地图
             info!("next state (GenerateWorld)");
             next_state.set(GameState::GenerateWorld);
@@ -467,39 +371,46 @@ fn random_data(world_map: &mut WorldMap, pretreat: &PretreatSet) {
     // 起始左上角 = 在上角坐标 + (地块一半+整体偏移量)
     let topleft = Vec2::new(-center.x, center.y)
         + (Vec2::splat(HEXAGON_HALF_SIZE) + MAP_OFFSET) * Vec2::new(1., -1.);
-    for col in 0..COLS {
-        for row in 0..ROWS {
-            // 随机地形
-            let Some(terrain) = pretreat.terrain.choose(&mut rng).cloned() else {
-                error!("can't choose terrain.");
-                return;
-            };
 
-            let Some(building) = pretreat.building.choose(&mut rng).cloned() else {
+    let coordiate_set = world_map.init_coordiate_combined();
+    for (col, row) in coordiate_set.into_iter() {
+        // 随机地形
+        let Some(Some(terrain)) = pretreat.terrain.choose(&mut rng).cloned() else {
+            error!("can't choose terrain.");
+            return;
+        };
+
+        // 随机建筑
+        let building = if terrain.name.eq("lake") {
+            None
+        } else {
+            let Some(v) = pretreat.building.choose(&mut rng).cloned() else {
                 return;
             };
-            let offset = if row % 2 == 0 {
-                // 偶数行无多余偏移
-                0.
-            } else {
-                // 奇数行偏移 = 间隔 + 边长 + 侧边宽
-                HEXAGON_GAP + HEXAGON_SIDE_LENGTH + HEXAGON_SIDE_WIDTH
-            };
-            let tm = TileMap {
-                position: topleft
-                    + Vec2::new(
-                        // x = (宽度 + 边长 + 2*间隔) + 奇偶偏移
-                        col as f32 * (HEXAGON_SIZE + HEXAGON_SIDE_LENGTH + HEXAGON_GAP * 2.)
-                            + offset,
-                        // y = 一半高度+一间隔
-                        -(row as f32 * (HEXAGON_GAP + HEXAGON_HALF_SIZE)),
-                    ),
-                coordinate: (col, row),
-                terrain,
-                building,
-                ..default()
-            };
-            world_map.map.insert((col, row), tm);
-        }
+            v
+        };
+
+        // 因为六边形是奇偶行错开的,所以需要计算偏移
+        let offset = if row % 2 == 0 {
+            // 偶数行无多余偏移
+            0.
+        } else {
+            // 奇数行偏移 = 间隔 + 边长 + 侧边宽
+            HEXAGON_GAP + HEXAGON_SIDE_LENGTH + HEXAGON_SIDE_WIDTH
+        };
+        let tm = TileMap {
+            position: topleft
+                + Vec2::new(
+                    // x = (宽度 + 边长 + 2*间隔) + 奇偶偏移
+                    col as f32 * (HEXAGON_SIZE + HEXAGON_SIDE_LENGTH + HEXAGON_GAP * 2.) + offset,
+                    // y = 一半高度+一间隔
+                    -(row as f32 * (HEXAGON_GAP + HEXAGON_HALF_SIZE)),
+                ),
+            coordinate: (col, row),
+            terrain: Some(terrain),
+            building,
+            ..default()
+        };
+        world_map.map.insert((col, row), tm);
     }
 }
