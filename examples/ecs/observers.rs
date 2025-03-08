@@ -16,6 +16,7 @@ fn main() {
         // Observers are systems that run when an event is "triggered". This observer runs whenever
         // `ExplodeMines` is triggered.
         // 连环爆炸事件
+        // add_observer 是(全局事件),对应的是通过 commands.trigger(ExplodeMines) 触发的事件
         .add_observer(
             |trigger: Trigger<ExplodeMines>,
              mines: Query<&Mine>,
@@ -102,6 +103,7 @@ fn setup(mut commands: Commands) {
         // Observers can watch for events targeting a specific entity.
         // This will create a new observer that runs whenever the Explode event
         // is triggered for this spawned entity.
+        // .observe 是指定事件,通过 commands.trigger_targets 发送
         .observe(explode_mine);
 
     // We want to spawn a bunch of mines. We could just call the code above for each of them.
