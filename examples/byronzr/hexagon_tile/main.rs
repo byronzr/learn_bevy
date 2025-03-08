@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use bevy::{asset::LoadedFolder, prelude::*, utils::HashSet};
 use rand::{rng, seq::IndexedRandom};
 
@@ -29,6 +31,7 @@ fn main() {
             check_textures.after(load_textures),
             clear_fow.after(render_map),
             mouse_action,
+            interaction_mesh,
         ),
     );
 
@@ -46,7 +49,7 @@ fn main() {
 
 // 清理迷雾
 fn clear_fow(
-    mut query: Query<(&mut Sprite, &FowCoor, &mut FowLevel)>,
+    mut query: Query<(&mut MeshMaterial2d<ColorMaterial>, &FowCoor, &mut FowLevel)>,
     player_info: Res<PlayerInfo>,
     mut world_map: ResMut<WorldMap>,
 ) {
@@ -59,7 +62,7 @@ fn clear_fow(
 
     let mut reachable_set = HashSet::new();
 
-    for (mut sprite, fow_coor, fow_level) in query.iter_mut() {
+    for (mut material, fow_coor, fow_level) in query.iter_mut() {
         // 当前扫描坐标与玩家坐标的差值
         let difference_value = (
             fow_coor.0 as i32 - player_info.coordiate.0 as i32,
@@ -81,7 +84,8 @@ fn clear_fow(
             if range_set.contains(&difference_value) {
                 // 打开迷雾
                 if level < fow_level.0 {
-                    sprite.color = Color::WHITE.with_alpha(0.);
+                    //sprite.color = Color::WHITE.with_alpha(0.);
+                    material.0 = world_map.fow_disappear[level].clone();
                 }
                 // 收集可到达区域
                 if level > 0 && level <= player_info.movement_range {
@@ -226,11 +230,22 @@ fn mouse_action(
 // 渲染地图(包括玩家)
 fn render_map(
     asset_server: Res<AssetServer>,
-    world_map: Res<WorldMap>,
+    mut world_map: ResMut<WorldMap>,
     mut commands: Commands,
     pretreat: Res<PretreatSet>,
     mut player_info: ResMut<PlayerInfo>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut material: ResMut<Assets<ColorMaterial>>,
 ) {
+    world_map.fow_appear = material.add(Color::srgba(0., 0., 0., 1.));
+    for level in 0..player_info.sight_range {
+        world_map.fow_disappear.push(material.add(Color::srgba(
+            0.,
+            0.,
+            0.,
+            level as f32 / player_info.sight_range as f32,
+        )));
+    }
     for (&(col, row), tm) in world_map.map.iter() {
         // 地形
         let Some(ei) = tm.terrain.clone() else {
@@ -267,17 +282,25 @@ fn render_map(
         };
 
         // fow
-        let mut fow = pretreat.fow.sprite.clone();
-        fow.color = Color::srgba(0., 0., 0., 1.);
+        let mut transform = Transform::from_translation(tm.position.extend(FOW_LAYER));
+        // 参数写的是 angle 但实际上是 radian
+        transform.rotate_local_z(90. * PI / 180.);
+        let shape = RegularPolygon::new(20., 6);
+
         commands
             .spawn((
-                fow,
+                Mesh2d(meshes.add(shape)),
+                MeshMaterial2d(world_map.fow_appear.clone()),
                 FowCoor(col, row),
                 FowLevel(99),
-                Transform::from_translation(tm.position.extend(FOW_LAYER)),
+                transform,
+                Interaction::default(),
             ))
             .with_children(|parent| {
                 // 坐标
+                let mut transform =
+                    Transform::from_translation(Vec3::new(0., 0., COORDIANTE_LAYER));
+                transform.rotate_z(-90. * PI / 180.);
                 parent.spawn((
                     // 差值坐标
                     Text2d(format!(
@@ -292,11 +315,11 @@ fn render_map(
                         font_size: 12.0,
                         ..default()
                     },
-                    //TextColor(Color::BLACK),
-                    Transform::from_translation(Vec3::new(0., 0., COORDIANTE_LAYER)),
+                    transform,
                     Visibility::Hidden,
                 ));
-            });
+            })
+            .observe(observ_regularpolygon);
     }
 
     // Player
@@ -312,6 +335,24 @@ fn render_map(
             transform,
         ));
     }
+}
+
+// mesh2d 没有效果
+fn observ_regularpolygon(trigger: Trigger<Pointer<Move>>) {
+    println!("move {:?}", trigger);
+}
+
+// interaction 也没有效果
+fn interaction_mesh(mut query: Query<(&Interaction, &FowCoor), Changed<Interaction>>) {
+    for (interaction, coor) in query.iter_mut() {
+        match interaction {
+            Interaction::Pressed => {
+                println!("clicked {:?}", coor);
+            }
+            _ => {}
+        }
+    }
+    //println!("interaction_mesh");
 }
 
 // 集中加载资源

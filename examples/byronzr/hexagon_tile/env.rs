@@ -142,6 +142,8 @@ pub struct WorldMap {
     pub reachable_coordiate_set: HashSet<(usize, usize)>, // 可达坐标
     pub fow_range: Option<FowSet>,                     // 雾逐圈数据
     pub coordiate_combined: Vec<(usize, usize)>,       // 笛卡尔积(Cartesian Product最大组合)
+    pub fow_appear: Handle<ColorMaterial>,             // 雾出现
+    pub fow_disappear: Vec<Handle<ColorMaterial>>,     // 雾消失
 }
 
 impl WorldMap {
