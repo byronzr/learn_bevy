@@ -12,6 +12,7 @@ use env::*;
 fn main() {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins);
+    app.add_plugins(MeshPickingPlugin);
     app.init_state::<GameState>();
     app.init_resource::<PretreatSet>();
     app.init_resource::<WorldMap>();
@@ -31,7 +32,6 @@ fn main() {
             check_textures.after(load_textures),
             clear_fow.after(render_map),
             mouse_action,
-            interaction_mesh,
         ),
     );
 
@@ -294,7 +294,6 @@ fn render_map(
                 FowCoor(col, row),
                 FowLevel(99),
                 transform,
-                Interaction::default(),
             ))
             .with_children(|parent| {
                 // 坐标
@@ -319,6 +318,10 @@ fn render_map(
                     Visibility::Hidden,
                 ));
             })
+            // 在启用 MeshPickingPlugin 后,Mesh2d 就能触发 Pcking 事件,
+            // 并能很好的控制在自定义的范围之内,这将大大简化 <pointer on area> 的判断
+            // 但它现在可能会出现性能问题,所以官方默认状态下是没有加入到 DefaultPlugins 中的,
+            // 而需要单独加入
             .observe(observ_regularpolygon);
     }
 
@@ -338,21 +341,14 @@ fn render_map(
 }
 
 // mesh2d 没有效果
+// (但是如果启用了 MeshPickingPlugin,则可以使用,但是会有性能问题)
+// Mesh: this is a naive raycast against the full mesh.
+// If you run into performance problems here,
+// you should use simplified meshes and an acceleration data structure like a BVH to speed this up.
+// As a result, this functionality is currently disabled by default.
+// It can be enabled by adding the MeshPickingPlugin.
 fn observ_regularpolygon(trigger: Trigger<Pointer<Move>>) {
     println!("move {:?}", trigger);
-}
-
-// interaction 也没有效果
-fn interaction_mesh(mut query: Query<(&Interaction, &FowCoor), Changed<Interaction>>) {
-    for (interaction, coor) in query.iter_mut() {
-        match interaction {
-            Interaction::Pressed => {
-                println!("clicked {:?}", coor);
-            }
-            _ => {}
-        }
-    }
-    //println!("interaction_mesh");
 }
 
 // 集中加载资源
