@@ -20,6 +20,11 @@ fn main() {
     app.add_plugins(RapierPhysicsPlugin::<NoUserData>::default());
     app.add_plugins(RapierDebugRenderPlugin {
         default_collider_debug: ColliderDebug::NeverRender,
+        style: DebugRenderStyle {
+            subdivisions: 1,
+            border_subdivisions: 1,
+            ..default()
+        },
         ..default()
     });
 
@@ -64,6 +69,7 @@ fn intersection_test_with_rapier2d(
     camera: Single<(&Camera, &GlobalTransform)>,
     // 文档中的 ReadDefaultRapierContext已经不存在了,这里使用 ReadRapierContext
     rapier_context: ReadRapierContext,
+    mut fow_query: Query<(Entity, &FowCoor)>,
     mut command: Commands,
 ) {
     // 最后一个鼠标移动事件
@@ -81,8 +87,16 @@ fn intersection_test_with_rapier2d(
     // 得到 RapierContext
     let context = rapier_context.single();
     context.intersections_with_point(world_position, filter, |entity| {
-        command.entity(entity).insert(ColliderDebug::AlwaysRender);
-        //println!("entity {:?}", entity);
+        // 利用调试 Render 显示测试区域,
+        // 没有实际的开发上的意义,commands,是有缓存的,并不能每次都将 ColliderDebug设置为 NeverRender
+        for (id, fow) in &mut fow_query {
+            if id == entity {
+                println!("fow {:?}", fow);
+                command.entity(entity).insert(ColliderDebug::AlwaysRender);
+            } else {
+                command.entity(entity).insert(ColliderDebug::NeverRender);
+            }
+        }
         true
     });
 }
@@ -324,9 +338,10 @@ fn render_map(
         // fow
         let mut transform = Transform::from_translation(tm.position.extend(FOW_LAYER));
         // 参数写的是 angle 但实际上是 radian
-        transform.rotate_local_z(90. * PI / 180.);
+        //transform.rotate_local_z(90. * PI / 180.);
+        transform.rotation = Quat::from_rotation_z(90. * PI / 180.);
         let shape = RegularPolygon::new(20., 6);
-        let points = shape.vertices(18.).into_iter().collect::<Vec<Vec2>>();
+        let points = shape.vertices(20.).into_iter().collect::<Vec<Vec2>>();
 
         let collider = Collider::convex_hull(&points).expect("Failed to create convex hull");
 
