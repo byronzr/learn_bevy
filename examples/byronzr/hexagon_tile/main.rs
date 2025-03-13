@@ -14,17 +14,14 @@ use env::*;
 fn main() {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins);
+
     // bevy native picking_backend
     //app.add_plugins(MeshPickingPlugin);
 
+    // 使用 Rapier2d 来测试区域
     app.add_plugins(RapierPhysicsPlugin::<NoUserData>::default());
     app.add_plugins(RapierDebugRenderPlugin {
         default_collider_debug: ColliderDebug::NeverRender,
-        style: DebugRenderStyle {
-            subdivisions: 1,
-            border_subdivisions: 1,
-            ..default()
-        },
         ..default()
     });
 
