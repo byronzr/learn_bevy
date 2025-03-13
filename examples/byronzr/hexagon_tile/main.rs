@@ -3,6 +3,8 @@ use std::f32::consts::PI;
 use bevy::{asset::LoadedFolder, prelude::*, utils::HashSet};
 use rand::{rng, seq::IndexedRandom};
 
+use bevy_rapier2d::prelude::*;
+
 // use std::io::{self, Write};
 
 pub mod env;
@@ -12,7 +14,15 @@ use env::*;
 fn main() {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins);
-    app.add_plugins(MeshPickingPlugin);
+    // bevy native picking_backend
+    //app.add_plugins(MeshPickingPlugin);
+
+    app.add_plugins(RapierPhysicsPlugin::<NoUserData>::default());
+    app.add_plugins(RapierDebugRenderPlugin {
+        default_collider_debug: ColliderDebug::NeverRender,
+        ..default()
+    });
+
     app.init_state::<GameState>();
     app.init_resource::<PretreatSet>();
     app.init_resource::<WorldMap>();
@@ -34,6 +44,7 @@ fn main() {
             mouse_action,
         ),
     );
+    app.add_systems(PostUpdate, intersection_test_with_rapier2d);
 
     app.add_systems(
         RunFixedMainLoop,
@@ -45,6 +56,35 @@ fn main() {
     // 渲染世界(包括玩家)
     app.add_systems(OnEnter(GameState::InGame), render_map);
     app.run();
+}
+
+// 测试碰撞
+fn intersection_test_with_rapier2d(
+    mut events: EventReader<CursorMoved>,
+    camera: Single<(&Camera, &GlobalTransform)>,
+    // 文档中的 ReadDefaultRapierContext已经不存在了,这里使用 ReadRapierContext
+    rapier_context: ReadRapierContext,
+    mut command: Commands,
+) {
+    // 最后一个鼠标移动事件
+    let Some(event) = events.read().last() else {
+        return;
+    };
+    // 转换坐标系
+    let (camera, camera_transform) = *camera;
+    let Ok(world_position) = camera.viewport_to_world_2d(camera_transform, event.position) else {
+        return;
+    };
+    let filter = QueryFilter::default();
+
+    // ReadRapierContext 并没有 intersection 的一系列方法,需要使用 single
+    // 得到 RapierContext
+    let context = rapier_context.single();
+    context.intersections_with_point(world_position, filter, |entity| {
+        command.entity(entity).insert(ColliderDebug::AlwaysRender);
+        //println!("entity {:?}", entity);
+        true
+    });
 }
 
 // 清理迷雾
@@ -286,6 +326,9 @@ fn render_map(
         // 参数写的是 angle 但实际上是 radian
         transform.rotate_local_z(90. * PI / 180.);
         let shape = RegularPolygon::new(20., 6);
+        let points = shape.vertices(18.).into_iter().collect::<Vec<Vec2>>();
+
+        let collider = Collider::convex_hull(&points).expect("Failed to create convex hull");
 
         commands
             .spawn((
@@ -294,6 +337,7 @@ fn render_map(
                 FowCoor(col, row),
                 FowLevel(99),
                 transform,
+                collider,
             ))
             .with_children(|parent| {
                 // 坐标
