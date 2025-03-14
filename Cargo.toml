@@ -51,3 +51,7 @@ path = "examples/byronzr/hexagon_tile/main.rs"
 [[example]]
 name = "rapier2d_rigid_type"
 path = "examples/rapier2d/rapier2d_rigid_type.rs"
+
+[[example]]
+name = "rapier2d_rigid_related"
+path = "examples/rapier2d/rapier2d_rigid_related.rs"

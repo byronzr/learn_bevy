@@ -11,6 +11,9 @@
     * 以纯数学函数实现
     * MeshPickingPlugin 加入后,支持 Mesh2d 的 picking 事件
     * Rapier2d 实现 Collider Interscetion Test
+* **[rapier2d]**
+    * [rapier2d_rigid_type](https://github.com/byronzr/learn_bevy/tree/main/examples/rapier2d/rapier2d_rigid_type.rs) rapier2d 的 rigid 类型介绍
+    * [rapier2d_rigid_related](https://github.com/byronzr/learn_bevy/tree/main/examples/rapier2d/rapier2d_rigid_related.rs) rapier2d 的 rigid 与之相关的一些 Component 用例说明
 	
 	
 
