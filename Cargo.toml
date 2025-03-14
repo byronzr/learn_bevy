@@ -36,15 +36,18 @@ lto = true
 [[example]]
 name = "camera_renderlayer"
 path = "examples/byronzr/camera_renderlayer.rs"
-doc-scrape-examples = true
 
 
 [[example]]
 name = "inventory"
 path = "examples/byronzr/inventory.rs"
-doc-scrape-examples = true
+
 
 [[example]]
 name = "hexagon_tile"
 path = "examples/byronzr/hexagon_tile/main.rs"
-doc-scrape-examples = true
+
+
+[[example]]
+name = "rapier2d_rigid_type"
+path = "examples/rapier2d/rapier2d_rigid_type.rs"
