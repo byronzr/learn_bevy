@@ -55,3 +55,7 @@ path = "examples/rapier2d/rapier2d_rigid_type.rs"
 [[example]]
 name = "rapier2d_rigid_related"
 path = "examples/rapier2d/rapier2d_rigid_related.rs"
+
+[[example]]
+name = "rapier2d_collider_type"
+path = "examples/rapier2d/rapier2d_collider_type.rs"

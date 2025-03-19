@@ -1,8 +1,5 @@
 //! 最为常用的刚体类型
 //! Dynamic,一但满足 Collider 形设的设置,将受到各种力学影响
-//! Fixed, 稳如老狗
-//! KinematicPositionBased, 位置动力学,不受力学影响,但可以通过代码控制位置(用得少)
-//! KinematicVelocityBased, 受 Velocity 影响,不需要设定 Collider 也能够旋转(用得少)
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
@@ -57,6 +54,7 @@ fn main() {
     app.run();
 }
 
+/// 优势组
 fn dominance(entities: Res<Entities>, mut commands: Commands) {
     for (i, entity) in entities.0.iter().enumerate() {
         let value = 0 - i as i8;
@@ -64,6 +62,7 @@ fn dominance(entities: Res<Entities>, mut commands: Commands) {
     }
 }
 
+/// 阻尼
 fn damping(entities: Res<Entities>, mut commands: Commands, mut has_run: Local<bool>) {
     // 只运行一次
     if *has_run {
@@ -81,6 +80,7 @@ fn damping(entities: Res<Entities>, mut commands: Commands, mut has_run: Local<b
     }
 }
 
+/// 脉冲波
 fn external_impluse(entities: Res<Entities>, mut commands: Commands, mut has_run: Local<bool>) {
     // 只运行一次
     if *has_run {
@@ -97,6 +97,7 @@ fn external_impluse(entities: Res<Entities>, mut commands: Commands, mut has_run
     }
 }
 
+/// 外力
 fn external_force(entities: Res<Entities>, mut commands: Commands) {
     for (i, entity) in entities.0.iter().enumerate() {
         let value = i as f32 * 5000.0;
@@ -107,6 +108,7 @@ fn external_force(entities: Res<Entities>, mut commands: Commands) {
     }
 }
 
+/// 质量
 fn mass(entities: Res<Entities>, mut commands: Commands) {
     for (i, entity) in entities.0.iter().enumerate() {
         let value = 1.0;
@@ -119,6 +121,7 @@ fn mass(entities: Res<Entities>, mut commands: Commands) {
     }
 }
 
+/// 重力
 fn gravity(entities: Res<Entities>, mut commands: Commands) {
     for (i, entity) in entities.0.iter().enumerate() {
         commands.entity(*entity).insert(GravityScale(1. * i as f32));
