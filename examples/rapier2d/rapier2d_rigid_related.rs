@@ -1,5 +1,6 @@
 //! 最为常用的刚体类型
 //! Dynamic,一但满足 Collider 形设的设置,将受到各种力学影响
+#![allow(dead_code)]
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
@@ -72,7 +73,7 @@ fn damping(entities: Res<Entities>, mut commands: Commands, mut has_run: Local<b
 
     println!("damping");
     for (i, entity) in entities.0.iter().enumerate() {
-        let value = i as f32;
+        let _value = i as f32;
         commands.entity(*entity).insert(Damping {
             linear_damping: 5.,
             angular_damping: 5.,
@@ -81,7 +82,7 @@ fn damping(entities: Res<Entities>, mut commands: Commands, mut has_run: Local<b
 }
 
 /// 脉冲波
-fn external_impluse(entities: Res<Entities>, mut commands: Commands, mut has_run: Local<bool>) {
+fn external_impluse(entities: Res<Entities>, mut commands: Commands, has_run: Local<bool>) {
     // 只运行一次
     if *has_run {
         return;
@@ -110,7 +111,7 @@ fn external_force(entities: Res<Entities>, mut commands: Commands) {
 
 /// 质量
 fn mass(entities: Res<Entities>, mut commands: Commands) {
-    for (i, entity) in entities.0.iter().enumerate() {
+    for (_i, entity) in entities.0.iter().enumerate() {
         let value = 1.0;
 
         // 加大这个值,自已试试

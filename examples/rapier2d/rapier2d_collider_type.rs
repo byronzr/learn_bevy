@@ -15,16 +15,18 @@ fn main() {
     app.run();
 }
 
-fn setup(mut commands: Commands) {
+/// 构建了两个实体,一个是传感器,一个是实体
+fn setup(mut commands: Commands, assert_server: Res<AssetServer>) {
     commands.spawn(Camera2d);
 
+    // 构键两个实体,一个是传感器,一个是实体
     let colliders = [false, true];
     let half_x = 1280. / 2.;
     let half_y = 720. / 2.;
     for (i, s) in colliders.iter().enumerate() {
-        let x = -half_x + 100. + i as f32 * 100.;
+        let x = -half_x + 800. + i as f32 * 100.;
         let y = half_y - 100.;
-        let entity = commands
+        let _entity = commands
             .spawn((
                 Sprite::from_color(Color::WHITE, Vec2::splat(30.)),
                 RigidBody::Dynamic,
@@ -33,13 +35,52 @@ fn setup(mut commands: Commands) {
                 Transform::from_translation(Vec3::new(x, y, 0.)),
             ))
             .with_children(|parent| {
-                parent.spawn(Collider::cuboid(15., 15.));
+                // 两个矩形碰撞体放置在一个实体上,观察物理效果的复杂性是否会提升
+                // Sensor 在这里同时添加才会有效果,尝试注释掉其中一个观察效果
+                if *s {
+                    parent.spawn((
+                        Collider::cuboid(5., 5.),
+                        Transform::from_xyz(-10., 0., 0.),
+                        Sensor,
+                    ));
+                    parent.spawn((
+                        Collider::cuboid(5., 5.),
+                        Transform::from_xyz(10., 0., 0.),
+                        Sensor,
+                    ));
+                } else {
+                    parent.spawn((Collider::cuboid(5., 5.), Transform::from_xyz(-10., 0., 0.)));
+                    parent.spawn((Collider::cuboid(5., 5.), Transform::from_xyz(10., 0., 0.)));
+                }
+
+                // 为了区别类型,添加一个文字标签,T = solid, S = sensor
+                parent.spawn((
+                    Text2d::new(if *s { "S" } else { "T" }),
+                    TextFont {
+                        font: assert_server.load("fonts/SourceHanSansCN-Normal.otf"),
+                        font_size: 24.,
+                        ..default()
+                    },
+                    TextColor(Color::BLACK),
+                    Transform::from_xyz(0., 0., 9.),
+                ));
             })
             .id();
-        if *s {
-            commands.entity(entity).insert(Sensor);
-        }
+        // 父级实体添加传感器,并不会产生效果,传感器必须与碰撞体一起添加才有意义
+        // if *s {
+        //     // 添加传感器,观察碰撞效果
+        //     commands.entity(_entity).insert(Sensor);
+        // }
     }
+
+    // 添加地面
+    commands.spawn((
+        Sprite::from_color(Color::WHITE, Vec2::new(1280., 30.)),
+        RigidBody::Fixed,
+        // Collider 的长宽是独立于 Sprite 的,可以从 Debug 中看出
+        Collider::cuboid(300., 15.),
+        Transform::from_translation(Vec3::new(0., -half_y + 55., 0.)),
+    ));
 }
 
 // 显示网格方便观察
