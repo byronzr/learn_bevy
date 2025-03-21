@@ -15,6 +15,7 @@
     * [rapier2d_rigid_type](https://github.com/byronzr/learn_bevy/tree/main/examples/rapier2d/rapier2d_rigid_type.rs) Rapier2d 的 rigid 类型介绍
     * [rapier2d_rigid_related](https://github.com/byronzr/learn_bevy/tree/main/examples/rapier2d/rapier2d_rigid_related.rs) Rapier2d 的 rigid 与之相关的一些 Component 用例说明
     * [rapier2d_collider_type](https://github.com/byronzr/learn_bevy/tree/main/examples/rapier2d/rapier2d_collider_type.rs) Rapier2d 的 collider 类型介绍(实体与传感器)
+    * [rapier2d_collider_related](https://github.com/byronzr/learn_bevy/tree/main/examples/rapier2d/rapier2d_collider_related.rs) Rapier2d 的 collider 相关的 Component 用例
 	
 	
 
