@@ -382,7 +382,11 @@ fn setup_sprite_ui(
     // 创建一个 UI 相机
     commands.spawn(Camera2d);
 
-    let size = win_query.physical_size();
+    // 获取物理屏幕大小(主要用于纹理相关)
+    //let size = win_query.physical_size();
+
+    // 窗体逻辑大小(用于UI布局)
+    let size = win_query.size();
     let size = Vec2::new(size.x as f32, size.y as f32);
     info!("window size: {:?}", size);
 
