@@ -138,7 +138,7 @@ fn setup(
                     // ActiveEvents::COLLISION_EVENTS,
                     // ActiveEvents::CONTACT_FORCE_EVENTS,
 
-                    // 当有足够的弹性时,ActiveEvents::CONTACT_FORCE_EVENTS 会触发(Stoped)
+                    // 当有足够的弹性时,ActiveEvents::COLLISION_EVENTS 会触发(Stoped)
                     Restitution::new(0.7),
                     Friction::new(0.01),
                     ColliderMassProperties::Mass(100.),
