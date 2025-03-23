@@ -63,3 +63,11 @@ path = "examples/rapier2d/rapier2d_collider_type.rs"
 [[example]]
 name = "rapier2d_collider_related"
 path = "examples/rapier2d/rapier2d_collider_related.rs"
+
+[[example]]
+name = "rapier2d_collider_event"
+path = "examples/rapier2d/rapier2d_collider_event.rs"
+
+[[example]]
+name = "rapier2d_collider_hook"
+path = "examples/rapier2d/rapier2d_collider_hook.rs"
