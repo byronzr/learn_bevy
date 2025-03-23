@@ -5,7 +5,7 @@
 /// 很多时候 Collider 会作为子级添加到 Entity 中,特别要注意这一点
 use std::f32::consts::PI;
 
-use bevy::{color::palettes::css::LIME, ecs::bundle, prelude::*};
+use bevy::{color::palettes::css::LIME, prelude::*};
 use bevy_rapier2d::prelude::*;
 
 // 为了方便拿到父级 entity 使用一个 自定义的 Marker 进行标记
@@ -57,21 +57,21 @@ fn group_test(
     }
 
     // 使用 mut 方式修改,要注意,在初始时,要保证 *Groups Component 已经存在
-    // for (group, mut collision_groups, mut solver_groups) in &mut query {
-    //     if group.0 == 4 {
-    //         collision_groups.memberships = Group::GROUP_9;
-    //         collision_groups.filters = Group::GROUP_9;
+    for (group, mut collision_groups, mut solver_groups) in &mut query {
+        if group.0 == 4 {
+            collision_groups.memberships = Group::GROUP_9;
+            collision_groups.filters = Group::GROUP_9;
 
-    //         solver_groups.memberships = Group::GROUP_9;
-    //         solver_groups.filters = Group::GROUP_9;
-    //     } else {
-    //         collision_groups.memberships = Group::GROUP_1;
-    //         collision_groups.filters = Group::GROUP_1;
+            solver_groups.memberships = Group::GROUP_9;
+            solver_groups.filters = Group::GROUP_9;
+        } else {
+            collision_groups.memberships = Group::GROUP_1;
+            collision_groups.filters = Group::GROUP_1;
 
-    //         solver_groups.memberships = Group::GROUP_1;
-    //         solver_groups.filters = Group::GROUP_1;
-    //     }
-    // }
+            solver_groups.memberships = Group::GROUP_1;
+            solver_groups.filters = Group::GROUP_1;
+        }
+    }
 }
 
 // 弹性
@@ -122,9 +122,9 @@ fn mass(query: Query<(Entity, &ColliderMarker), With<RigidBody>>, mut commands: 
         commands
             .entity(entity)
             .insert(ColliderMassProperties::MassProperties(MassProperties {
-                local_center_of_mass: Vec2::new(50., 50.), // 质心相对位置,影响旋转中心
-                mass,                                      // 质量
-                principal_inertia: 10.,                    // 主惯性(影响碰撞体旋转)
+                local_center_of_mass: Vec2::new(5., 5.), // 质心相对位置,影响旋转中心
+                mass,                                    // 质量
+                principal_inertia: 10.,                  // 主惯性(影响碰撞体旋转)
             }));
     }
 }
@@ -141,7 +141,9 @@ fn setup(
 
     // false = solid collider
     // true = sensor collider
-    let sensor_list = [false, true, false, true, false, true];
+    let sensor_list = [
+        false, true, false, true, false, true, false, true, false, true, false, true,
+    ];
 
     // 六边形
     let shape_polygon = RegularPolygon::new(15., 6);
@@ -159,14 +161,16 @@ fn setup(
     let angle = 0.;
     let vertexes: Vec<Vec2> = shape_polygon.vertices(angle).into_iter().collect();
     let half_y = 720. / 2.;
+    let half_x = 1280. / 2.;
     for (i, s) in sensor_list.iter().enumerate() {
-        let mut transform = Transform::from_translation(Vec3::new(i as f32 * 100. - 150., 0., 0.));
+        let mut transform =
+            Transform::from_translation(Vec3::new(-half_x + (i + 1) as f32 * 80., 0., 0.));
         // angle 为弧度,而不是度数,为了精度,通常以 PI 为被除数进行计算
         transform.rotate_local_z(PI / 4.);
         commands
             .spawn((
                 RigidBody::Dynamic,
-                Mesh2d(if i < 2 {
+                Mesh2d(if i < 5 {
                     shape_ploygon_handle.clone()
                 } else {
                     shape_ball_handle.clone()
@@ -181,7 +185,7 @@ fn setup(
                 // convex_hull 根据顶点进行多边行绘制与bevy原生的绘制方式有区别的地方是返回 Option
                 // collider 以 children 的方式添加到 entity 中,可以很好的继承父级的相对形变,
                 // 对于异形的碰撞体,这是一个很好的选择
-                let collider = if i < 2 {
+                let collider = if i < 5 {
                     let Some(v) = Collider::convex_hull(&vertexes) else {
                         error!("Failed to create collider");
                         return;
@@ -195,11 +199,16 @@ fn setup(
                 let mut transform = Transform::from_xyz(0., 0., 9.);
                 transform.rotate_local_z(angle);
 
-                //
+                // Collider 相关的 Component 要通常要毗邻于 Collider(即,在同一个 Bundle 中),
+                // ColliderMarker 标记在此处就是为了得到与 Collider 同级的 Bundle
+                // 如果 ColliderMarker 标记在父级,那么获得的 Bundle 就与 Collider 无关.
+                // 而 Mass 相关属性,可同时作用于 RigidBody 与 Collider,这让人很容易误判
                 let bundle = (
                     collider,
                     transform,
                     // 先指定一个默认组别,再 system 中才能正常修改
+                    // 是否在 create 时就指定组别,决定了 system 中的修改方式,
+                    // 其实在这个地方,就很好的体现了 bevy 0.15 开始的 Required Component 统一实现的好处
                     // CollisionGroups::new(Group::GROUP_1, Group::GROUP_1),
                     // SolverGroups::new(Group::GROUP_1, Group::GROUP_1),
                     ColliderMarker,
