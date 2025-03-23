@@ -229,6 +229,13 @@ fn generate_random_item(
                             anchor: Anchor::TopLeft,
                             ..default()
                         },
+                        PickingBehavior {
+                            // 是否阻止鼠标事件传递到其下方的实体
+                            // 默认值是 true 所以,在原来代码中不断调整 z 轴
+                            should_block_lower: false,
+                            // 是否允许被鼠标悬停
+                            is_hoverable: true,
+                        },
                         item.clone(),
                         Transform::from_xyz(0., 0., ITEM_LAYER),
                         UnSlotted, // 标记未排放
@@ -364,7 +371,10 @@ fn observe_item<E: Debug + Reflect + Clone>()
         if let Some(trigger) = reflect.downcast_ref::<Pointer<Drag>>() {
             let delta = trigger.delta * Vec2::new(1., -1.);
             transform.translation += delta.extend(0.);
-            transform.translation.z = SLOT_LAYER;
+            // 让 item 添加 PickingBehavior 组件后,就不需要调整 z 轴了
+            // transform.translation.z = SLOT_LAYER;
+            // 一直保护在指定图层就好了
+            transform.translation.z = ITEM_LAYER;
             picked.0 = Some(ev.entity());
             return;
         }
@@ -376,8 +386,6 @@ fn setup_sprite_ui(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     win_query: Single<&Window>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut material: ResMut<Assets<ColorMaterial>>,
 ) {
     // 创建一个 UI 相机
     commands.spawn(Camera2d);
@@ -413,11 +421,11 @@ fn setup_sprite_ui(
             ));
             // TODO: 还差半格 slot_size 未处理
             let custom_size = Vec2::splat(SLOT_SIZE - SLOT_GAP);
-            let _ = commands
+            commands
                 .spawn((
                     // * 也可以使用 Mesh2 ,但 Sprite 相对更简单
                     Sprite {
-                        color: Color::from(css::GREY.with_alpha(0.1)),
+                        color: Color::from(css::GREY.with_alpha(0.2)),
                         custom_size: Some(custom_size),
                         anchor: Anchor::TopLeft,
                         ..default()
@@ -427,18 +435,17 @@ fn setup_sprite_ui(
                     // Anchor::Center,
                 ))
                 // 显示坐标索引
-                .with_child((
-                    Text2d::new(format!("{},{}", col, row)),
-                    TextFont {
-                        font_size: 9.0,
-                        ..default()
-                    },
-                    // 位移到格子中心,Sprite 的 Anchor 为 TopLeft,所以视觉上不是中心
-                    Transform::from_translation((custom_size / 2. * Vec2::new(1., -1.)).extend(0.)),
-                ))
+                // .with_child((
+                //     Text2d::new(format!("{},{}", col, row)),
+                //     TextFont {
+                //         font_size: 9.0,
+                //         ..default()
+                //     },
+                //     // 位移到格子中心,Sprite 的 Anchor 为 TopLeft,所以视觉上不是中心
+                //     Transform::from_translation((custom_size / 2. * Vec2::new(1., -1.)).extend(0.)),
+                // ))
                 // ! slot 只需一个 DragEnter 事件
-                .observe(observe_slot)
-                .id();
+                .observe(observe_slot);
         }
     }
 
@@ -488,27 +495,6 @@ fn setup_sprite_ui(
                     ));
                 });
         });
-    commands
-        .spawn((
-            Sprite::from_image(asset_server.load("items/paper.png")),
-            Mesh2d(meshes.add(Circle::new(20.))),
-            MeshMaterial2d(material.add(Color::srgb(1., 0., 0.))),
-            Transform::from_xyz(300., 300., 0.),
-        ))
-        .observe(observe_circle::<Pointer<Move>>())
-        .observe(observe_circle::<Pointer<Over>>());
-}
-
-/// 支持拖拽事件
-fn observe_circle<E: Debug + Reflect + Clone>() -> impl Fn(Trigger<E>) {
-    move |ev| {
-        info!("observe_circle: {:?}", ev);
-        let reflect = ev.event().try_as_reflect().unwrap();
-
-        if let Some(trigger) = reflect.downcast_ref::<Pointer<DragEnd>>() {
-            info!("DragEnd: {:?}", trigger.pointer_location);
-        }
-    }
 }
 
 /// ! 调试用的 gizmos
