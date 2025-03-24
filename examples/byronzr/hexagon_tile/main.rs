@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use bevy::{asset::LoadedFolder, prelude::*, utils::HashSet};
+use bevy::{asset::LoadedFolder, prelude::*, utils::HashSet, winit::WinitSettings};
 use rand::{rng, seq::IndexedRandom};
 
 use bevy_rapier2d::prelude::*;
@@ -14,6 +14,7 @@ use env::*;
 fn main() {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins);
+    app.insert_resource(WinitSettings::game());
 
     // bevy native picking_backend
     //app.add_plugins(MeshPickingPlugin);
@@ -417,7 +418,7 @@ fn load_textures(
     info!("loading... textures");
     commands.insert_resource(LoadTexture(asset_server.load_folder("textures")));
     commands.spawn(Camera2d);
-    pretreat.window_size = Vec2::new(win.physical_width() as f32, win.physical_height() as f32);
+    pretreat.window_size = Vec2::new(win.size().x, win.size().y);
 }
 
 // 进行资源预处理
