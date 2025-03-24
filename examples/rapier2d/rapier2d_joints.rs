@@ -21,6 +21,17 @@ fn setup(
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     commands.spawn(Camera2d);
+
+    let joint = RevoluteJointBuilder::new()
+        .local_anchor1(Vec2::new(0.0, 50.0))
+        .local_anchor2(Vec2::new(0.0, -50.0));
+    let parent_entity = commands
+        .spawn((RigidBody::Fixed, Collider::cuboid(10f32, 10f32)))
+        .id();
+    commands
+        .spawn(RigidBody::Dynamic)
+        .insert(Collider::cuboid(5f32, 5f32))
+        .insert(ImpulseJoint::new(parent_entity, joint));
 }
 
 // 显示网格方便观察
