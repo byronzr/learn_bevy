@@ -1,9 +1,11 @@
 //! 最为常用的刚体类型
-//! Dynamic,一但满足 Collider 形设的设置,将受到各种力学影响
+//! 以 Dynamic 为例,
 #![allow(dead_code)]
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
+// 创建一个资源,用于存储实体
+// 因为设置需要有序进行,如果使用 Query 会导致无法预测
 #[derive(Resource, Debug, Default)]
 struct Entities(Vec<Entity>);
 
@@ -31,7 +33,7 @@ fn main() {
 
     // 添加持续的外力(向左,扭矩为逆时针旋转)
     // 持续的力,会是一个保持的值,60桢内一直是这个值
-    // app.add_systems(Update, external_force);
+    app.add_systems(Update, external_force);
 
     // 添加脉冲力
     // 脉冲力,是一个会被刚体吸收的值,60桢内这个值都会被吸收,
@@ -56,7 +58,12 @@ fn main() {
 }
 
 /// 优势组
-fn dominance(entities: Res<Entities>, mut commands: Commands) {
+fn dominance(entities: Res<Entities>, mut commands: Commands, mut has_run: Local<bool>) {
+    if *has_run {
+        return;
+    }
+    *has_run = true;
+
     for (i, entity) in entities.0.iter().enumerate() {
         let value = 0 - i as i8;
         commands.entity(*entity).insert(Dominance::group(value));
@@ -65,13 +72,13 @@ fn dominance(entities: Res<Entities>, mut commands: Commands) {
 
 /// 阻尼
 fn damping(entities: Res<Entities>, mut commands: Commands, mut has_run: Local<bool>) {
-    // 只运行一次
     if *has_run {
         return;
     }
+    // 只运行一次,这样,阻尼就会慢慢的消失
+    // 不然,每桢都运行,就会一直有阻尼(新的)
     *has_run = true;
 
-    println!("damping");
     for (i, entity) in entities.0.iter().enumerate() {
         let _value = i as f32;
         commands.entity(*entity).insert(Damping {
@@ -82,13 +89,13 @@ fn damping(entities: Res<Entities>, mut commands: Commands, mut has_run: Local<b
 }
 
 /// 脉冲波
-fn external_impluse(entities: Res<Entities>, mut commands: Commands, has_run: Local<bool>) {
+fn external_impluse(entities: Res<Entities>, mut commands: Commands, mut has_run: Local<bool>) {
     // 只运行一次
     if *has_run {
         return;
     }
-    // 注释掉这行,每桢就会发送一个脉冲波
-    //*has_run = true;
+    // 启用,则每桢就会发送一个脉冲波
+    *has_run = true;
     for (i, entity) in entities.0.iter().enumerate() {
         let value = i as f32 * 500.0;
         commands.entity(*entity).insert(ExternalImpulse {
@@ -99,7 +106,12 @@ fn external_impluse(entities: Res<Entities>, mut commands: Commands, has_run: Lo
 }
 
 /// 外力
-fn external_force(entities: Res<Entities>, mut commands: Commands) {
+fn external_force(entities: Res<Entities>, mut commands: Commands, mut has_run: Local<bool>) {
+    // 只运行一次
+    if *has_run {
+        return;
+    }
+    *has_run = true;
     for (i, entity) in entities.0.iter().enumerate() {
         let value = i as f32 * 5000.0;
         commands.entity(*entity).insert(ExternalForce {
@@ -110,7 +122,12 @@ fn external_force(entities: Res<Entities>, mut commands: Commands) {
 }
 
 /// 质量
-fn mass(entities: Res<Entities>, mut commands: Commands) {
+fn mass(entities: Res<Entities>, mut commands: Commands, mut has_run: Local<bool>) {
+    // 只运行一次
+    if *has_run {
+        return;
+    }
+    *has_run = true;
     for (_i, entity) in entities.0.iter().enumerate() {
         let value = 1.0;
 
@@ -130,6 +147,7 @@ fn gravity(entities: Res<Entities>, mut commands: Commands) {
 }
 
 // 设置
+// 创建 10 个 rigid body, 以便观察,虽然展示的是 Rigid 相关的效果
 fn setup(mut world: Commands, mut entities: ResMut<Entities>) {
     world.spawn(Camera2d);
 
