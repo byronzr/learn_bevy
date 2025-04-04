@@ -1,8 +1,8 @@
 //! 最为常用的刚体类型
 //! Dynamic,受到各种力学影响
 //! Fixed, 稳如老狗
-//! KinematicPositionBased, 位置动力学,不受力学影响,但可以通过代码控制位置(用得少)
-//! KinematicVelocityBased, 受 Velocity 影响,不需要设定 Collider 也能够旋转(用得少)
+//! KinematicPositionBased, 用户指定 Position,其它力学为系统推断
+//! KinematicVelocityBased, 用户指定 Velocity,其它力学为系统推断
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
@@ -16,9 +16,34 @@ fn main() {
     app.add_plugins(RapierDebugRenderPlugin::default());
 
     app.add_systems(Startup, setup);
-    app.add_systems(Update, show_grid);
+    app.add_systems(Update, (show_grid, kinematic_update));
 
     app.run();
+}
+
+// 两个特殊 RigidBody 的调试观察
+fn kinematic_update(
+    mut commands: Commands,
+    mut query: Query<(Entity, &RigidBody, &mut Transform), With<RigidBody>>,
+    time: Res<Time<Fixed>>,
+) {
+    // KinematicVelocityBased 与 KinematicPositionBased 这两个类型的刚体,
+    // 只会与 Dynamic 发生碰撞
+    // 注: Fixed 本身不会与 Fixed 与 Kinematic* 碰撞,这是 Fixed 的特性,
+    for (entity, body, mut transform) in &mut query {
+        // 为 KinematicPositionBased 设定一个位置,让它在 X 轴上移动
+        if body == &RigidBody::KinematicPositionBased {
+            transform.translation.x += time.delta_secs() * 100.;
+        }
+
+        // 为 KinematicVelocityBased 设定一个速度,让它的速率与其它类型不同
+        if body == &RigidBody::KinematicVelocityBased {
+            commands.entity(entity).insert(Velocity {
+                linvel: Vec2::new(-100., -0.1),
+                angvel: 1.,
+            });
+        }
+    }
 }
 
 // 设置
