@@ -1,5 +1,5 @@
 //! 最为常用的刚体类型
-//! Dynamic,一但满足 Collider 形设的设置,将受到各种力学影响
+//! Dynamic,受到各种力学影响
 //! Fixed, 稳如老狗
 //! KinematicPositionBased, 位置动力学,不受力学影响,但可以通过代码控制位置(用得少)
 //! KinematicVelocityBased, 受 Velocity 影响,不需要设定 Collider 也能够旋转(用得少)
@@ -29,12 +29,13 @@ fn setup(mut world: Commands) {
         // 受 Dampping 影响
         // 受 Gravity 影响
         RigidBody::Dynamic,
-        // 不受力学影响,但可以通过代码控制位置
+        // 不受力学影响
         RigidBody::Fixed,
-        // 不受力学影响,但可以通过代码控制位置
+        // 由用户指定位置(position),从而推断出相应力学参数(未证实)
+        // 因为没有指定位置,所以展示中状态如 Fixed
         RigidBody::KinematicPositionBased,
-        // 只受到 Velocity 影响,
-        // 并且不需要指定 Collider 也能够旋转
+        // 由用户指定加速(velocity),从而推断出相应力学参数(未证实)
+        // 因为指定了加速,向量为(1,1),所以会旋转并缓慢向右上角移动
         RigidBody::KinematicVelocityBased,
     ];
     let dampping = Damping {
@@ -59,7 +60,7 @@ fn setup(mut world: Commands) {
             Collider::cuboid(15., 15.),
             // 重力
             GravityScale(1.0),
-            // (碰撞体)质量
+            // Mass(质量),Density(密度)
             ColliderMassProperties::Density(1.),
         ));
     }
