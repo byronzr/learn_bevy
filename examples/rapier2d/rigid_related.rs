@@ -4,10 +4,29 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
+const RADIUS: f32 = 15.0;
+
+fn init_collider_ball() -> Collider {
+    // 圆形碰撞体
+    Collider::ball(RADIUS)
+}
+
 // 创建一个资源,用于存储实体
 // 因为设置需要有序进行,如果使用 Query 会导致无法预测
 #[derive(Resource, Debug, Default)]
 struct Entities(Vec<Entity>);
+
+// require_component 将必要的 component 绑定在一起.
+// 因为如果在 spawn 时,没有创建这些 component, 在 query 得到结果,
+// 为了统一后期在 system 中变更一致性,也为了测试 require_component 的适用性
+#[derive(Component, Debug)]
+#[require(
+    RigidBody(||RigidBody::Dynamic),
+    Collider(init_collider_ball),
+    GravityScale(||GravityScale(0.0)),
+    ColliderMassProperties(||ColliderMassProperties::Density(0.0))
+)]
+struct RigidDynamicBall;
 
 fn main() {
     let mut app = App::new();
@@ -18,10 +37,11 @@ fn main() {
     // 这是一个调试插件,在分析碰撞与边界时,会提供一些可视化的帮助(外框)
     app.add_plugins(RapierDebugRenderPlugin::default());
     app.init_resource::<Entities>();
+    // 网格
+    app.add_systems(Update, show_grid);
 
     // 统一设置了无重力影响,无质量的刚体
     app.add_systems(Startup, setup);
-    app.add_systems(Update, show_grid);
 
     // 添加质量
     // 无质量(0)刚体,不受力学影响
@@ -95,7 +115,7 @@ fn external_impluse(entities: Res<Entities>, mut commands: Commands, mut has_run
         return;
     }
     // 启用,则每桢就会发送一个脉冲波
-    *has_run = true;
+    //*has_run = true;
     for (i, entity) in entities.0.iter().enumerate() {
         let value = i as f32 * 500.0;
         commands.entity(*entity).insert(ExternalImpulse {
@@ -157,13 +177,11 @@ fn setup(mut world: Commands, mut entities: ResMut<Entities>) {
             .spawn((
                 Sprite::from_color(Color::WHITE, Vec2::splat(30.)),
                 transform,
-                RigidBody::Dynamic,
-                // 碰撞体形状
-                Collider::cuboid(15., 15.),
-                // 无重力
-                GravityScale(0.0),
-                // (碰撞体)无质量
-                ColliderMassProperties::Density(0.),
+                // RigidBody::Dynamic,
+                // Collider::cuboid(15., 15.),
+                // GravityScale(0.0),
+                // ColliderMassProperties::Density(0.),
+                RigidDynamicBall,
             ))
             .id();
         entities.0.push(entity);
