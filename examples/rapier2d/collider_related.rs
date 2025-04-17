@@ -1,8 +1,8 @@
 ///! Collider type.
-/// Solid 就是默认的碰撞体类型,
-/// Sensor 是传感器类型,需要追加 insert
-/// Collider 相关的 Component 要通常要毗邻于 Collider(即,在同一个 Bundle 中),
-/// 很多时候 Collider 会作为子级添加到 Entity 中,特别要注意这一点
+///! Solid 就是默认的碰撞体类型,
+///! Sensor 是传感器类型,需要追加 insert
+///! Collider 相关的 Component 要通常要毗邻于 Collider(即,在同一个 Bundle 中),
+///! 很多时候 Collider 会作为子级添加到 Entity 中,特别要注意这一点
 use std::f32::consts::PI;
 
 use bevy::{color::palettes::css::LIME, prelude::*};
