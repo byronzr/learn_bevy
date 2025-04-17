@@ -1,6 +1,7 @@
 //! 最为常用的刚体类型
 //! 以 Dynamic 为例,
 #![allow(dead_code)]
+#![allow(unused_mut)]
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
@@ -170,7 +171,6 @@ fn gravity(entities: Res<Entities>, mut commands: Commands) {
 // 创建 10 个 rigid body, 以便观察,虽然展示的是 Rigid 相关的效果
 fn setup(mut world: Commands, mut entities: ResMut<Entities>) {
     world.spawn(Camera2d);
-
     for i in 0..10 {
         let transform = Transform::from_translation(Vec3::new(i as f32 * 100. - 500., 300., 0.));
         let entity = world
@@ -181,6 +181,8 @@ fn setup(mut world: Commands, mut entities: ResMut<Entities>) {
                 // Collider::cuboid(15., 15.),
                 // GravityScale(0.0),
                 // ColliderMassProperties::Density(0.),
+                // 由于在 system 中用 mut Query 进行各项设置,所以使用 require component (bevy 0.15 特性),
+                // 可以保证这些 component 一定存在,并且毗邻于 Collider
                 RigidDynamicBall,
             ))
             .id();
