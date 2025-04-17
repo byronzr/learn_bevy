@@ -57,6 +57,10 @@ name = "rigid_related"
 path = "examples/rapier2d/rigid_related.rs"
 
 [[example]]
+name = "rigid_kinematic"
+path = "examples/rapier2d/rigid_kinematic.rs"
+
+[[example]]
 name = "collider_type"
 path = "examples/rapier2d/collider_type.rs"
 
