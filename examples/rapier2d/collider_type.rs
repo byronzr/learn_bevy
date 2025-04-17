@@ -1,7 +1,6 @@
 ///! Collider type.
-///! Solid 就是默认的碰撞体类型,
+///! Solider 就是默认的碰撞体类型,
 ///! Sensor 是传感器类型,需要追加 insert
-///
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 

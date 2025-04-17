@@ -149,6 +149,7 @@ fn setup(
     }
 
     // make a ground
+    // 地板
     let shape_rectangle = Rectangle::new(1280., 20.);
     let mesh_handle = meshes.add(shape_rectangle);
     let color_handle = materials.add(Color::srgb(0.5, 0.4, 0.3));
