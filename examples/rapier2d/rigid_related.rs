@@ -49,7 +49,6 @@ fn main() {
     app.add_systems(Update, mass);
 
     // 添加重力影响
-    // 无重力(0)刚体,受力学影响,但无初速度,不会动
     app.add_systems(Update, gravity);
 
     // 添加持续的外力(向左,扭矩为逆时针旋转)
