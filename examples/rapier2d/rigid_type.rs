@@ -16,34 +16,9 @@ fn main() {
     app.add_plugins(RapierDebugRenderPlugin::default());
 
     app.add_systems(Startup, setup);
-    app.add_systems(Update, (show_grid, kinematic_update));
+    app.add_systems(Update, show_grid);
 
     app.run();
-}
-
-// 两个特殊 RigidBody 的调试观察
-fn kinematic_update(
-    mut commands: Commands,
-    mut query: Query<(Entity, &RigidBody, &mut Transform), With<RigidBody>>,
-    time: Res<Time<Fixed>>,
-) {
-    // KinematicVelocityBased 与 KinematicPositionBased 这两个类型的刚体,
-    // 只会与 Dynamic 发生碰撞
-    // 注: Fixed 本身不会与 Fixed 与 Kinematic* 碰撞,这是 Fixed 的特性,
-    for (entity, body, mut transform) in &mut query {
-        // 为 KinematicPositionBased 设定一个位置,让它在 X 轴上移动
-        if body == &RigidBody::KinematicPositionBased {
-            transform.translation.x += time.delta_secs() * 100.;
-        }
-
-        // 为 KinematicVelocityBased 设定一个速度,让它的速率与其它类型不同
-        if body == &RigidBody::KinematicVelocityBased {
-            commands.entity(entity).insert(Velocity {
-                linvel: Vec2::new(-100., -0.1),
-                angvel: 1.,
-            });
-        }
-    }
 }
 
 // 设置
@@ -82,6 +57,8 @@ fn setup(mut world: Commands) {
                 angvel: 1.,
             },
             // 碰撞体形状
+            // Dynamic 受到影响
+            // KinematicVelocityBased 不受影响,
             Collider::cuboid(15., 15.),
             // 重力
             GravityScale(1.0),
