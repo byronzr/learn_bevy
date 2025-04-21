@@ -75,3 +75,7 @@ path = "examples/rapier2d/collider_event.rs"
 [[example]]
 name = "joints"
 path = "examples/rapier2d/joints.rs"
+
+[[example]]
+name = "scene_queries_cast"
+path = "examples/rapier2d/scene_queries_cast.rs"

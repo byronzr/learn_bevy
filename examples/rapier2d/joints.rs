@@ -28,7 +28,7 @@ fn main() {
     // setup
     app.add_systems(Startup, setup);
 
-    // external force
+    // external impulse
     app.add_systems(FixedUpdate, external_impluse);
 
     app.add_systems(PostUpdate, show_grid);
