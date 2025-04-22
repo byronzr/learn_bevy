@@ -1,3 +1,6 @@
+///! 键(1),观察 cast_ray
+///! 键(2),观察 cast_shape
+///! 键(空格),清除临时图形
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
