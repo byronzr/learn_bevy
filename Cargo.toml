@@ -83,3 +83,7 @@ path = "examples/rapier2d/scene_queries_cast.rs"
 [[example]]
 name = "scene_queries_projection"
 path = "examples/rapier2d/scene_queries_projection.rs"
+
+[[example]]
+name = "scene_queries_intersections"
+path = "examples/rapier2d/scene_queries_intersections.rs"

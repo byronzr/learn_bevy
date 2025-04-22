@@ -21,6 +21,7 @@
 * **[collider_event](https://github.com/byronzr/learn_bevy/tree/main/examples/rapier2d/collider_event.rs):** 关于 Event  用例
 * **[scene_queries_cast](https://github.com/byronzr/learn_bevy/tree/main/examples/rapier2d/scene_queries_cast.rs):** 关于 场景查询 (Scene Queries) cast(ray/shape) 用例
 * **[scene_queries_projection](https://github.com/byronzr/learn_bevy/tree/main/examples/rapier2d/scene_queries_projection.rs):** 关于 场景查询 (point projection) 用例
+* **[scene_queries_intersections](https://github.com/byronzr/learn_bevy/tree/main/examples/rapier2d/scene_queries_intersections.rs):** 关于 场景查询 (intersection) 用例
 	
 	
 
