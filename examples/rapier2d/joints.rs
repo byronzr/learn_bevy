@@ -12,7 +12,7 @@ const START_Y: f32 = 720.0 / 2.0;
 struct Objective;
 
 #[derive(Resource, Debug)]
-struct ImpluseTimer(Timer);
+struct ImpulseTimer(Timer);
 
 fn main() {
     let mut app = App::new();
@@ -20,7 +20,7 @@ fn main() {
     app.add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.));
     app.add_plugins(RapierDebugRenderPlugin::default());
 
-    app.insert_resource(ImpluseTimer(Timer::new(
+    app.insert_resource(ImpulseTimer(Timer::new(
         Duration::from_secs(1),
         TimerMode::Repeating,
     )));
@@ -38,7 +38,7 @@ fn main() {
 fn external_impluse(
     mut commands: Commands,
     query: Query<Entity, With<Objective>>,
-    mut timer: ResMut<ImpluseTimer>,
+    mut timer: ResMut<ImpulseTimer>,
     time: Res<Time>,
 ) {
     if timer.0.tick(time.delta()).just_finished() {
@@ -48,7 +48,7 @@ fn external_impluse(
                 torque_impulse: 0.0,
             });
         }
-        println!("external_impluse");
+        println!("external_impulse");
     }
 }
 
@@ -134,21 +134,33 @@ fn setup(
     //.motor_position(target_pos, 0., 0.);
 
     // local_anchor2
+    // Root
+    let transform = Transform::from_translation(vec_positions.pop().unwrap().extend(0.));
     let parent_entity = commands
         .spawn((
-            RigidBody::Dynamic,
+            RigidBody::Fixed,
             Collider::cuboid(10f32, 10f32),
-            Objective,
+            transform.clone(),
         ))
         .id();
 
     // local_anchor1
+    // first
+    let first_node = commands
+        .spawn((
+            RigidBody::Dynamic,
+            Collider::cuboid(5f32, 5f32),
+            ImpulseJoint::new(parent_entity, joint),
+            transform.clone(),
+        ))
+        .id();
+    // second
     commands.spawn((
-        RigidBody::Fixed,
-        //RigidBody::Dynamic,
+        RigidBody::Dynamic,
         Collider::cuboid(5f32, 5f32),
-        ImpulseJoint::new(parent_entity, joint),
-        Transform::from_translation(vec_positions.pop().unwrap().extend(0.)),
+        ImpulseJoint::new(first_node, joint),
+        transform.clone(),
+        Objective,
     ));
 
     // make a ground
