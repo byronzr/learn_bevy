@@ -8,13 +8,13 @@
 use bevy::{
     asset::RenderAssetUsages,
     color::Color,
+    platform::collections::HashSet,
     prelude::*,
     render::{
-        camera::RenderTarget,
+        camera::{ImageRenderTarget, RenderTarget},
         render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
         view::RenderLayers,
     },
-    utils::HashSet,
     winit::WinitSettings,
 };
 
@@ -86,6 +86,8 @@ fn setup(
 
     let image_handle = asset_images.add(image_container);
 
+    let render_target = ImageRenderTarget::from(image_handle.clone());
+
     let texture_camera = commands
         .spawn((
             Camera2d,
@@ -95,7 +97,7 @@ fn setup(
             Camera {
                 // 是不是激活都不重要,什么都不会影响
                 // is_active: false,
-                target: RenderTarget::Image(image_handle.clone()),
+                target: RenderTarget::Image(render_target),
                 ..default()
             },
         ))
@@ -108,7 +110,7 @@ fn setup(
                 height: Val::Px(100.),
                 ..default()
             },
-            TargetCamera(texture_camera),
+            UiTargetCamera(texture_camera),
         ))
         .with_children(|parent| {
             parent.spawn(Sprite::from_image(asset_server.load("items/AK47.png")));
@@ -210,7 +212,7 @@ fn setup(
                 ..default()
             },
             BackgroundColor(Color::srgb(0., 1., 0.)),
-            TargetCamera(camera_ui_0),
+            UiTargetCamera(camera_ui_0),
         ))
         .with_children(|parent| {
             parent.spawn((

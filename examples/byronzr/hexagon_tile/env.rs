@@ -1,7 +1,7 @@
 use bevy::asset::LoadedFolder;
+use bevy::platform::collections::HashMap;
+use bevy::platform::collections::HashSet;
 use bevy::prelude::*;
-use bevy::utils::HashSet;
-use bevy::utils::hashbrown::HashMap;
 use serde::{Deserialize, Serialize};
 
 // 分层

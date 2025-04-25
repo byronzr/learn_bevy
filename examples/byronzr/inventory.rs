@@ -3,7 +3,7 @@
 use std::{fmt::Debug, sync::LazyLock};
 
 use bevy::{
-    color::palettes::css, prelude::*, sprite::Anchor, utils::hashbrown::HashSet,
+    color::palettes::css, platform::collections::HashSet, prelude::*, sprite::Anchor,
     winit::WinitSettings,
 };
 use rand::{rng, seq::IndexedRandom};
@@ -190,8 +190,9 @@ fn auto_slot(
             }
         }
         // 如果找到不存储的格子,删除物品
-        //commands.entity(query_entity).despawn();
-        commands.entity(query_entity).try_despawn_recursive();
+        // since 0.16
+        // commands.entity(query_entity).try_despawn_recursive();
+        commands.entity(query_entity).despawn();
     }
 }
 
@@ -229,7 +230,9 @@ fn generate_random_item(
                             anchor: Anchor::TopLeft,
                             ..default()
                         },
-                        PickingBehavior {
+                        // PickingBehavior
+                        // since 0.16
+                        Pickable {
                             // 是否阻止鼠标事件传递到其下方的实体
                             // 默认值是 true 所以,在原来代码中不断调整 z 轴
                             should_block_lower: false,
@@ -344,7 +347,9 @@ fn observe_item<E: Debug + Reflect + Clone>()
 -> impl Fn(Trigger<E>, Query<(&mut Transform, &mut ItemSlots), Without<SlotIndex>>, ResMut<PickedEntity>)
 {
     move |ev, mut query, mut picked| {
-        let Ok((mut transform, is_item)) = query.get_mut(ev.entity()) else {
+        //let Ok((mut transform, is_item)) = query.get_mut(ev.entity()) else {
+        // since 0.16
+        let Ok((mut transform, is_item)) = query.get_mut(ev.target()) else {
             return;
         };
 
@@ -375,7 +380,9 @@ fn observe_item<E: Debug + Reflect + Clone>()
             // transform.translation.z = SLOT_LAYER;
             // 一直保护在指定图层就好了
             transform.translation.z = ITEM_LAYER;
-            picked.0 = Some(ev.entity());
+            // picked.0 = Some(ev.entity());
+            // since 0.16
+            picked.0 = Some(ev.target());
             return;
         }
     }
