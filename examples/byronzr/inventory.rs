@@ -92,6 +92,15 @@ fn main() {
     app.insert_resource(WinitSettings::desktop_app());
     app.init_resource::<InventorySlotStatus>();
     app.init_resource::<PickedEntity>();
+    // since 0.16 指定透明度低于 10% 不触发事件
+    app.insert_resource(SpritePickingSettings {
+        picking_mode: SpritePickingMode::AlphaThreshold(0.1),
+        ..default()
+    });
+    // app.insert_resource(SpritePickingSettings {
+    //     picking_mode: SpritePickingMode::BoundingBox,
+    //     ..default()
+    // });
 
     // 使用 Sprite 进行物品栏的绘制
     app.add_systems(Startup, setup_sprite_ui);
@@ -101,7 +110,7 @@ fn main() {
     app.add_systems(
         Update,
         (
-            draw_gizmos,
+            //draw_gizmos,
             generate_random_item,
             auto_slot,
             picked_item_rotate,
@@ -243,9 +252,12 @@ fn generate_random_item(
                         Transform::from_xyz(0., 0., ITEM_LAYER),
                         UnSlotted, // 标记未排放
                     ))
-                    .observe(observe_item::<Pointer<DragStart>>()) // ! 处理点击事件开始时,将 item 进行位移到鼠标
-                    .observe(observe_item::<Pointer<DragEnd>>()) // ! 处理点击事件结束时,将 item 进行位移到物品栏对齐
-                    .observe(observe_item::<Pointer<Drag>>()); // ! 移动事件
+                    // 处理点击事件开始时,将 item 进行位移到鼠标
+                    .observe(observe_item::<Pointer<DragStart>>())
+                    // 处理点击事件结束时,将 item 进行位移到物品栏对齐
+                    .observe(observe_item::<Pointer<DragEnd>>())
+                    // 移动事件
+                    .observe(observe_item::<Pointer<Drag>>());
             }
             Interaction::Hovered => {
                 bg.0 = Color::from(css::DARK_BLUE.with_alpha(0.8));
@@ -262,7 +274,12 @@ fn observe_slot(
     mut items_query: Query<&mut ItemSlots>,
     slot_query: Query<(&SlotIndex, &Transform), Without<ItemSlots>>,
     mut slot_info: ResMut<InventorySlotStatus>,
+    pick_item: Res<PickedEntity>,
 ) {
+    if pick_item.0.is_none() {
+        return;
+    }
+
     // 当前物品
     let Ok(mut is_item) = items_query.get_mut(trigger.dragged) else {
         return;
@@ -347,8 +364,7 @@ fn observe_item<E: Debug + Reflect + Clone>()
 -> impl Fn(Trigger<E>, Query<(&mut Transform, &mut ItemSlots), Without<SlotIndex>>, ResMut<PickedEntity>)
 {
     move |ev, mut query, mut picked| {
-        //let Ok((mut transform, is_item)) = query.get_mut(ev.entity()) else {
-        // since 0.16
+        // since 0.16 ev.entity() 变成了 ev.target()
         let Ok((mut transform, is_item)) = query.get_mut(ev.target()) else {
             return;
         };
@@ -374,14 +390,14 @@ fn observe_item<E: Debug + Reflect + Clone>()
         // 移动时,我们需要触发 DragEnter 事件,需要与 Slot 在同一层(z轴)
         // Y轴的坐标是反的,所以需要转换
         if let Some(trigger) = reflect.downcast_ref::<Pointer<Drag>>() {
+            //println!("item observe: {:?}", ev);
             let delta = trigger.delta * Vec2::new(1., -1.);
             transform.translation += delta.extend(0.);
             // 让 item 添加 PickingBehavior 组件后,就不需要调整 z 轴了
             // transform.translation.z = SLOT_LAYER;
             // 一直保护在指定图层就好了
             transform.translation.z = ITEM_LAYER;
-            // picked.0 = Some(ev.entity());
-            // since 0.16
+            // since 0.16 ev.entity() 变成了 ev.target()
             picked.0 = Some(ev.target());
             return;
         }
@@ -432,34 +448,39 @@ fn setup_sprite_ui(
                 .spawn((
                     // * 也可以使用 Mesh2 ,但 Sprite 相对更简单
                     Sprite {
-                        color: Color::from(css::GREY.with_alpha(0.2)),
+                        color: Color::from(css::GREY),
                         custom_size: Some(custom_size),
                         anchor: Anchor::TopLeft,
                         ..default()
                     },
+                    // since 0.16 is_hoverable 必须被定义,才能被 observe 接收
+                    Pickable {
+                        should_block_lower: true,
+                        is_hoverable: true,
+                    },
                     transform,
                     SlotIndex((col, row)),
-                    // Anchor::Center,
+                    // 显示坐标索引
+                    // children![(
+                    //     Text2d::new(format!("{},{}", col, row)),
+                    //     TextFont {
+                    //         font_size: 9.0,
+                    //         ..default()
+                    //     },
+                    //     // 位移到格子中心,Sprite 的 Anchor 为 TopLeft,所以视觉上不是中心
+                    //     Transform::from_translation(
+                    //         (custom_size / 2. * Vec2::new(1., -1.)).extend(0.)
+                    //     ),
+                    // )],
                 ))
-                // 显示坐标索引
-                // .with_child((
-                //     Text2d::new(format!("{},{}", col, row)),
-                //     TextFont {
-                //         font_size: 9.0,
-                //         ..default()
-                //     },
-                //     // 位移到格子中心,Sprite 的 Anchor 为 TopLeft,所以视觉上不是中心
-                //     Transform::from_translation((custom_size / 2. * Vec2::new(1., -1.)).extend(0.)),
-                // ))
-                // ! slot 只需一个 DragEnter 事件
+                // slot 只需一个 DragEnter 事件
                 .observe(observe_slot);
         }
     }
 
     // 放一个生成按钮
-    // ! 未来可以使用 children![] 宏,简化嵌套, 现在却不行
-    commands
-        .spawn(Node {
+    commands.spawn((
+        Node {
             // * 不是不可以使用 UI 层与 Sprite 配合,
             // * 最主要的原因是 UI 层需要布局时,需要最外层的 Node 以 Val::Percent(100.) 的方式占用整个窗口
             // * 一但占用了整个窗口,鼠标的事件就无法穿透 UI 层,
@@ -470,76 +491,33 @@ fn setup_sprite_ui(
             justify_content: JustifyContent::Start,
             padding: UiRect::all(Val::Px(10.0)),
             ..default()
-        })
-        .with_children(|parent| {
-            parent
-                .spawn((
-                    Button,
-                    Node {
-                        padding: UiRect::all(Val::Px(5.0)),
-                        // width: Val::Px(150.0),
-                        // height: Val::Px(65.0),
-                        border: UiRect::all(Val::Px(1.0)),
-                        // horizontally center child text
-                        justify_content: JustifyContent::Center,
-                        // vertically center child text
-                        align_items: AlignItems::Start,
-                        ..default()
-                    },
-                    BorderRadius::all(Val::Px(5.0)),
-                    BorderColor(Color::WHITE),
-                    BackgroundColor(Color::from(css::DARK_ORANGE)),
-                ))
-                .with_children(|parent| {
-                    parent.spawn((
-                        Text::new("Generate a random item"),
-                        TextFont {
-                            font: asset_server.load("fonts/SourceHanSansCN-Normal.otf"),
-                            font_size: 14.0,
-                            ..default()
-                        },
-                        TextColor(Color::WHITE),
-                    ));
-                });
-        });
-}
-
-/// ! 调试用的 gizmos
-fn draw_gizmos(mut gizmos: Gizmos, win_query: Single<&Window>) {
-    // @ 通过 Window 始终获得最新的 size 有可能中途 resing
-    let size = win_query.physical_size();
-    let size = Vec2::new(size.x as f32, size.y as f32);
-    gizmos.rect_2d(Isometry2d::IDENTITY, size, css::YELLOW_GREEN);
-}
-
-/// ! 这段代码展示了 UI Node 无法与 Sprite 配合实现物品栏的绘制
-fn setup_node_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
-    // 创建一个 UI 相机
-    commands.spawn((Camera2d, IsDefaultUiCamera));
-
-    // 加载物品图片
-    let h = asset_server.load("items/paper.png");
-
-    //
-    commands
-        .spawn(Node {
-            width: Val::Percent(100.),
-            height: Val::Percent(100.),
-            justify_content: JustifyContent::Center,
-            align_items: AlignItems::Center,
-            ..default()
-        })
-        .with_children(|parent| {
-            parent.spawn((
-                Node {
-                    width: Val::Px(100.),
-                    aspect_ratio: Some(1.),
+        },
+        // since 0.16 可以使用 children![] 宏
+        children![(
+            Button,
+            Node {
+                padding: UiRect::all(Val::Px(5.0)),
+                // width: Val::Px(150.0),
+                // height: Val::Px(65.0),
+                border: UiRect::all(Val::Px(1.0)),
+                // horizontally center child text
+                justify_content: JustifyContent::Center,
+                // vertically center child text
+                align_items: AlignItems::Start,
+                ..default()
+            },
+            BorderRadius::all(Val::Px(5.0)),
+            BorderColor(Color::WHITE),
+            BackgroundColor(Color::from(css::DARK_ORANGE)),
+            children![(
+                Text::new("Generate a random item"),
+                TextFont {
+                    font: asset_server.load("fonts/SourceHanSansCN-Normal.otf"),
+                    font_size: 14.0,
                     ..default()
                 },
-                BackgroundColor(Color::BLACK),
-            ));
-        });
-
-    //
-    commands.spawn((Sprite::from_image(h),));
+                TextColor(Color::WHITE),
+            )],
+        )],
+    ));
 }
