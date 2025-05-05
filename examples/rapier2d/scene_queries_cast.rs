@@ -12,17 +12,18 @@ struct TempSprite;
 
 fn main() {
     let mut app = App::new();
+    let mut rapier_debug = RapierDebugRenderPlugin::default();
+    rapier_debug.mode = DebugRenderMode::from_bits(0b111111).unwrap();
     app.add_plugins((
         DefaultPlugins,
         RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.),
-        RapierDebugRenderPlugin::default(),
+        rapier_debug,
     ));
 
-    app.add_systems(Startup, setup);
+    app.add_systems(Startup, (setup, show_grid));
 
     app.add_systems(Update, (cast_ray, cast_shape, clear_tmp_sprite));
 
-    app.add_systems(PostUpdate, show_grid);
     app.run();
 }
 
@@ -44,9 +45,9 @@ fn cast_ray(
     mut commands: Commands,
     read_rapier: ReadRapierContext,
     keyboard: Res<ButtonInput<KeyCode>>,
-) {
+) -> Result {
     if !keyboard.just_pressed(KeyCode::Digit1) {
-        return;
+        return Ok(());
     }
     // 第一个测试
     let n = 1.0;
@@ -73,7 +74,7 @@ fn cast_ray(
     let filter = QueryFilter::default();
 
     // Fixed: 官方文档中不存在的 ReadDefaultRapierContext
-    let rapier_context = read_rapier.single();
+    let rapier_context = read_rapier.single()?;
 
     // 获得 TOI
     if let Some((entity, toi)) = rapier_context.cast_ray(ray_pos, ray_dir, max_toi, solid, filter) {
@@ -118,6 +119,7 @@ fn cast_ray(
             true // Return `false` instead if we want to stop searching for other hits.
         },
     );
+    Ok(())
 }
 
 /* Cast a shape inside of a system. */
@@ -125,9 +127,9 @@ fn cast_shape(
     mut commands: Commands,
     read_rapier: ReadRapierContext,
     keyboard: Res<ButtonInput<KeyCode>>,
-) {
+) -> Result {
     if !keyboard.just_pressed(KeyCode::Digit2) {
-        return;
+        return Ok(());
     }
 
     // 第二个测试
@@ -135,46 +137,63 @@ fn cast_shape(
 
     // 发射源点
     let start_x = -START_X + (1280.0 / 5.0) * n;
-    let shape = Collider::cuboid(5.0, 5.0);
-    let shape_pos = Vec2::new(start_x, 0.);
+    let shape = Collider::cuboid(50.0, 50.0);
+    let mut shape_pos = Vec2::new(start_x, 0.);
     make_temp_sprite(&mut commands, shape_pos, Color::srgb_u8(128, 0, 0));
 
-    let shape_rot = 0.8; // rotation
+    let shape_rot = 0.; // rotation
     //let shape_vel = Vec2::new(0.1, 0.4);
     let shape_vel = Vec2::new(0., -100.);
     make_temp_sprite(&mut commands, shape_vel, Color::srgb_u8(0, 0, 128));
 
-    let filter = QueryFilter::default();
+    let mut filter = QueryFilter::default();
     let options = ShapeCastOptions {
-        max_time_of_impact: 4.0,
-        target_distance: 0.0,
+        // ! toi
+        max_time_of_impact: 1.0,
+        // ! 目标距离(但我搞不明白)
+        target_distance: 500.0,
+        // ! 所谓的穿透,还需要手动调整,不知道意义何在(如果存在暗箱运算,又只能返回一个ShapCastHit)
         stop_at_penetration: false,
-        compute_impact_geometry_on_penetration: false,
+        // ! 提供法线等信息
+        compute_impact_geometry_on_penetration: true,
     };
 
-    let rapier_context = read_rapier.single();
-    if let Some((entity, hit)) =
-        rapier_context.cast_shape(shape_pos, shape_rot, shape_vel, &shape, options, filter)
-    {
-        // The first collider hit has the entity `entity`. The `hit` is a
-        // structure containing details about the hit configuration.
-        println!(
-            "Hit the entity {:?} with the configuration: {:?}",
-            entity, hit
-        );
+    let rapier_context = read_rapier.single()?;
+    // 循环两次,测试穿透
+    for _ in 0..20 {
+        if let Some((entity, hit)) =
+            rapier_context.cast_shape(shape_pos, shape_rot, shape_vel, &shape, options, filter)
+        {
+            // The first collider hit has the entity `entity`. The `hit` is a
+            // structure containing details about the hit configuration.
+            println!(
+                "Hit the entity {:?} with the configuration: {:?}",
+                entity, hit
+            );
 
-        // hit 的内部属性
-        // hit.toi 撞击时间
-        // hit.witness1 撞击点(目标对象)
-        // hit.witness2 撞击点(发射对象) 可以看到 约等于 (-5,-5),在第三象限的角被撞击
-        // hit.normal1 法线(目标对象)
-        // hit.normal2 法线(发射对象)
-        make_temp_sprite(
-            &mut commands,
-            hit.details.unwrap().witness1,
-            Color::srgb_u8(0, 128, 0),
-        );
+            // hit 的内部属性
+            // hit.time_of_impact 撞击时间
+            // hit.witness1 撞击点(目标对象)
+            // hit.witness2 撞击点(发射对象) 可以看到 约等于 (-5,-5),在第三象限的角被撞击
+            // hit.normal1 法线(目标对象)
+            // hit.normal2 法线(发射对象)
+            make_temp_sprite(
+                &mut commands,
+                hit.details.unwrap().witness1,
+                Color::srgb_u8(0, 128, 0),
+            );
+
+            shape_pos += shape_vel * hit.time_of_impact;
+            // pub exclude_collider: Option<Entity>,
+            // 这里可以看出 exclude_collider 不是一个集合,所以排除的对象只能是一个
+            // 在这里,shape的体积过大,所以一直在交替碰撞
+            filter = filter.exclude_collider(entity);
+            make_temp_sprite(&mut commands, shape_pos, Color::srgb_u8(0, 128, 128));
+        } else {
+            break;
+        }
     }
+    Ok(())
 }
 
 // 清理示例图形
@@ -209,20 +228,26 @@ fn make_ground(
             Mesh2d(mesh_handle),
             MeshMaterial2d(color_handle),
             transform,
-            // 注意,这里没有效果.因为 ActiveEvents Component 需要放在 Collider Bundle 中
-            // ActiveEvents::COLLISION_EVENTS,
         ))
         .with_children(|parent| {
-            let collider =
-                Collider::cuboid(shape_rectangle.half_size.x, shape_rectangle.half_size.y);
-            let entity = parent
-                .spawn((
-                    collider,
-                    //ActiveEvents::COLLISION_EVENTS,
-                    //Name("ground".to_string()),
-                ))
-                .id();
-            println!("ground collider entity: >> {:?} <<", entity);
+            let transform1 = Transform::from_translation(Vec3::new(0., 10., 0.));
+            let transform2 = Transform::from_translation(Vec3::new(0., -10., 0.));
+
+            // 用于测试穿透增加两层(1)
+            let collider = Collider::cuboid(
+                shape_rectangle.half_size.x,
+                shape_rectangle.half_size.y / 3.,
+            );
+            let entity = parent.spawn((collider, transform1)).id();
+            println!("(1) ground collider entity: >> {:?} <<", entity);
+
+            // 用于测试穿透增加两层(2)
+            let collider = Collider::cuboid(
+                shape_rectangle.half_size.x,
+                shape_rectangle.half_size.y / 3.,
+            );
+            let entity = parent.spawn((collider, transform2)).id();
+            println!("(2) ground collider entity: >> {:?} <<", entity);
         })
         .id();
     println!("ground entity: >> {:?} <<", entity);
@@ -238,7 +263,8 @@ fn make_temp_sprite(commands: &mut Commands, pos: Vec2, color: Color) {
 }
 
 // 显示网格方便观察
-fn show_grid(mut gizmos: Gizmos) {
+fn show_grid(mut commands: Commands, mut gizom_assets: ResMut<Assets<GizmoAsset>>) {
+    let mut gizmos = GizmoAsset::default();
     // 网格 (1280x720)
     gizmos
         .grid_2d(
@@ -249,4 +275,11 @@ fn show_grid(mut gizmos: Gizmos) {
             LinearRgba::gray(0.05), // 网格颜色
         )
         .outer_edges();
+    commands.spawn((
+        Gizmo {
+            handle: gizom_assets.add(gizmos),
+            ..default()
+        },
+        Transform::from_xyz(0., 0., -99.),
+    ));
 }

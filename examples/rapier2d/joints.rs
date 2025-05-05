@@ -26,12 +26,11 @@ fn main() {
     )));
 
     // setup
-    app.add_systems(Startup, setup);
+    app.add_systems(Startup, (setup, show_grid));
 
     // external impulse
     app.add_systems(FixedUpdate, external_impluse);
 
-    app.add_systems(PostUpdate, show_grid);
     app.run();
 }
 
@@ -133,7 +132,7 @@ fn setup(
         .local_anchor2(Vec2 { x: -30., y: 0. });
     //.motor_position(target_pos, 0., 0.);
 
-    // local_anchor2
+    // local_anchor2 = target
     // Root
     let transform = Transform::from_translation(vec_positions.pop().unwrap().extend(0.));
     let parent_entity = commands
@@ -144,7 +143,7 @@ fn setup(
         ))
         .id();
 
-    // local_anchor1
+    // local_anchor1 = current
     // first
     let first_node = commands
         .spawn((
@@ -190,7 +189,8 @@ fn setup(
 }
 
 // 显示网格方便观察
-fn show_grid(mut gizmos: Gizmos) {
+fn show_grid(mut commands: Commands, mut gizom_assets: ResMut<Assets<GizmoAsset>>) {
+    let mut gizmos = GizmoAsset::default();
     // 网格 (1280x720)
     gizmos
         .grid_2d(
@@ -201,4 +201,11 @@ fn show_grid(mut gizmos: Gizmos) {
             LinearRgba::gray(0.05), // 网格颜色
         )
         .outer_edges();
+    commands.spawn((
+        Gizmo {
+            handle: gizom_assets.add(gizmos),
+            ..default()
+        },
+        Transform::from_xyz(0., 0., -99.),
+    ));
 }

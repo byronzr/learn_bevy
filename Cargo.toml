@@ -9,7 +9,12 @@ env = { "RUST_BACKTRACE" = "1" }
 
 [dependencies]
 bevy = { version = "0.16.0" }
-bevy_rapier2d = { version = "0.29.0", features = [
+# bevy_rapier2d = { version = "0.29.0", features = [
+#     "simd-stable",
+#     "debug-render-2d",
+#     #"serde-serialize",
+# ] }
+bevy_rapier2d = { git = "https://github.com/dimforge/bevy_rapier", branch = "master", features = [
     "simd-stable",
     "debug-render-2d",
     #"serde-serialize",
@@ -29,10 +34,8 @@ opt-level = 3
 opt-level = 3
 lto = true
 
-# [profile.dev]
-# opt-level = 3
-# debug = false
 
+# Integrated Experiments #
 [[example]]
 name = "camera_renderlayer"
 path = "examples/byronzr/camera_renderlayer.rs"
@@ -47,43 +50,43 @@ path = "examples/byronzr/inventory.rs"
 name = "hexagon_tile"
 path = "examples/byronzr/hexagon_tile/main.rs"
 
-
+# Rapier2d Experiments
 [[example]]
-name = "rigid_type"
+name = "rapier_rigid_type"
 path = "examples/rapier2d/rigid_type.rs"
 
 [[example]]
-name = "rigid_related"
+name = "rapier_rigid_related"
 path = "examples/rapier2d/rigid_related.rs"
 
 [[example]]
-name = "rigid_kinematic"
+name = "rapier_rigid_kinematic"
 path = "examples/rapier2d/rigid_kinematic.rs"
 
 [[example]]
-name = "collider_type"
+name = "rapier_collider_type"
 path = "examples/rapier2d/collider_type.rs"
 
 [[example]]
-name = "collider_related"
+name = "rapier_collider_related"
 path = "examples/rapier2d/collider_related.rs"
 
 [[example]]
-name = "collider_event"
+name = "rapier_collider_event"
 path = "examples/rapier2d/collider_event.rs"
 
 [[example]]
-name = "joints"
+name = "rapier_joints"
 path = "examples/rapier2d/joints.rs"
 
 [[example]]
-name = "scene_queries_cast"
+name = "rapier_scene_queries_cast"
 path = "examples/rapier2d/scene_queries_cast.rs"
 
 [[example]]
-name = "scene_queries_projection"
+name = "rapier_scene_queries_projection"
 path = "examples/rapier2d/scene_queries_projection.rs"
 
 [[example]]
-name = "scene_queries_intersections"
+name = "rapier_scene_queries_intersections"
 path = "examples/rapier2d/scene_queries_intersections.rs"

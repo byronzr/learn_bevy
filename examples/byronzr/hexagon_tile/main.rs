@@ -1,6 +1,6 @@
 use std::f32::consts::PI;
 
-use bevy::{asset::LoadedFolder, prelude::*, utils::HashSet, winit::WinitSettings};
+use bevy::{asset::LoadedFolder, platform::collections::HashSet, prelude::*, winit::WinitSettings};
 use rand::{rng, seq::IndexedRandom};
 
 use bevy_rapier2d::prelude::*;
@@ -69,21 +69,21 @@ fn intersection_test_with_rapier2d(
     rapier_context: ReadRapierContext,
     mut fow_query: Query<(Entity, &FowCoor)>,
     mut command: Commands,
-) {
+) -> Result {
     // 最后一个鼠标移动事件
     let Some(event) = events.read().last() else {
-        return;
+        return Ok(());
     };
     // 转换坐标系
     let (camera, camera_transform) = *camera;
     let Ok(world_position) = camera.viewport_to_world_2d(camera_transform, event.position) else {
-        return;
+        return Ok(());
     };
     let filter = QueryFilter::default();
 
     // ReadRapierContext 并没有 intersection 的一系列方法,需要使用 single
     // 得到 RapierContext
-    let context = rapier_context.single();
+    let context = rapier_context.single()?;
     context.intersections_with_point(world_position, filter, |entity| {
         // 利用调试 Render 显示测试区域,
         // 没有实际的开发上的意义,commands,是有缓存的,并不能每次都将 ColliderDebug设置为 NeverRender
@@ -97,6 +97,7 @@ fn intersection_test_with_rapier2d(
         }
         true
     });
+    Ok(())
 }
 
 // 清理迷雾
@@ -166,8 +167,7 @@ fn animate_player(
     pretreat: Res<PretreatSet>,
     mut world_map: ResMut<WorldMap>,
 ) {
-    let Ok((mut timer, mut sprite, indices, mut transform, mut state)) = query.get_single_mut()
-    else {
+    let Ok((mut timer, mut sprite, indices, mut transform, mut state)) = query.single_mut() else {
         return;
     };
     timer.0.tick(time.delta());

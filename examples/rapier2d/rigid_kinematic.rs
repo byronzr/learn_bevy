@@ -20,10 +20,10 @@ fn main() {
         RapierDebugRenderPlugin::default(),
     ));
 
-    app.add_systems(Startup, setup);
+    app.add_systems(Startup, (setup, show_grid));
 
     app.add_systems(Update, (space_controller, draw_position, set_velocity));
-    app.add_systems(PostUpdate, show_grid);
+
     app.run();
 }
 
@@ -171,7 +171,8 @@ fn set_velocity(
 }
 
 // 显示网格方便观察
-fn show_grid(mut gizmos: Gizmos) {
+fn show_grid(mut commands: Commands, mut gizom_assets: ResMut<Assets<GizmoAsset>>) {
+    let mut gizmos = GizmoAsset::default();
     // 网格 (1280x720)
     gizmos
         .grid_2d(
@@ -182,4 +183,11 @@ fn show_grid(mut gizmos: Gizmos) {
             LinearRgba::gray(0.05), // 网格颜色
         )
         .outer_edges();
+    commands.spawn((
+        Gizmo {
+            handle: gizom_assets.add(gizmos),
+            ..default()
+        },
+        Transform::from_xyz(0., 0., -99.),
+    ));
 }

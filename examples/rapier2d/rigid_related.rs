@@ -22,10 +22,14 @@ struct Entities(Vec<Entity>);
 // 为了统一后期在 system 中变更一致性,也为了测试 require_component 的适用性
 #[derive(Component, Debug)]
 #[require(
-    RigidBody(||RigidBody::Dynamic),
-    Collider(init_collider_ball),
-    GravityScale(||GravityScale(0.0)),
-    ColliderMassProperties(||ColliderMassProperties::Density(0.0))
+    // RigidBody(||RigidBody::Dynamic),
+    RigidBody::Dynamic,
+    //Collider(init_collider_ball),
+    Collider::ball(RADIUS),
+    //GravityScale(||GravityScale(0.0)),
+    GravityScale(0.0),
+    //ColliderMassProperties(||ColliderMassProperties::Density(0.0))
+    ColliderMassProperties::Density(0.0),
 )]
 struct RigidDynamicBall;
 
@@ -38,11 +42,9 @@ fn main() {
     // 这是一个调试插件,在分析碰撞与边界时,会提供一些可视化的帮助(外框)
     app.add_plugins(RapierDebugRenderPlugin::default());
     app.init_resource::<Entities>();
-    // 网格
-    app.add_systems(Update, show_grid);
 
     // 统一设置了无重力影响,无质量的刚体
-    app.add_systems(Startup, setup);
+    app.add_systems(Startup, (setup, show_grid));
 
     // 添加质量
     // 无质量(0)刚体,不受力学影响
@@ -190,7 +192,8 @@ fn setup(mut world: Commands, mut entities: ResMut<Entities>) {
 }
 
 // 显示网格方便观察
-fn show_grid(mut gizmos: Gizmos) {
+fn show_grid(mut commands: Commands, mut gizom_assets: ResMut<Assets<GizmoAsset>>) {
+    let mut gizmos = GizmoAsset::default();
     // 网格 (1280x720)
     gizmos
         .grid_2d(
@@ -201,4 +204,11 @@ fn show_grid(mut gizmos: Gizmos) {
             LinearRgba::gray(0.05), // 网格颜色
         )
         .outer_edges();
+    commands.spawn((
+        Gizmo {
+            handle: gizom_assets.add(gizmos),
+            ..default()
+        },
+        Transform::from_xyz(0., 0., -99.),
+    ));
 }

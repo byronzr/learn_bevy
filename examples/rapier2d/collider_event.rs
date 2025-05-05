@@ -14,14 +14,13 @@ fn main() {
     app.add_plugins(DefaultPlugins);
     app.add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.));
     app.add_plugins(RapierDebugRenderPlugin::default());
-    app.add_systems(Startup, setup);
+    app.add_systems(Startup, (setup, show_grid));
 
     // 需要对应用的 Collider Bundle 中有 ActiveEvents::COLLISION_EVENTS, 才能触发事件
     app.add_systems(Update, events_reader);
     // 需要对应用的 Collider Bundle 中有 ActiveEvents::CONTACT_FORCE_EVENTS, 才能触发事件
     app.add_systems(Update, contact_reader);
 
-    app.add_systems(PostUpdate, show_grid);
     app.run();
 }
 
@@ -176,7 +175,8 @@ fn setup(
 }
 
 // 显示网格方便观察
-fn show_grid(mut gizmos: Gizmos) {
+fn show_grid(mut commands: Commands, mut gizom_assets: ResMut<Assets<GizmoAsset>>) {
+    let mut gizmos = GizmoAsset::default();
     // 网格 (1280x720)
     gizmos
         .grid_2d(
@@ -187,4 +187,11 @@ fn show_grid(mut gizmos: Gizmos) {
             LinearRgba::gray(0.05), // 网格颜色
         )
         .outer_edges();
+    commands.spawn((
+        Gizmo {
+            handle: gizom_assets.add(gizmos),
+            ..default()
+        },
+        Transform::from_xyz(0., 0., -99.),
+    ));
 }

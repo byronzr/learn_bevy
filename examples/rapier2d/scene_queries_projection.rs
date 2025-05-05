@@ -15,7 +15,7 @@ fn main() {
         RapierDebugRenderPlugin::default(),
     ));
 
-    app.add_systems(Startup, setup);
+    app.add_systems(Startup, (setup, show_grid));
 
     app.add_systems(
         Update,
@@ -27,7 +27,6 @@ fn main() {
             .chain(),
     );
 
-    app.add_systems(PostUpdate, show_grid);
     app.run();
 }
 
@@ -47,9 +46,9 @@ fn projection(
     mut commands: Commands,
     read_rapier: ReadRapierContext,
     keyboard: Res<ButtonInput<KeyCode>>,
-) {
+) -> Result {
     if !keyboard.just_pressed(KeyCode::Space) {
-        return;
+        return Ok(());
     }
 
     let point = Vec2::new(1., 2.);
@@ -57,11 +56,12 @@ fn projection(
     let solid = true;
     let filter = QueryFilter::default();
 
-    let rapier_context = read_rapier.single();
+    let rapier_context = read_rapier.single()?;
     if let Some((entity, projection)) = rapier_context.project_point(point, solid, filter) {
         println!("entity:{:?}, projection: {:?}", entity, projection);
         make_temp_sprite(&mut commands, projection.point, Color::srgb_u8(0, 128, 0));
     }
+    Ok(())
 }
 
 // 创建一个包含源点的碰撞体
@@ -137,7 +137,8 @@ fn make_temp_sprite(commands: &mut Commands, pos: Vec2, color: Color) {
 }
 
 // 显示网格方便观察
-fn show_grid(mut gizmos: Gizmos) {
+fn show_grid(mut commands: Commands, mut gizom_assets: ResMut<Assets<GizmoAsset>>) {
+    let mut gizmos = GizmoAsset::default();
     // 网格 (1280x720)
     gizmos
         .grid_2d(
@@ -148,4 +149,11 @@ fn show_grid(mut gizmos: Gizmos) {
             LinearRgba::gray(0.05), // 网格颜色
         )
         .outer_edges();
+    commands.spawn((
+        Gizmo {
+            handle: gizom_assets.add(gizmos),
+            ..default()
+        },
+        Transform::from_xyz(0., 0., -99.),
+    ));
 }
