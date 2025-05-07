@@ -10,7 +10,7 @@ fn main() {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins);
     // NoUserData 在是力学与运动中可能会需要的自定义附加数据,但通常在学习阶段,我们并没有这么复杂的需求
-    // pixels_per_meter(100.) 比较标配的设置,1米=100像素,但不适合察
+    // pixels_per_meter(100.) 比较标配的设置,1米=100像素,但不适合观察
     app.add_plugins(RapierPhysicsPlugin::<NoUserData>::default());
     // 这是一个调试插件,在分析碰撞与边界时,会提供一些可视化的帮助(外框)
     app.add_plugins(RapierDebugRenderPlugin::default());
@@ -38,8 +38,8 @@ fn setup(mut world: Commands) {
         RigidBody::KinematicVelocityBased,
     ];
     let dampping = Damping {
-        linear_damping: 3.0,
-        angular_damping: 3.0,
+        linear_damping: 30.0,
+        angular_damping: 30.0,
     };
 
     for (i, rigid_body_type) in type_list.iter().enumerate() {

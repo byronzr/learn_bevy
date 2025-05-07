@@ -25,6 +25,7 @@ fn setup(mut commands: Commands, assert_server: Res<AssetServer>) {
     for (i, s) in colliders.iter().enumerate() {
         let x = -half_x + 800. + i as f32 * 100.;
         let y = half_y - 100.;
+
         let _entity = commands
             .spawn((
                 Sprite::from_color(Color::WHITE, Vec2::splat(30.)),

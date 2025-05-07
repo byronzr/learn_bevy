@@ -98,10 +98,10 @@ fn friction(
 ) {
     let target = *ground;
     // 摩擦力的域值为0.0 ~ 1.0 ,但也可以超过1.0
-    commands.entity(target).insert(Friction::new(100.));
+    commands.entity(target).insert(Friction::new(0.));
 
     for entity in query.iter() {
-        commands.entity(entity).insert(Friction::new(1000.));
+        commands.entity(entity).insert(Friction::new(0.));
     }
 }
 
@@ -167,10 +167,14 @@ fn setup(
             Transform::from_translation(Vec3::new(-half_x + (i + 1) as f32 * 80., 0., 0.));
         // angle 为弧度,而不是度数,为了精度,通常以 PI 为被除数进行计算
         transform.rotate_local_z(PI / 4.);
+
+        // 选球后六边形
+        let first = i > 5;
+
         commands
             .spawn((
                 RigidBody::Dynamic,
-                Mesh2d(if i < 5 {
+                Mesh2d(if first {
                     shape_ploygon_handle.clone()
                 } else {
                     shape_ball_handle.clone()
@@ -185,7 +189,7 @@ fn setup(
                 // convex_hull 根据顶点进行多边行绘制与bevy原生的绘制方式有区别的地方是返回 Option
                 // collider 以 children 的方式添加到 entity 中,可以很好的继承父级的相对形变,
                 // 对于异形的碰撞体,这是一个很好的选择
-                let collider = if i < 5 {
+                let collider = if first {
                     let Some(v) = Collider::convex_hull(&vertexes) else {
                         error!("Failed to create collider");
                         return;

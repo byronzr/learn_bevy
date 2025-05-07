@@ -132,8 +132,7 @@ fn setup(
                 parent.spawn((
                     collider,
                     Name(format!("shape-{}", i)),
-                    // 在此处再次添加 ActiveEvents 不会有任何额外影响,
-                    // ground 与 shape 二者之间,有一个添加了 ActiveEvents 就可以触发事件了.
+                    // 在此处再次添加 ActiveEvents 能够使球体之间的碰撞发生事件,
                     // ActiveEvents::COLLISION_EVENTS,
                     // ActiveEvents::CONTACT_FORCE_EVENTS,
 
@@ -168,7 +167,8 @@ fn setup(
                 Collider::cuboid(shape_rectangle.half_size.x, shape_rectangle.half_size.y);
             parent.spawn((
                 collider,
-                ActiveEvents::COLLISION_EVENTS,
+                //ActiveEvents::COLLISION_EVENTS,
+                ActiveEvents::CONTACT_FORCE_EVENTS,
                 Name("ground".to_string()),
             ));
         });

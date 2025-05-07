@@ -132,6 +132,7 @@ fn space_controller(
 }
 
 // serve velocity
+// Velocity 测试,让下面的物体得到一个速率,并生成一个相同的参照物(Dynamic),观察两者的差异
 fn set_velocity(
     mut commands: Commands,
     mut query: Query<(Entity, &RigidBody, &mut Velocity), With<MarkerVelocity>>,

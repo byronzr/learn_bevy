@@ -61,7 +61,7 @@ fn main() {
     // 脉冲力,是一个会被刚体吸收的值,60桢内这个值都会被吸收,
     // 所以,虽然脉冲的 value 的基数是 500,但每桢都喂了 500 的基数,
     // 很快会超过它
-    app.add_systems(Update, external_impluse);
+    app.add_systems(Update, external_impulse);
 
     // 添加阻尼
     // 阻尼同样会影响重力
@@ -111,7 +111,7 @@ fn damping(entities: Res<Entities>, mut commands: Commands, mut has_run: Local<b
 }
 
 /// 脉冲波
-fn external_impluse(entities: Res<Entities>, mut commands: Commands, mut has_run: Local<bool>) {
+fn external_impulse(entities: Res<Entities>, mut commands: Commands, mut has_run: Local<bool>) {
     // 只运行一次
     if *has_run {
         return;
