@@ -1,5 +1,5 @@
 /// ! ActiveEvents::COLLISION_EVENTS,碰撞事件(提高性能消耗)
-/// ! ActiveEvents::CONTACT_FORCE_EVENTS,接触力事件(性能消耗更大)
+/// ! ActiveEvents::CONTACT_FORCE_EVENTS,接触力事件(性能消耗更大,可过滤,信息量更多)
 use bevy::prelude::*;
 use bevy_rapier2d::{prelude::*, rapier::prelude::CollisionEventFlags};
 
@@ -133,7 +133,7 @@ fn setup(
                     collider,
                     Name(format!("shape-{}", i)),
                     // 在此处再次添加 ActiveEvents 能够使球体之间的碰撞发生事件,
-                    // ActiveEvents::COLLISION_EVENTS,
+                    ActiveEvents::COLLISION_EVENTS,
                     // ActiveEvents::CONTACT_FORCE_EVENTS,
 
                     // 当有足够的弹性时,ActiveEvents::COLLISION_EVENTS 会触发(Stoped)
@@ -167,8 +167,10 @@ fn setup(
                 Collider::cuboid(shape_rectangle.half_size.x, shape_rectangle.half_size.y);
             parent.spawn((
                 collider,
-                //ActiveEvents::COLLISION_EVENTS,
-                ActiveEvents::CONTACT_FORCE_EVENTS,
+                ActiveEvents::COLLISION_EVENTS,
+                // 是 COLLISION_EVENTS 加强版,能够配合 ContactForceEventThreshold,过滤掉小的接触力
+                // ActiveEvents::CONTACT_FORCE_EVENTS,
+                // ContactForceEventThreshold(5000.),
                 Name("ground".to_string()),
             ));
         });
