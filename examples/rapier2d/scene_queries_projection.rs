@@ -2,10 +2,8 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
-const START_Y: f32 = 720.0 / 2.0;
-
 #[derive(Component, Debug)]
-struct TempSprite;
+struct Index(usize);
 
 fn main() {
     let mut app = App::new();
@@ -20,8 +18,9 @@ fn main() {
     app.add_systems(
         Update,
         (
-            make_new_collider_inside,
-            make_new_collider_outside,
+            // make_new_collider_inside,
+            // make_new_collider_outside,
+            movement_ball,
             projection,
         )
             .chain(),
@@ -30,110 +29,66 @@ fn main() {
     app.run();
 }
 
+fn movement_ball(mut query: Query<(&mut Transform, &Index)>, time: Res<Time>) {
+    for (mut transform, index) in query.iter_mut() {
+        let x = if index.0 == 0 { -300. } else { 300. };
+        let y = time.elapsed_secs().sin() * 100.;
+
+        transform.translation = Vec3::new(x, y, 0.);
+    }
+}
+
 // 创建地板
-fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-) {
+fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
 
-    // make ground
-    make_ground(&mut commands, &mut meshes, &mut materials);
+    // Left - Ball_0
+    commands.spawn((
+        Collider::ball(50.),
+        Transform::from_xyz(-300., 0., 0.),
+        Index(0),
+    ));
+
+    // Right - Ball_1
+    commands.spawn((
+        Collider::ball(50.),
+        Transform::from_xyz(300., 0., 0.),
+        Index(1),
+    ));
 }
 
 fn projection(
-    mut commands: Commands,
     read_rapier: ReadRapierContext,
-    keyboard: Res<ButtonInput<KeyCode>>,
+    mut gizmos: Gizmos,
+    // idle 会无法读取鼠标位置
+    //mut event: EventReader<CursorMoved>,
+    windows: Single<&Window>,
+    camera: Single<(&Camera, &GlobalTransform)>,
 ) -> Result {
-    if !keyboard.just_pressed(KeyCode::Space) {
-        return Ok(());
-    }
+    let (camera, global_transform) = *camera;
 
-    let point = Vec2::new(1., 2.);
-    make_temp_sprite(&mut commands, point, Color::srgb_u8(128, 0, 0));
+    // 获得 App 的 window
+    let window = *windows;
+
+    // 获得鼠标的位置(不包括 title bar mac中),所以鼠标位置是基于 Canvas 的
+    let Some(cursor_position) = window.cursor_position() else {
+        warn_once!("cursor_position not found");
+        return Ok(());
+    };
+
+    let point = camera.viewport_to_world_2d(global_transform, cursor_position)?;
+
+    gizmos.cross_2d(point, 12., Color::srgb_u8(128, 0, 0));
+
     let solid = true;
     let filter = QueryFilter::default();
 
     let rapier_context = read_rapier.single()?;
     if let Some((entity, projection)) = rapier_context.project_point(point, solid, filter) {
         println!("entity:{:?}, projection: {:?}", entity, projection);
-        make_temp_sprite(&mut commands, projection.point, Color::srgb_u8(0, 128, 0));
+        gizmos.arrow_2d(point, projection.point, Color::srgb_u8(0, 128, 0));
     }
     Ok(())
-}
-
-// 创建一个包含源点的碰撞体
-fn make_new_collider_inside(mut commands: Commands, keyboard: Res<ButtonInput<KeyCode>>) {
-    if !keyboard.just_pressed(KeyCode::Digit1) {
-        return;
-    }
-
-    commands.spawn((
-        Sprite::from_color(Color::srgb(0.5, 0.4, 0.3), Vec2::splat(100.)),
-        Transform::from_translation(Vec3::new(0., 0., 0.)),
-        Collider::cuboid(50., 50.),
-    ));
-}
-
-// 创建一个临近的碰撞体
-fn make_new_collider_outside(mut commands: Commands, keyboard: Res<ButtonInput<KeyCode>>) {
-    if !keyboard.just_pressed(KeyCode::Digit2) {
-        return;
-    }
-
-    commands.spawn((
-        Sprite::from_color(Color::srgb(0.5, 0.4, 0.3), Vec2::splat(100.)),
-        Transform::from_translation(Vec3::new(-150., -150., 0.)),
-        Collider::cuboid(50., 50.),
-    ));
-}
-
-// 创建地板
-fn make_ground(
-    commands: &mut Commands,
-    meshes: &mut ResMut<Assets<Mesh>>,
-    materials: &mut ResMut<Assets<ColorMaterial>>,
-) {
-    // make a ground
-    let shape_rectangle = Rectangle::new(1280., 20.);
-    let mesh_handle = meshes.add(shape_rectangle);
-    let color_handle = materials.add(Color::srgb(0.5, 0.4, 0.3));
-    let mut transform = Transform::from_xyz(0., -START_Y + 100.0, 0.);
-    transform.rotate_local_z(-0.05);
-    let entity = commands
-        .spawn((
-            RigidBody::Fixed,
-            Mesh2d(mesh_handle),
-            MeshMaterial2d(color_handle),
-            transform,
-            // 注意,这里没有效果.因为 ActiveEvents Component 需要放在 Collider Bundle 中
-            // ActiveEvents::COLLISION_EVENTS,
-        ))
-        .with_children(|parent| {
-            let collider =
-                Collider::cuboid(shape_rectangle.half_size.x, shape_rectangle.half_size.y);
-            let entity = parent
-                .spawn((
-                    collider,
-                    //ActiveEvents::COLLISION_EVENTS,
-                    //Name("ground".to_string()),
-                ))
-                .id();
-            println!("ground collider entity: >> {:?} <<", entity);
-        })
-        .id();
-    println!("ground entity: >> {:?} <<", entity);
-}
-
-fn make_temp_sprite(commands: &mut Commands, pos: Vec2, color: Color) {
-    // 在发射源,绘制一个图形
-    commands.spawn((
-        Sprite::from_color(color, Vec2::splat(10.)),
-        Transform::from_translation(pos.extend(0.0)),
-        TempSprite,
-    ));
 }
 
 // 显示网格方便观察
