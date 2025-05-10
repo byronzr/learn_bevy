@@ -9,8 +9,20 @@ struct MajorStar;
 #[derive(Component)]
 struct MinorStar;
 
-#[derive(Resource, Default)]
-struct Running(bool);
+#[derive(Resource)]
+struct RunState {
+    pub running: bool,
+    pub vel: f32,
+}
+
+impl Default for RunState {
+    fn default() -> Self {
+        Self {
+            running: true,
+            vel: 100.,
+        }
+    }
+}
 
 fn main() {
     let mut app = App::new();
@@ -18,12 +30,12 @@ fn main() {
     app.add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.));
     app.add_plugins(RapierDebugRenderPlugin::default());
 
-    app.init_resource::<Running>();
+    app.init_resource::<RunState>();
 
     // setup
     app.add_systems(Startup, (setup, show_grid));
 
-    app.add_systems(FixedUpdate, (circum, space));
+    app.add_systems(FixedUpdate, (circum, controls));
 
     app.run();
 }
@@ -37,7 +49,7 @@ fn setup(
 
     let r_joint = RevoluteJointBuilder::new()
         .local_anchor1(Vec2::new(-50., 0.))
-        .local_anchor2(Vec2::new(150., 0.))
+        .local_anchor2(Vec2::new(200., 0.))
         // target_vel = 弧度值/秒 (正值为逆时针, 负值为顺时针)
         // 当扭力大于阻力时,关节完成一次转动后,后续可能进入一种平衡状态.
         // 所以, 可以认为 factor 是一个初始速度
@@ -50,7 +62,7 @@ fn setup(
         // target_pos 在 RevoluteJoint 与 PrismaticJoint 中是不同的
         // 弧度值 / 目标位置
         // stiffness 刚性值,提供类似扭力的作用(在PrismaticJoint中是弹簧的刚性)
-        .motor_position(30., 1000.0, 0.0);
+        .motor_position(30., 100.0, 0.0);
 
     // Major yellow
     let major = commands
@@ -93,7 +105,7 @@ fn setup(
         .id();
 
     // 过于复杂的 joint 可能会导致物理引擎计算混乱
-    // Minor teal
+    // Minor purple
     commands.spawn((
         RigidBody::Dynamic,
         Mesh2d(meshes.add(Circle::new(5.))),
@@ -107,24 +119,26 @@ fn setup(
 }
 
 // 环绕
-fn circum(
-    query: Single<&mut Transform, With<MajorStar>>,
-    time: Res<Time>,
-    running: ResMut<Running>,
-) {
-    if !running.0 {
+fn circum(query: Single<&mut Transform, With<MajorStar>>, time: Res<Time>, run: ResMut<RunState>) {
+    if !run.running {
         return;
     }
     let mut transform = query.into_inner();
-    let angle = time.elapsed_secs() / 100. * std::f32::consts::TAU;
+    let angle = time.elapsed_secs() / run.vel * std::f32::consts::TAU;
     let (x, y) = (RADIUS * angle.cos(), RADIUS * angle.sin());
 
     transform.translation = Vec3::new(x, y, 0.0);
 }
 
-fn space(mut running: ResMut<Running>, keyboard_input: Res<ButtonInput<KeyCode>>) {
+fn controls(mut run: ResMut<RunState>, keyboard_input: Res<ButtonInput<KeyCode>>) {
     if keyboard_input.just_pressed(KeyCode::Space) {
-        running.0 = !running.0;
+        run.running = !run.running;
+    }
+    if keyboard_input.just_pressed(KeyCode::ArrowUp) {
+        run.vel += 10.;
+    }
+    if keyboard_input.just_pressed(KeyCode::ArrowDown) {
+        run.vel -= 10.;
     }
 }
 
