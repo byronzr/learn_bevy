@@ -30,7 +30,7 @@ fn main() {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins);
     app.add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.));
-    //app.add_plugins(RapierDebugRenderPlugin::default());
+    app.add_plugins(RapierDebugRenderPlugin::default());
 
     app.init_resource::<RunState>();
 

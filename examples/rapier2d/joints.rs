@@ -103,7 +103,7 @@ fn setup(
     ));
 
     // * -- PrismaJoint -- *
-    // 消除 X 轴限制
+    // 消除 Y 轴限制
     let joint = PrismaticJointBuilder::new(Vec2::Y)
         .local_anchor1(Vec2 { x: 30., y: 0. })
         .local_anchor2(Vec2 { x: -30., y: 0. });
@@ -130,7 +130,6 @@ fn setup(
     let joint = RevoluteJointBuilder::new()
         .local_anchor1(Vec2 { x: 30., y: 0. })
         .local_anchor2(Vec2 { x: -30., y: 0. });
-    //.motor_position(target_pos, 0., 0.);
 
     // local_anchor2 = target
     // Root
