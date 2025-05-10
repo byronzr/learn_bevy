@@ -25,7 +25,7 @@ fn main() {
 
     app.init_resource::<BindType>();
 
-    app.add_systems(Startup, (setup, show_grid));
+    app.add_systems(Startup, (usage, setup, show_grid).chain());
 
     app.add_systems(Update, (switch, movement, intersection_test).chain());
 
@@ -130,6 +130,7 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    mut text: Single<&mut Text>,
 ) {
     commands.spawn(Camera2d);
 
@@ -138,6 +139,9 @@ fn setup(
         .spawn((Collider::cuboid(10., 10.), BindObjective))
         .id();
     println!("Bind Objective: {:?}", entity);
+
+    text.0
+        .push_str("Press Space to switch between Point and Shape");
 
     // make ground
     make_ground(&mut commands, &mut meshes, &mut materials);
@@ -155,50 +159,29 @@ fn make_ground(
     let color_handle = materials.add(Color::srgb(0.5, 0.4, 0.3));
     let mut transform = Transform::from_xyz(0., -START_Y + 100.0, 0.);
     transform.rotate_local_z(-0.05);
-    let entity = commands
-        .spawn((
-            RigidBody::Fixed,
-            Mesh2d(mesh_handle),
-            MeshMaterial2d(color_handle),
-            transform,
-            // 注意,这里没有效果.因为 ActiveEvents Component 需要放在 Collider Bundle 中
-            // ActiveEvents::COLLISION_EVENTS,
-        ))
-        .with_children(|parent| {
-            let collider =
-                Collider::cuboid(shape_rectangle.half_size.x, shape_rectangle.half_size.y);
-            let entity = parent
-                .spawn((
-                    collider,
-                    //ActiveEvents::COLLISION_EVENTS,
-                    //Name("ground".to_string()),
-                ))
-                .id();
-            println!("ground collider entity: >> {:?} <<", entity);
-        })
-        .id();
-    println!("ground entity: >> {:?} <<", entity);
+    commands.spawn((
+        RigidBody::Fixed,
+        Mesh2d(mesh_handle),
+        MeshMaterial2d(color_handle),
+        transform,
+        children![(Collider::cuboid(
+            shape_rectangle.half_size.x,
+            shape_rectangle.half_size.y
+        ),)],
+    ));
 }
 
-// // 显示网格方便观察
-// fn show_grid(mut gizmos: Gizmos) {
-//     // 网格 (1280x720)
-//     gizmos
-//         .grid_2d(
-//             Isometry2d::IDENTITY, // 投影模式
-//             UVec2::new(16, 9),    // 单元格数量
-//             Vec2::new(80., 80.),  // 单元格大小
-//             // Dark gray
-//             LinearRgba::gray(0.05), // 网格颜色
-//         )
-//         .outer_edges();
-
-//     gizmos.rect_2d(
-//         Isometry2d::IDENTITY,
-//         Vec2::splat(20.),
-//         Color::srgba_u8(255, 0, 0, 155),
-//     );
-// }
+fn usage(mut commands: Commands) {
+    commands.spawn((
+        Text::default(),
+        Node {
+            position_type: PositionType::Absolute,
+            bottom: Val::Px(12.0),
+            left: Val::Px(12.0),
+            ..default()
+        },
+    ));
+}
 
 // 显示网格方便观察
 fn show_grid(mut commands: Commands, mut gizom_assets: ResMut<Assets<GizmoAsset>>) {
