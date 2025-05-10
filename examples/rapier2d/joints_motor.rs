@@ -13,6 +13,7 @@ struct MinorStar;
 struct RunState {
     pub running: bool,
     pub vel: f32,
+    pub blue_radius: f32,
 }
 
 impl Default for RunState {
@@ -20,6 +21,7 @@ impl Default for RunState {
         Self {
             running: true,
             vel: 100.,
+            blue_radius: 200.,
         }
     }
 }
@@ -28,7 +30,7 @@ fn main() {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins);
     app.add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.));
-    app.add_plugins(RapierDebugRenderPlugin::default());
+    //app.add_plugins(RapierDebugRenderPlugin::default());
 
     app.init_resource::<RunState>();
 
@@ -44,12 +46,13 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    run: Res<RunState>,
 ) {
     commands.spawn(Camera2d);
 
     let r_joint = RevoluteJointBuilder::new()
         .local_anchor1(Vec2::new(-50., 0.))
-        .local_anchor2(Vec2::new(200., 0.))
+        .local_anchor2(Vec2::new(run.blue_radius, 0.))
         // target_vel = 弧度值/秒 (正值为逆时针, 负值为顺时针)
         // 当扭力大于阻力时,关节完成一次转动后,后续可能进入一种平衡状态.
         // 所以, 可以认为 factor 是一个初始速度
@@ -62,7 +65,13 @@ fn setup(
         // target_pos 在 RevoluteJoint 与 PrismaticJoint 中是不同的
         // 弧度值 / 目标位置
         // stiffness 刚性值,提供类似扭力的作用(在PrismaticJoint中是弹簧的刚性)
-        .motor_position(30., 100.0, 0.0);
+        .motor_position(30., 500.0, 0.0);
+
+    let p2_joint = PrismaticJointBuilder::new(Vec2::Y)
+        .local_anchor1(Vec2::new(-50., 0.))
+        .local_anchor2(Vec2::new(20., 0.))
+        .limits([-100., 100.])
+        .motor_position(30., 1000.0, 0.0);
 
     // Major yellow
     let major = commands
@@ -96,7 +105,6 @@ fn setup(
             RigidBody::Dynamic,
             Mesh2d(meshes.add(Circle::new(10.))),
             MeshMaterial2d(materials.add(Color::srgb_u8(0, 128, 128))),
-            MinorStar,
             ImpulseJoint::new(major, p_joint),
             // 设置了 Collider, joint 才可以驱动它,
             // 如果不是一个 colider 那么 rapier 不知道力学公式如何影响它
@@ -110,8 +118,8 @@ fn setup(
         RigidBody::Dynamic,
         Mesh2d(meshes.add(Circle::new(5.))),
         MeshMaterial2d(materials.add(Color::srgb_u8(128, 0, 128))),
-        MinorStar,
-        ImpulseJoint::new(minor_teal, p_joint),
+        ImpulseJoint::new(minor_teal, p2_joint),
+        // MultibodyJoint::new(minor_teal, p2_joint.into()),
         // 设置了 Collider, joint 才可以驱动它,
         // 如果不是一个 colider 那么 rapier 不知道力学公式如何影响它
         Collider::ball(5.),
@@ -119,7 +127,12 @@ fn setup(
 }
 
 // 环绕
-fn circum(query: Single<&mut Transform, With<MajorStar>>, time: Res<Time>, run: ResMut<RunState>) {
+fn circum(
+    query: Single<&mut Transform, With<MajorStar>>,
+    time: Res<Time>,
+    run: ResMut<RunState>,
+    mut gizmos: Gizmos,
+) {
     if !run.running {
         return;
     }
@@ -128,9 +141,19 @@ fn circum(query: Single<&mut Transform, With<MajorStar>>, time: Res<Time>, run: 
     let (x, y) = (RADIUS * angle.cos(), RADIUS * angle.sin());
 
     transform.translation = Vec3::new(x, y, 0.0);
+
+    gizmos.circle_2d(
+        Vec2::new(x - 50., y),
+        run.blue_radius,
+        Color::srgba_u8(128, 128, 0, 128),
+    );
 }
 
-fn controls(mut run: ResMut<RunState>, keyboard_input: Res<ButtonInput<KeyCode>>) {
+fn controls(
+    mut run: ResMut<RunState>,
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    query: Single<&mut ImpulseJoint, With<MinorStar>>,
+) {
     if keyboard_input.just_pressed(KeyCode::Space) {
         run.running = !run.running;
     }
@@ -139,6 +162,17 @@ fn controls(mut run: ResMut<RunState>, keyboard_input: Res<ButtonInput<KeyCode>>
     }
     if keyboard_input.just_pressed(KeyCode::ArrowDown) {
         run.vel -= 10.;
+    }
+    let mut impulse = query.into_inner();
+    if keyboard_input.just_pressed(KeyCode::ArrowLeft) {
+        let joint = impulse.data.as_mut();
+        run.blue_radius -= 10.;
+        joint.set_local_anchor2(Vec2::new(run.blue_radius, joint.local_anchor1().y));
+    }
+    if keyboard_input.just_pressed(KeyCode::ArrowRight) {
+        let joint = impulse.data.as_mut();
+        run.blue_radius += 10.;
+        joint.set_local_anchor2(Vec2::new(run.blue_radius, joint.local_anchor1().y));
     }
 }
 
