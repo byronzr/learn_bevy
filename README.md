@@ -29,6 +29,8 @@
 * **[rapier_scene_queries_projection](https://github.com/byronzr/learn_bevy/tree/main/examples/rapier2d/scene_queries_projection.rs):** 关于 场景查询 (point projection) 用例
 * **[rapier_scene_queries_intersections](https://github.com/byronzr/learn_bevy/tree/main/examples/rapier2d/scene_queries_intersections.rs):** 关于 场景查询 (intersection) 用例
 * **[rapier_joints](https://github.com/byronzr/learn_bevy/tree/main/examples/rapier2d/joints.rs):** 关于 (joints) 用例
+* **[rapier_joints_motor](https://github.com/byronzr/learn_bevy/tree/main/examples/rapier2d/joints_motor.rs):** 关于 (joint_motor) 关节(马达)电机用例
+
 	
 	
 

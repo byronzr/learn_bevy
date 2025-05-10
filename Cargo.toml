@@ -80,6 +80,10 @@ name = "rapier_joints"
 path = "examples/rapier2d/joints.rs"
 
 [[example]]
+name = "rapier_joints_motor"
+path = "examples/rapier2d/joints_motor.rs"
+
+[[example]]
 name = "rapier_scene_queries_cast"
 path = "examples/rapier2d/scene_queries_cast.rs"
 
