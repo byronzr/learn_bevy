@@ -1,14 +1,14 @@
 ///! 键(1),观察 cast_ray
 ///! 键(2),观察 cast_shape
 ///! 键(空格),清除临时图形
-use bevy::prelude::*;
+use bevy::{gizmos, prelude::*};
 use bevy_rapier2d::prelude::*;
 
 const START_X: f32 = 1280.0 / 2.0;
 const START_Y: f32 = 720.0 / 2.0;
 
 #[derive(Component, Debug)]
-struct TempSprite;
+struct TempGizmos;
 
 fn main() {
     let mut app = App::new();
@@ -20,11 +20,23 @@ fn main() {
         rapier_debug,
     ));
 
-    app.add_systems(Startup, (setup, show_grid));
+    app.add_systems(Startup, (usage, setup, show_grid).chain());
 
     app.add_systems(Update, (cast_ray, cast_shape, clear_tmp_sprite));
 
     app.run();
+}
+
+fn usage(mut commands: Commands) {
+    commands.spawn((
+        Text::default(),
+        Node {
+            position_type: PositionType::Absolute,
+            bottom: Val::Px(12.0),
+            left: Val::Px(12.0),
+            ..default()
+        },
+    ));
 }
 
 // 创建地板
@@ -32,8 +44,15 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    mut text: Single<&mut Text>,
 ) {
     commands.spawn(Camera2d);
+
+    text.0.push_str(
+        "Press 1 to cast a ray\n\
+         Press 2 to cast a shape\n\
+         Press Space to clear temp sprites",
+    );
 
     // make ground
     make_ground(&mut commands, &mut meshes, &mut materials);
@@ -45,24 +64,30 @@ fn cast_ray(
     mut commands: Commands,
     read_rapier: ReadRapierContext,
     keyboard: Res<ButtonInput<KeyCode>>,
+    mut gizmos_asset: ResMut<Assets<GizmoAsset>>,
 ) -> Result {
+    // 按下数字键 1, 进行射线投射
     if !keyboard.just_pressed(KeyCode::Digit1) {
         return Ok(());
     }
+
+    let mut gizmos = GizmoAsset::default();
+
     // 第一个测试
     let n = 1.0;
 
     // (红色)发射源点
     let start_x = -START_X + (1280.0 / 5.0) * n;
     let ray_pos = Vec2::new(start_x, 0.);
+
     // 在发射源,绘制一个图形
-    make_temp_sprite(&mut commands, ray_pos, Color::srgb_u8(128, 0, 0));
+    gizmos.cross_2d(ray_pos, 12., Color::srgb_u8(128, 0, 0));
 
     // (蓝色)在向量目标,绘制一个图形
     // 注意: 看到了,并非是基于 ray_pos 的原点进行向量发射,而是基于 (0,0) 确定向量
     // 注意: 但是 Y 轴,依然是一个很重要的数据,它确定了(单位)向量的长度
     let ray_dir = Vec2::new(0., -100.0);
-    make_temp_sprite(&mut commands, ray_dir, Color::srgb_u8(0, 0, 128));
+    gizmos.arrow_2d(Vec2::ZERO, ray_dir, Color::srgb_u8(0, 0, 128));
 
     // 撞击时长 ( Time of Impact ),这里可以理解为发射允许的最大时长
     let max_toi = 4.0;
@@ -84,7 +109,7 @@ fn cast_ray(
             entity, hit_point, toi
         );
         // (绿色)撞击点
-        make_temp_sprite(&mut commands, hit_point, Color::srgb_u8(0, 128, 0));
+        gizmos.arrow_2d(ray_pos, hit_point, Color::srgb_u8(0, 128, 0));
     }
 
     // 获得法线
@@ -98,6 +123,12 @@ fn cast_ray(
         println!(
             "Entity {:?} hit at point {} with normal {}",
             entity, hit_point, hit_normal
+        );
+        // 绘制法线
+        gizmos.arrow_2d(
+            hit_point,
+            hit_normal,
+            Color::srgb_u8(0, 128, 128).with_alpha(0.2),
         );
     }
 
@@ -119,6 +150,17 @@ fn cast_ray(
             true // Return `false` instead if we want to stop searching for other hits.
         },
     );
+
+    // 绘制示意图
+    commands.spawn((
+        Gizmo {
+            handle: gizmos_asset.add(gizmos),
+            ..default()
+        },
+        TempGizmos,
+        Transform::from_xyz(0., 0., -99.),
+    ));
+
     Ok(())
 }
 
@@ -127,6 +169,7 @@ fn cast_shape(
     mut commands: Commands,
     read_rapier: ReadRapierContext,
     keyboard: Res<ButtonInput<KeyCode>>,
+    mut gizmos_asset: ResMut<Assets<GizmoAsset>>,
 ) -> Result {
     if !keyboard.just_pressed(KeyCode::Digit2) {
         return Ok(());
@@ -134,65 +177,89 @@ fn cast_shape(
 
     // 第二个测试
     let n = 3.0;
+    let mut gizmos = GizmoAsset::default();
+
+    // 旋转角度
+    let shape_rot = std::f32::consts::FRAC_PI_8; // rotation
 
     // 发射源点
     let start_x = -START_X + (1280.0 / 5.0) * n;
     let shape = Collider::cuboid(50.0, 50.0);
     let mut shape_pos = Vec2::new(start_x, 0.);
-    make_temp_sprite(&mut commands, shape_pos, Color::srgb_u8(128, 0, 0));
+    //make_temp_sprite(&mut commands, shape_pos, Color::srgb_u8(128, 0, 0));
+    let mut isometry = Isometry2d::from_rotation(shape_rot.into());
+    isometry.translation = shape_pos.into();
+    gizmos.rect_2d(isometry, Vec2::splat(100.), Color::srgb_u8(128, 0, 0));
 
-    let shape_rot = 0.; // rotation
     //let shape_vel = Vec2::new(0.1, 0.4);
     let shape_vel = Vec2::new(0., -100.);
-    make_temp_sprite(&mut commands, shape_vel, Color::srgb_u8(0, 0, 128));
+    //make_temp_sprite(&mut commands, shape_vel, Color::srgb_u8(0, 0, 128));
+    gizmos.arrow_2d(Vec2::ZERO, shape_vel, Color::srgb_u8(0, 0, 128));
 
-    let mut filter = QueryFilter::default();
+    let filter = QueryFilter::default();
     let options = ShapeCastOptions {
-        // ! toi
-        max_time_of_impact: 1.0,
-        // ! 目标距离(但我搞不明白)
-        target_distance: 500.0,
-        // ! 所谓的穿透,还需要手动调整,不知道意义何在(如果存在暗箱运算,又只能返回一个ShapCastHit)
+        // toi
+        max_time_of_impact: 10.0,
+        // 目标距离(让发射源在目标点停下)
+        target_distance: 50.0,
+        // ! 好像还没用
         stop_at_penetration: false,
-        // ! 提供法线等信息
+        // 提供法线等信息
         compute_impact_geometry_on_penetration: true,
     };
 
     let rapier_context = read_rapier.single()?;
-    // 循环两次,测试穿透
-    for _ in 0..20 {
-        if let Some((entity, hit)) =
-            rapier_context.cast_shape(shape_pos, shape_rot, shape_vel, &shape, options, filter)
-        {
-            // The first collider hit has the entity `entity`. The `hit` is a
-            // structure containing details about the hit configuration.
-            println!(
-                "Hit the entity {:?} with the configuration: {:?}",
-                entity, hit
-            );
 
-            // hit 的内部属性
-            // hit.time_of_impact 撞击时间
-            // hit.witness1 撞击点(目标对象)
-            // hit.witness2 撞击点(发射对象) 可以看到 约等于 (-5,-5),在第三象限的角被撞击
-            // hit.normal1 法线(目标对象)
-            // hit.normal2 法线(发射对象)
-            make_temp_sprite(
-                &mut commands,
-                hit.details.unwrap().witness1,
-                Color::srgb_u8(0, 128, 0),
-            );
+    if let Some((entity, hit)) =
+        rapier_context.cast_shape(shape_pos, shape_rot, shape_vel, &shape, options, filter)
+    {
+        // The first collider hit has the entity `entity`. The `hit` is a
+        // structure containing details about the hit configuration.
+        println!(
+            "Hit the entity {:?} with the configuration: {:?}",
+            entity, hit
+        );
 
-            shape_pos += shape_vel * hit.time_of_impact;
-            // pub exclude_collider: Option<Entity>,
-            // 这里可以看出 exclude_collider 不是一个集合,所以排除的对象只能是一个
-            // 在这里,shape的体积过大,所以一直在交替碰撞
-            filter = filter.exclude_collider(entity);
-            make_temp_sprite(&mut commands, shape_pos, Color::srgb_u8(0, 128, 128));
-        } else {
-            break;
-        }
+        // hit 的内部属性
+        // hit.time_of_impact 撞击时间
+        // hit.witness1 撞击点(目标对象)
+        // hit.witness2 撞击点(发射对象) 可以看到 约等于 (-5,-5),在第三象限的角被撞击
+        // hit.normal1 法线(目标对象)
+        // hit.normal2 法线(发射对象)
+        gizmos.cross_2d(
+            hit.details.unwrap().witness1,
+            12.,
+            Color::srgb_u8(0, 128, 0),
+        );
+
+        let origin_pos = shape_pos;
+        shape_pos += shape_vel * hit.time_of_impact;
+        gizmos.arrow_2d(origin_pos, shape_pos, Color::srgb_u8(0, 128, 0));
+
+        // distance
+        let direct_pos = shape_vel.normalize() * options.target_distance + shape_pos;
+
+        gizmos.arrow_2d(shape_pos, direct_pos, Color::srgb_u8(0, 128, 128));
+
+        let mut isometry = Isometry2d::from_rotation(shape_rot.into());
+        isometry.translation = direct_pos.into();
+        gizmos.rect_2d(
+            isometry,
+            Vec2::splat(100.),
+            Color::srgb_u8(128, 128, 0).with_alpha(0.2),
+        );
     }
+
+    // 绘制示意图
+    commands.spawn((
+        Gizmo {
+            handle: gizmos_asset.add(gizmos),
+            ..default()
+        },
+        TempGizmos,
+        Transform::from_xyz(0., 0., -99.),
+    ));
+
     Ok(())
 }
 
@@ -200,7 +267,7 @@ fn cast_shape(
 fn clear_tmp_sprite(
     mut commands: Commands,
     keyboard: Res<ButtonInput<KeyCode>>,
-    query: Query<Entity, With<TempSprite>>,
+    query: Query<Entity, With<TempGizmos>>,
 ) {
     if !keyboard.just_pressed(KeyCode::Space) {
         return;
@@ -222,43 +289,18 @@ fn make_ground(
     let color_handle = materials.add(Color::srgb(0.5, 0.4, 0.3));
     let mut transform = Transform::from_xyz(0., -START_Y + 100.0, 0.);
     transform.rotate_local_z(-0.05);
-    let entity = commands
-        .spawn((
-            RigidBody::Fixed,
-            Mesh2d(mesh_handle),
-            MeshMaterial2d(color_handle),
-            transform,
-        ))
-        .with_children(|parent| {
-            let transform1 = Transform::from_translation(Vec3::new(0., 10., 0.));
-            let transform2 = Transform::from_translation(Vec3::new(0., -10., 0.));
-
-            // 用于测试穿透增加两层(1)
-            let collider = Collider::cuboid(
-                shape_rectangle.half_size.x,
-                shape_rectangle.half_size.y / 3.,
-            );
-            let entity = parent.spawn((collider, transform1)).id();
-            println!("(1) ground collider entity: >> {:?} <<", entity);
-
-            // 用于测试穿透增加两层(2)
-            let collider = Collider::cuboid(
-                shape_rectangle.half_size.x,
-                shape_rectangle.half_size.y / 3.,
-            );
-            let entity = parent.spawn((collider, transform2)).id();
-            println!("(2) ground collider entity: >> {:?} <<", entity);
-        })
-        .id();
-    println!("ground entity: >> {:?} <<", entity);
-}
-
-fn make_temp_sprite(commands: &mut Commands, pos: Vec2, color: Color) {
-    // 在发射源,绘制一个图形
     commands.spawn((
-        Sprite::from_color(color, Vec2::splat(10.)),
-        Transform::from_translation(pos.extend(0.0)),
-        TempSprite,
+        RigidBody::Fixed,
+        Mesh2d(mesh_handle),
+        MeshMaterial2d(color_handle),
+        transform,
+        children![(
+            Collider::cuboid(
+                shape_rectangle.half_size.x,
+                shape_rectangle.half_size.y / 3.,
+            ),
+            Transform::from_translation(Vec3::new(0., 10., 0.))
+        )],
     ));
 }
 
