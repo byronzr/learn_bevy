@@ -189,11 +189,10 @@ fn show_grid(mut commands: Commands, mut gizom_assets: ResMut<Assets<GizmoAsset>
     // 网格 (1280x720)
     gizmos
         .grid_2d(
-            Isometry2d::IDENTITY, // 投影模式
-            UVec2::new(16, 9),    // 单元格数量
-            Vec2::new(80., 80.),  // 单元格大小
-            // Dark gray
-            LinearRgba::gray(0.05), // 网格颜色
+            Isometry2d::IDENTITY,                   // 投影模式
+            UVec2::new(64, 36),                     // 单元格数量
+            Vec2::new(20., 20.),                    // 单元格大小
+            LinearRgba::gray(0.05).with_alpha(0.2), // 网格颜色
         )
         .outer_edges();
     commands.spawn((
