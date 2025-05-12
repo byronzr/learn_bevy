@@ -1,4 +1,5 @@
 use bevy::{platform::collections::HashSet, prelude::*};
+use bevy_ecs::system::SystemParam;
 use bevy_rapier2d::prelude::*;
 
 #[derive(Resource, Default)]
@@ -23,20 +24,73 @@ struct State {
 #[derive(Component)]
 struct ColliderIndex(usize);
 
+#[derive(SystemSet, Hash, Eq, PartialEq, Debug, Clone)]
+enum MySet {
+    Running,
+    Control,
+}
+
 fn main() {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins);
-    app.add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.));
+    app.add_plugins(RapierPhysicsPlugin::<AutoFixed>::pixels_per_meter(100.));
     app.add_plugins(RapierDebugRenderPlugin::default());
     let state = State {
         concern_index: 100,
         ..default()
     };
     app.insert_resource(state);
+    app.configure_sets(Update, (MySet::Running, MySet::Control));
 
     app.add_systems(Startup, (setup, ui, show_grid).chain());
-    app.add_systems(Update, (create_entities, controls, concern_guard));
+    app.add_systems(
+        Update,
+        (
+            (create_entities, concern_guard).in_set(MySet::Running),
+            controls.in_set(MySet::Control),
+            //controls.in_set(RenderSet::Cleanup),
+            ApplyDeferred.before(MySet::Control).after(MySet::Running),
+        ),
+    );
     app.run();
+}
+
+#[derive(SystemParam)]
+struct AutoFixed<'w, 's> {
+    entitis: Query<'w, 's, &'static ColliderIndex>,
+    state: Res<'w, State>,
+}
+
+impl BevyPhysicsHooks for AutoFixed<'_, '_> {
+    // ActiveHooks::FILTER_CONTACT_PAIRS,
+    // 只有 collider CONTACT 就一直会触发
+    fn filter_contact_pair(&self, _context: PairFilterContextView) -> Option<SolverFlags> {
+        // return None;
+        Some(SolverFlags::COMPUTE_IMPULSES)
+    }
+    // ActiveHooks::FILTER_INTERSECTION_PAIR
+    fn filter_intersection_pair(&self, _context: PairFilterContextView) -> bool {
+        false
+    }
+    //ActiveHooks::MODIFY_SOLVER_CONTACTS,
+    fn modify_solver_contacts(&self, context: ContactModificationContextView) {
+        let Ok(c1i) = self.entitis.get(context.collider1()) else {
+            println!("Collider1 not found (c1i)");
+            return;
+        };
+        let Ok(c2i) = self.entitis.get(context.collider2()) else {
+            println!("Collider2 not found (c2i)");
+            return;
+        };
+        for solver_contact in &mut *context.raw.solver_contacts {
+            if c1i.0 > self.state.concern_index + 100 && c2i.0 > self.state.concern_index + 100 {
+                solver_contact.friction = 1.;
+                solver_contact.restitution = 1.;
+                //solver_contact.tangent_velocity = Vec2::ZERO;
+                println!("success");
+            }
+        }
+    }
 }
 
 fn ui(mut commands: Commands) {
@@ -55,7 +109,6 @@ fn concern_guard(
     mut commands: Commands,
     mut state: ResMut<State>,
     read_rapier: ReadRapierContext,
-    time: Res<Time>,
 ) -> Result {
     let Some(entity) = state.concern_entity else {
         return Ok(());
@@ -63,14 +116,24 @@ fn concern_guard(
     let rapier_context = read_rapier.single()?;
     // 收集所有将会(已经)与 entity 发生碰撞的成对 collider
     let iter = rapier_context.contact_pairs_with(entity);
-    let mut contact_count = 0;
 
     // 保存上次作用的 entity 准备进行交差恢复
     let pre_revert_collider = state.revert_collider.clone();
     state.revert_collider.clear();
 
+    // 关心的 collider
+    let Some(concern) = state.concern_entity else {
+        println!("Concern entity not found");
+        return Ok(());
+    };
+
+    // 所有已发生接触的设为红色
+    let Some(contact) = state.ball_material_contact.clone() else {
+        println!("Contact material not found");
+        return Ok(());
+    };
+
     for contact_pair in iter {
-        contact_count += 1;
         let Some(c1) = contact_pair.collider1() else {
             println!("Collider1 not found");
             continue;
@@ -81,35 +144,25 @@ fn concern_guard(
         };
 
         // 保存到恢复集合
-        if c1 != entity {
-            state.revert_collider.insert(c1);
-        }
-        if c2 != entity {
-            state.revert_collider.insert(c2);
-        }
+        // 两个 collider 其中一个是关心的,另一个是接触的
+        let other_collider = if c1 != concern { c1 } else { c2 };
+
+        // 保存至恢复集合
+        state.revert_collider.insert(other_collider);
 
         // 是否已经发生发生接触(contact)
         // iterator 中同样存在还未发生 contact 的 collider
         if contact_pair.has_any_active_contact() {
-            // 所有已发生接触的设为红色
-            let contact = state.ball_material_contact.clone().unwrap();
-            let Some(concern) = state.concern_entity else {
-                println!("Concern entity not found");
-                return Ok(());
-            };
-            if c1 != concern {
-                commands.entity(c1).insert(MeshMaterial2d(contact.clone()));
-            }
-            if c2 != concern {
-                commands.entity(c2).insert(MeshMaterial2d(contact.clone()));
-            }
+            commands
+                .entity(other_collider)
+                .insert(MeshMaterial2d(contact.clone()));
         }
     }
-    println!(
-        "has contact ({}) {:?}",
-        contact_count,
-        time.elapsed_secs_wrapped(),
-    );
+    // println!(
+    //     "has contact ({}) {:?}",
+    //     contact_count,
+    //     time.elapsed_secs_wrapped(),
+    // );
 
     // 开始交差恢复
     // 上次记录的 entity 如果不在本次接触中,则恢复颜色
@@ -152,13 +205,22 @@ fn controls(
     // manual generation
     if input.just_pressed(KeyCode::KeyG) {
         state.generation = !state.generation;
-        println!("Generation: {}", state.generation);
     }
 
     // manual render debug
     if input.just_pressed(KeyCode::KeyD) {
         render_context.enabled = !render_context.enabled;
-        println!("RenderDebugSwitch: {}", render_context.enabled);
+    }
+
+    // manual despawn all
+    if input.just_pressed(KeyCode::KeyC) {
+        for (entity, _) in query {
+            commands.entity(entity).try_despawn();
+        }
+        state.count = 0;
+        state.concern_entity = None;
+        state.revert_collider.clear();
+        println!("DespawnAll");
     }
 }
 
@@ -170,7 +232,7 @@ fn create_entities(
     mut text: Single<&mut Text>,
 ) -> Result {
     text.0 = format!(
-        "RenderDebugSwitch: D\nRigidBodyFixed: Space\nGeneration: G\nEntitiesCount: {}\n",
+        "DespawnAll: C\nRenderDebugSwitch: D\nRigidBodyFixed: Space\nGeneration: G\nEntitiesCount: {}\n",
         state.count
     );
 
@@ -198,6 +260,9 @@ fn create_entities(
             Collider::ball(5.),
             Transform::from_xyz(x, 300., 0.),
             ColliderIndex(state.count),
+            Restitution::new(0.5),
+            // 如果不启用,很有可能穿过杯子
+            Ccd::enabled(),
             // (性能优化) 阻尼可加快碰撞体进入休眠状态
             // Damping {
             //     linear_damping: 10.,
@@ -211,6 +276,13 @@ fn create_entities(
                 angular_threshold: 1.,
                 sleeping: false,
             },
+            // 启用后,才可以调用对应的 Hook (filter_contact_pair)
+            //ActiveHooks::FILTER_CONTACT_PAIRS, // |
+            // 启用后,才可以调用对应的 Hook (filter_contact_pair)
+            // ActiveHooks::FILTER_INTERSECTION_PAIR
+            // |
+            // 启用后,才可以调用对应的 Hook (modify_solver_contacts)
+            ActiveHooks::MODIFY_SOLVER_CONTACTS,
         ))
         .id();
     // 捕获关心的实体
