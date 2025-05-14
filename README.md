@@ -6,9 +6,9 @@
 请查看官方用例 [bevy](https://bevyengine.org/),中文注释的代码 [高级伴读](https://github.com/byronzr/learn_bevy/tree/main/examples),(从 0.15 开始的注释,如果没有出现 panic 将不会主动优化代码,仅作来理解使用)
 
 # 实践型案例
-* **[camera_renderlayer](https://github.com/byronzr/learn_bevy/tree/main/examples/byronzr/camera_renderlayer.rs):** 关于 camera 中的 RenderLayers / TaregetCamera 的相关实践
+* **[camera_renderlayer](https://github.com/byronzr/learn_bevy/tree/main/examples/byronzr/camera_renderlayer/main.rs):** 关于 camera 中的 RenderLayers / TaregetCamera 的相关实践
     * [0.16] 变更了部分函数名称
-* **[inventory](https://github.com/byronzr/learn_bevy/tree/main/examples/byronzr/inventory.rs):** 利用 `Trigger<Pointer<T>>` 实现物品栏堆叠
+* **[inventory](https://github.com/byronzr/learn_bevy/tree/main/examples/byronzr/inventory/main.rs):** 利用 `Trigger<Pointer<T>>` 实现物品栏堆叠
     * [0.16] 支持了透明区域无法选择的直觉操作
 * **[hexagon_tile](https://github.com/byronzr/learn_bevy/tree/main/examples/byronzr/hexagon_tile):** 六边形走地图与迷雾(三种区域测试方式)
     * 以纯数学函数实现

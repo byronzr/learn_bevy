@@ -48,7 +48,6 @@ fn main() {
         (
             (create_entities, concern_guard).in_set(MySet::Running),
             controls.in_set(MySet::Control),
-            //controls.in_set(RenderSet::Cleanup),
             ApplyDeferred.before(MySet::Control).after(MySet::Running),
         ),
     );
@@ -65,8 +64,8 @@ impl BevyPhysicsHooks for AutoFixed<'_, '_> {
     // ActiveHooks::FILTER_CONTACT_PAIRS,
     // 只有 collider CONTACT 就一直会触发
     fn filter_contact_pair(&self, _context: PairFilterContextView) -> Option<SolverFlags> {
-        // return None;
-        Some(SolverFlags::COMPUTE_IMPULSES)
+        return None;
+        //Some(SolverFlags::COMPUTE_IMPULSES)
     }
     // ActiveHooks::FILTER_INTERSECTION_PAIR
     fn filter_intersection_pair(&self, _context: PairFilterContextView) -> bool {
@@ -105,6 +104,7 @@ fn ui(mut commands: Commands) {
     ));
 }
 
+// 非 EventReader 方式处理 contact 事件
 fn concern_guard(
     mut commands: Commands,
     mut state: ResMut<State>,
@@ -151,18 +151,12 @@ fn concern_guard(
         state.revert_collider.insert(other_collider);
 
         // 是否已经发生发生接触(contact)
-        // iterator 中同样存在还未发生 contact 的 collider
         if contact_pair.has_any_active_contact() {
             commands
                 .entity(other_collider)
                 .insert(MeshMaterial2d(contact.clone()));
         }
     }
-    // println!(
-    //     "has contact ({}) {:?}",
-    //     contact_count,
-    //     time.elapsed_secs_wrapped(),
-    // );
 
     // 开始交差恢复
     // 上次记录的 entity 如果不在本次接触中,则恢复颜色
@@ -175,7 +169,7 @@ fn concern_guard(
             .entity(*entity)
             .insert(MeshMaterial2d(normal.clone()));
     }
-    //println!("Contact pairs: {:?}", iter.count());
+
     Ok(())
 }
 
@@ -276,13 +270,10 @@ fn create_entities(
                 angular_threshold: 1.,
                 sleeping: false,
             },
-            // 启用后,才可以调用对应的 Hook (filter_contact_pair)
-            //ActiveHooks::FILTER_CONTACT_PAIRS, // |
-            // 启用后,才可以调用对应的 Hook (filter_contact_pair)
-            // ActiveHooks::FILTER_INTERSECTION_PAIR
-            // |
-            // 启用后,才可以调用对应的 Hook (modify_solver_contacts)
-            ActiveHooks::MODIFY_SOLVER_CONTACTS,
+            // (filter_contact_pair)
+            // ActiveHooks::FILTER_CONTACT_PAIRS |
+            // ActiveHooks::FILTER_INTERSECTION_PAIR / (filter_contact_pair)
+            ActiveHooks::MODIFY_SOLVER_CONTACTS, // (modify_solver_contacts)
         ))
         .id();
     // 捕获关心的实体

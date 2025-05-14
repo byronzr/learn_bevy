@@ -39,12 +39,12 @@ lto = true
 # Integrated Experiments #
 [[example]]
 name = "camera_renderlayer"
-path = "examples/byronzr/camera_renderlayer.rs"
+path = "examples/byronzr/camera_renderlayer/main.rs"
 
 
 [[example]]
 name = "inventory"
-path = "examples/byronzr/inventory.rs"
+path = "examples/byronzr/inventory/main.rs"
 
 
 [[example]]
