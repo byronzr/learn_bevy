@@ -51,6 +51,11 @@ path = "examples/byronzr/inventory/main.rs"
 name = "hexagon_tile"
 path = "examples/byronzr/hexagon_tile/main.rs"
 
+[[example]]
+name = "space_battle"
+path = "examples/byronzr/space_battle/main.rs"
+
+
 # Rapier2d Experiments
 [[example]]
 name = "rapier_rigid_type"

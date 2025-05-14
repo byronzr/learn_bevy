@@ -331,7 +331,6 @@ fn setup(
 
     Ok(())
 }
-
 // 显示网格方便观察
 fn show_grid(mut commands: Commands, mut gizom_assets: ResMut<Assets<GizmoAsset>>) {
     let mut gizmos = GizmoAsset::default();
