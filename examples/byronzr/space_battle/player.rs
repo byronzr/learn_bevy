@@ -41,8 +41,7 @@ pub fn generate_player(
     mut materials: ResMut<Assets<ColorMaterial>>,
     asset_server: Res<AssetServer>,
 ) {
-    // color for hull
-    let hull_color = materials.add(ColorMaterial::from(Color::srgb(0., 0.5, 0.)));
+    let texture_handle = asset_server.load("space_battle/lasher_ff.png");
 
     // color for weapon mount
     let mount_color = materials.add(ColorMaterial::from(Color::srgb(0., 0., 0.5)));
@@ -74,8 +73,12 @@ pub fn generate_player(
     let hull = commands
         .spawn((
             ShipHull,
-            Mesh2d(meshes.add(Circle::new(10.))),
-            MeshMaterial2d(hull_color),
+            // Mesh2d(meshes.add(Circle::new(10.))),
+            // MeshMaterial2d(materials.add(ColorMaterial::from(Color::srgb(0., 0.5, 0.)))),
+            Sprite {
+                image: texture_handle.clone(),
+                ..default()
+            },
         ))
         .id();
 

@@ -1,8 +1,9 @@
 use bevy::prelude::*;
+use bevy_ecs::entity_disabling::Disabled;
 use bevy_rapier2d::prelude::*;
 use rand::{Rng, rng};
 
-use crate::player::ShipHull;
+use crate::{VirtualTurret, player::ShipHull};
 
 //use rand_chacha::ThreadRng;
 
@@ -18,6 +19,8 @@ fn controls(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     mut render_context: ResMut<DebugRenderContext>,
     player: Single<Entity, With<ShipHull>>,
+    virtual_turret: Single<(Entity, &mut VirtualTurret, Option<&Disabled>)>,
+    mut switch: ResMut<crate::SwitchResource>,
 ) {
     if keyboard_input.just_pressed(KeyCode::Space) {
         // todo
@@ -37,8 +40,20 @@ fn controls(
     if keyboard_input.just_pressed(KeyCode::Tab) {
         render_context.enabled = !render_context.enabled;
     }
-    // generate a random enemy
-    if keyboard_input.just_pressed(KeyCode::KeyE) {
-        // todo
+    let (entity, mut virtual_turret, _) = virtual_turret.into_inner();
+    // show infomation
+    if keyboard_input.just_pressed(KeyCode::KeyI) {
+        switch.detect_test = !switch.detect_test;
+        if switch.detect_test {
+            commands.entity(entity).remove::<Disabled>();
+        } else {
+            commands.entity(entity).insert(Disabled);
+        }
+        println!("detect_test: {}", switch.detect_test);
     }
+    // Virtual turret rotate
+    if keyboard_input.just_pressed(KeyCode::KeyQ) {
+        virtual_turret.0 = !virtual_turret.0;
+    }
+    // todo
 }
