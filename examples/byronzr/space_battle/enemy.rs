@@ -11,7 +11,8 @@ pub struct EnemyPlugin;
     Collider::cuboid(10., 10.),
     RigidBody::Dynamic,
     GravityScale(0.),
-    ColliderMassProperties::Mass(1.)
+    ColliderMassProperties::Mass(1.),
+    CollisionGroups::new(Group::GROUP_19, Group::GROUP_1)
 )]
 pub struct EnemyHull;
 
@@ -28,7 +29,14 @@ impl Plugin for EnemyPlugin {
     }
 }
 
-fn random_enemies(mut commands: Commands, mut timer: ResMut<EnemyGenerateTimer>, time: Res<Time>) {
+fn random_enemies(
+    mut commands: Commands,
+    mut timer: ResMut<EnemyGenerateTimer>,
+    time: Res<Time>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    _asset_server: Res<AssetServer>,
+) {
     if timer.0.tick(time.delta()).just_finished() {
         // todo
         let mut rng = rng();
@@ -42,6 +50,11 @@ fn random_enemies(mut commands: Commands, mut timer: ResMut<EnemyGenerateTimer>,
         let x = if x < 0. { -440. - x } else { 440. + x };
         let y = if y < 0. { -160. - y } else { 160. + y };
 
-        commands.spawn((EnemyHull, Transform::from_xyz(x, y, 0.)));
+        commands.spawn((
+            Mesh2d(meshes.add(Rectangle::new(20., 20.))),
+            MeshMaterial2d(materials.add(ColorMaterial::from(Color::WHITE))),
+            EnemyHull,
+            Transform::from_xyz(x, y, 0.),
+        ));
     }
 }

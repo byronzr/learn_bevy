@@ -1,5 +1,8 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
+use rand::{Rng, rng};
+
+use crate::enemy::EnemyHull;
 
 #[derive(Component, Debug)]
 #[require(
@@ -8,7 +11,8 @@ use bevy_rapier2d::prelude::*;
     Friction::new(0.5),
     Restitution::new(0.5),
     ColliderMassProperties::Mass(1.0),
-    GravityScale(0.0)
+    GravityScale(0.0),
+    CollisionGroups::new(Group::GROUP_1, Group::GROUP_19)
 )]
 pub struct ShipPart;
 
@@ -24,6 +28,7 @@ pub struct ShipPart;
         linear_damping: 0.5,
         angular_damping: 0.5,
     },
+    CollisionGroups::new(Group::GROUP_1, Group::GROUP_19),
 )]
 pub struct ShipHull;
 
@@ -31,11 +36,58 @@ pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, generate_player);
+        app.add_systems(Startup, generate_player_ship);
+        app.add_systems(Update, (drift, detect_enemy));
     }
 }
 
-pub fn generate_player(
+#[derive(Component, Eq, PartialEq, Debug)]
+enum ShipState {
+    Idle,
+    Moving,
+}
+
+// detect_enemy
+fn detect_enemy(
+    enemy_query: Populated<Entity, With<EnemyHull>>,
+    player: Single<(Entity, &Transform), With<ShipHull>>,
+    read_context: ReadRapierContext,
+    mut gizmos: Gizmos,
+) -> Result {
+    let rapeir_context = read_context.single()?;
+    let (entity, transform) = player.into_inner();
+    let filter = QueryFilter::default().groups(CollisionGroups::new(Group::ALL, Group::GROUP_19));
+    let ship_pos = transform.translation.xy();
+    if let Some((entity, projection)) = rapeir_context.project_point(ship_pos, true, filter) {
+        gizmos.arrow_2d(ship_pos, projection.point, Color::srgb_u8(0, 255, 255));
+        println!("entity:{:?}, projection: {:?}", entity, projection);
+    }
+
+    Ok(())
+}
+
+// idle drift
+fn drift(mut commands: Commands, player: Single<(Entity, &ShipState), With<ShipHull>>) {
+    let (entity, state) = player.into_inner();
+    if *state == ShipState::Moving {
+        return;
+    }
+    let mut rng = rng();
+    let (x, y, torque) = (
+        rng.random_range(-10.0..10.0),
+        rng.random_range(-10.0..10.0),
+        rng.random_range(-10.0..10.0),
+    );
+
+    commands.entity(entity).insert(ExternalImpulse {
+        impulse: Vec2::new(x, y),
+        // 正数逆时针
+        torque_impulse: torque,
+    });
+}
+
+// generate player
+pub fn generate_player_ship(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -79,6 +131,7 @@ pub fn generate_player(
                 image: texture_handle.clone(),
                 ..default()
             },
+            ShipState::Idle,
         ))
         .id();
 
