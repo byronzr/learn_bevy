@@ -58,7 +58,6 @@ fn direct_test(
     // 2. about cross
     let up = Vec3::Z;
     let side = front0.extend(0.).cross(up);
-
     // rotation
     player.rotation = Quat::from_mat3(&Mat3::from_cols(side, front0.extend(0.), up));
 

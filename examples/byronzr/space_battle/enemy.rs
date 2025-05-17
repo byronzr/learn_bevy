@@ -4,6 +4,8 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use rand::{Rng, rng};
 
+use crate::switch::SwitchResource;
+
 pub struct EnemyPlugin;
 
 #[derive(Component)]
@@ -36,7 +38,11 @@ fn random_enemies(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     _asset_server: Res<AssetServer>,
+    res: Res<SwitchResource>,
 ) {
+    if !res.enemy_start {
+        return;
+    }
     if timer.0.tick(time.delta()).just_finished() {
         // todo
         let mut rng = rng();

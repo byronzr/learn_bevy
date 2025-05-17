@@ -1,12 +1,13 @@
 use bevy::prelude::*;
 use bevy_ecs::entity_disabling::Disabled;
 use bevy_rapier2d::prelude::*;
-use rand::{Rng, rng};
+//use rand::{Rng, rng};
 
 use crate::player::ShipHull;
 
 use crate::switch::SwitchResource;
-use crate::ui::VirtualTurret;
+use crate::ui::{Tip, VirtualTurret};
+use crate::weapon::{WeaponResource, WeaponType};
 
 pub struct ControlsPlugin;
 impl Plugin for ControlsPlugin {
@@ -22,18 +23,24 @@ fn controls(
     _player: Single<Entity, With<ShipHull>>,
     virtual_turret: Single<(Entity, &mut VirtualTurret, Option<&Disabled>)>,
     mut switch: ResMut<SwitchResource>,
+    mut weapon: ResMut<WeaponResource>,
+    mut text: Single<&mut Text, With<Tip>>,
 ) {
+    if keyboard_input.just_pressed(KeyCode::Numpad1) {
+        weapon.fire_type = WeaponType::Hamer;
+    }
+    if keyboard_input.just_pressed(KeyCode::Numpad2) {
+        weapon.fire_type = WeaponType::Bullet;
+    }
+    if keyboard_input.just_pressed(KeyCode::Numpad3) {
+        weapon.fire_type = WeaponType::Missile;
+    }
+
     if keyboard_input.just_pressed(KeyCode::Space) {
         // todo
     }
     if keyboard_input.just_pressed(KeyCode::KeyS) {
-        // let mut rng = rng();
-        // let (x, y) = (rng.random_range(-10.0..10.0), rng.random_range(-10.0..10.0));
-        // commands.entity(*player).insert(ExternalImpulse {
-        //     impulse: Vec2::new(x, y),
-        //     // 正数逆时针
-        //     torque_impulse: -10.0,
-        // });
+        switch.enemy_start = !switch.enemy_start;
     }
     if keyboard_input.just_pressed(KeyCode::Tab) {
         render_context.enabled = !render_context.enabled;
@@ -56,11 +63,23 @@ fn controls(
         } else {
             commands.entity(entity).insert(Disabled);
         }
-        println!("detect_test: {}", switch.detect_test);
     }
     // Virtual turret rotate
     if keyboard_input.just_pressed(KeyCode::KeyQ) {
         virtual_turret.0 = !virtual_turret.0;
     }
-    // todo
+    text.0 = format!(
+        "
+        Pause Game: Space
+        Switch Debug Render: Tab [{}]
+        Enemy Start: S [{}]
+        Detect Test: I [{}]
+        Virtual Turret: Q [{}]
+        Weapon Type: [{:?}]",
+        render_context.enabled,
+        switch.enemy_start,
+        switch.detect_test,
+        virtual_turret.0,
+        weapon.fire_type
+    );
 }
