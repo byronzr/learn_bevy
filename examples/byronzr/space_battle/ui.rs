@@ -1,13 +1,14 @@
+use std::borrow::Cow;
+
 use bevy::prelude::*;
 use bevy_ecs::entity_disabling::Disabled;
-use bevy_rapier2d::render::DebugRenderContext;
 
-use crate::{switch::SwitchResource, weapon::WeaponResource};
+use crate::{switch::SwitchResource, turret::WeaponResource};
 // use bevy_rapier2d::prelude::*;
 
 // UI 提示
 #[derive(Component)]
-pub struct Tip;
+pub struct ActiveButton;
 
 // UI 检查器
 #[derive(Component)]
@@ -28,36 +29,69 @@ impl Plugin for UIPlugin {
 fn setup(
     mut commands: Commands,
     mut gizmos_assets: ResMut<Assets<GizmoAsset>>,
-    rapier_context: Res<DebugRenderContext>,
-    switch: Res<SwitchResource>,
+    mut switch: ResMut<SwitchResource>,
     weapon: Res<WeaponResource>,
+    mut asset_server: ResMut<AssetServer>,
 ) {
     //
     commands.spawn(Camera2d);
 
     // Tips
-    commands.spawn((
-        Text(format!(
-            "Pause Game: Space
-            Switch Debug Render: Tab [{}]
-            Enemy Start: S [{}]
-            Detect Test: I [{}]
-            Virtual Turret: Q 
-            Weapon Type: [{:?}]",
-            rapier_context.enabled, switch.enemy_start, switch.detect_test, weapon.fire_type
-        )),
-        TextFont {
-            font_size: 12.,
-            ..default()
-        },
-        Tip,
-        Node {
+    let tips = commands
+        .spawn((Node {
             position_type: PositionType::Absolute,
-            top: Val::Px(12.),
+            bottom: Val::Px(12.),
             left: Val::Px(12.),
+            flex_direction: FlexDirection::Row,
+            column_gap: Val::Px(12.),
             ..default()
-        },
-    ));
+        },))
+        .id();
+    switch.enemy_appear = (
+        Some(
+            commands
+                .spawn(button(&mut asset_server, "Enemy Appear".into()))
+                .insert(ChildOf(tips))
+                .id(),
+        ),
+        false,
+    );
+    switch.debug_render = Some(
+        commands
+            .spawn(button(&mut asset_server, "Debug Render".into()))
+            .insert(ChildOf(tips))
+            .id(),
+    );
+
+    switch.detect_test = (
+        Some(
+            commands
+                .spawn(button(&mut asset_server, "Detect Test".into()))
+                .insert(ChildOf(tips))
+                .id(),
+        ),
+        false,
+    );
+
+    switch.virtual_turret = (
+        Some(
+            commands
+                .spawn(button(&mut asset_server, "Virtual Turret".into()))
+                .insert(ChildOf(tips))
+                .id(),
+        ),
+        false,
+    );
+
+    switch.weapon_entity = Some(
+        commands
+            .spawn(button(
+                &mut asset_server,
+                format!("Weapon Type: {:?}", weapon.fire_type).into(),
+            ))
+            .insert(ChildOf(tips))
+            .id(),
+    );
 
     // Infomation
     commands.spawn((
@@ -111,4 +145,33 @@ fn show_grid(
         },))
         .id();
     res.background = Some(id);
+}
+
+fn button(asset_server: &mut AssetServer, name: Cow<'_, str>) -> impl Bundle + use<> {
+    (
+        Button,
+        Node {
+            width: Val::Px(150.0),
+            height: Val::Px(25.0),
+            border: UiRect::all(Val::Px(1.0)),
+            // horizontally center child text
+            justify_content: JustifyContent::Center,
+            // vertically center child text
+            align_items: AlignItems::Center,
+            ..default()
+        },
+        //BorderColor(Color::BLACK),
+        BackgroundColor(Color::BLACK),
+        BorderRadius::all(Val::Px(5.0)),
+        children![(
+            Text::new(name),
+            TextFont {
+                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                font_size: 12.0,
+                ..default()
+            },
+            TextColor(Color::srgb(0.9, 0.9, 0.9)),
+            //TextShadow::default(),
+        )],
+    )
 }

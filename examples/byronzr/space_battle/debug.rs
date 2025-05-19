@@ -24,7 +24,7 @@ fn direct_test(
     time: Res<Time>,
     switch: Res<SwitchResource>,
 ) {
-    if !switch.detect_test {
+    if !switch.detect_test.1 {
         return;
     }
 

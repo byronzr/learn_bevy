@@ -1,15 +1,25 @@
 use bevy::prelude::*;
-use bevy_ecs::entity;
-
-use crate::player::{ShipPart, ShipResource};
+use bitflags::bitflags;
 
 #[derive(Component, Default, Clone, Debug, Eq, PartialEq)]
 pub enum WeaponType {
-    #[default]
     Bullet,
     Missile,
+    #[default]
     Beam,
-    Hamer,
+}
+
+bitflags! {
+    #[derive(Default,Debug)]
+    pub struct FireReady: u8 {
+        const DISTANCE = 0b00000001;
+        const CAPACITY = 0b00000010;
+        const FLUX = 0b00000100;
+        const REFIRE = 0b00001000;
+        const TURNRATE = 0b00010000;
+        const ALL = 0b00011111;
+        const NONE = 0b00000000;
+    }
 }
 
 #[derive(Component, Default)]
@@ -17,23 +27,23 @@ pub struct Weapon {
     pub weapon_type: WeaponType,
     pub entity: Option<Entity>,
     pub refire: f32,
+    // 将 refire 转换成一个可用定时器
+    pub refire_timer: Option<Timer>,
     pub capacity: f32,
     pub per: PerInfo,
     pub phase: Vec<PhaseInfo>,
+    pub turn_rate: f32,
+    pub fire_ready: FireReady,
 }
 
 #[derive(Default)]
 pub struct PerInfo {
     pub shot: f32,
+    // 将每秒 shot 转换成一个可用定时器
+    pub shot_timer: Option<Timer>,
     pub flux: f32,
     pub damage: f32,
     pub size: f32,
-}
-
-pub struct Projectile {
-    pub damage: f32,
-    pub size: f32,
-    pub phase: PhaseInfo,
 }
 
 pub struct PhaseInfo {
@@ -43,10 +53,11 @@ pub struct PhaseInfo {
 }
 
 impl WeaponType {
-    pub fn init(&self, entity: Entity) -> Weapon {
+    pub fn init(&self, entity: Entity, rate: f32) -> Weapon {
         let mut weapon = Weapon::default();
         weapon.weapon_type = self.clone();
         weapon.entity = Some(entity);
+        weapon.turn_rate = rate;
         match *self {
             WeaponType::Bullet => {
                 weapon.refire = 2.;
@@ -75,70 +86,19 @@ impl WeaponType {
                 })
             }
             WeaponType::Beam => {
-                weapon.refire = 0.0;
-                weapon.capacity = 0.0;
+                weapon.refire = 5.0;
+                weapon.capacity = 1.0;
                 weapon.per.shot = 1.0;
                 weapon.per.flux = 1.0;
                 weapon.per.damage = 5.0;
                 weapon.per.size = 1.0;
                 weapon.phase.push(PhaseInfo {
                     speed: 0.0,
-                    range: 50.0,
-                    track: 0.0,
-                })
-            }
-            WeaponType::Hamer => {
-                weapon.refire = 0.0;
-                weapon.capacity = 0.0;
-                weapon.per.shot = 1.0;
-                weapon.per.flux = 1.0;
-                weapon.per.damage = 5.0;
-                weapon.per.size = 1.0;
-                weapon.phase.push(PhaseInfo {
-                    speed: 300.0,
-                    range: 250.0,
+                    range: 150.0,
                     track: 0.0,
                 })
             }
         }
         weapon
-    }
-}
-
-#[derive(Resource)]
-pub struct WeaponResource {
-    pub weapon: Vec<Weapon>,
-    pub fire_type: WeaponType,
-}
-
-pub struct WeaponPlugin;
-impl Plugin for WeaponPlugin {
-    fn build(&self, app: &mut App) {
-        app.insert_resource(WeaponResource {
-            weapon: vec![],
-            fire_type: WeaponType::default(),
-        });
-        app.add_systems(Update, detect_enemy);
-    }
-}
-
-fn detect_enemy(
-    mut commands: Commands,
-    weapon: Res<WeaponResource>,
-    ship: Res<ShipResource>,
-    query: Populated<(Entity, &Transform), With<ShipPart>>,
-) {
-    let available_weapons = weapon
-        .weapon
-        .iter()
-        .filter(|w| w.weapon_type == weapon.fire_type)
-        .collect::<Vec<_>>();
-    for weapon in available_weapons {
-        let Some(entity) = weapon.entity else {
-            continue;
-        };
-        let Ok((_entity, transform)) = query.get(entity) else {
-            continue;
-        };
     }
 }

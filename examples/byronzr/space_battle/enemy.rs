@@ -40,7 +40,7 @@ fn random_enemies(
     _asset_server: Res<AssetServer>,
     res: Res<SwitchResource>,
 ) {
-    if !res.enemy_start {
+    if !res.enemy_appear.1 {
         return;
     }
     if timer.0.tick(time.delta()).just_finished() {

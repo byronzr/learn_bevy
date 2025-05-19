@@ -6,80 +6,91 @@ use bevy_rapier2d::prelude::*;
 use crate::player::ShipHull;
 
 use crate::switch::SwitchResource;
-use crate::ui::{Tip, VirtualTurret};
-use crate::weapon::{WeaponResource, WeaponType};
+use crate::turret::{WeaponResource, weapon::WeaponType};
+use crate::ui::{ActiveButton, VirtualTurret};
 
 pub struct ControlsPlugin;
 impl Plugin for ControlsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, controls);
+        app.add_systems(Update, button_interaction);
     }
 }
 
-fn controls(
+fn button_interaction(
     mut commands: Commands,
-    keyboard_input: Res<ButtonInput<KeyCode>>,
-    mut render_context: ResMut<DebugRenderContext>,
-    _player: Single<Entity, With<ShipHull>>,
-    virtual_turret: Single<(Entity, &mut VirtualTurret, Option<&Disabled>)>,
+    interaction_query: Query<
+        (Entity, &Interaction, &Children, Option<&ActiveButton>),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut text_query: Query<&mut Text>,
     mut switch: ResMut<SwitchResource>,
     mut weapon: ResMut<WeaponResource>,
-    mut text: Single<&mut Text, With<Tip>>,
-) {
-    if keyboard_input.just_pressed(KeyCode::Numpad1) {
-        weapon.fire_type = WeaponType::Hamer;
-    }
-    if keyboard_input.just_pressed(KeyCode::Numpad2) {
-        weapon.fire_type = WeaponType::Bullet;
-    }
-    if keyboard_input.just_pressed(KeyCode::Numpad3) {
-        weapon.fire_type = WeaponType::Missile;
-    }
+    mut render_context: ResMut<DebugRenderContext>,
+    virtual_turret: Single<(Entity, &mut VirtualTurret, Option<&Disabled>)>,
+) -> Result {
+    let (detect_entity, mut virtual_turret, _) = virtual_turret.into_inner();
+    for (entity, interaction, children, active) in interaction_query {
+        if matches!(interaction, Interaction::Pressed) {
+            // weapon_entity
+            if Some(entity) == switch.weapon_entity {
+                let next = match weapon.fire_type {
+                    WeaponType::Beam => WeaponType::Bullet,
+                    WeaponType::Bullet => WeaponType::Missile,
+                    WeaponType::Missile => WeaponType::Beam,
+                };
+                let mut text = text_query.get_mut(children[0])?;
+                **text = format!("Weapon Type: {:?}", next);
+                weapon.set_type(next);
+                // 武器的处理方式是枚举,不变色
+                continue;
+            }
 
-    if keyboard_input.just_pressed(KeyCode::Space) {
-        // todo
-    }
-    if keyboard_input.just_pressed(KeyCode::KeyS) {
-        switch.enemy_start = !switch.enemy_start;
-    }
-    if keyboard_input.just_pressed(KeyCode::Tab) {
-        render_context.enabled = !render_context.enabled;
-        let Some(entity) = switch.background else {
-            return;
-        };
-        if render_context.enabled {
-            commands.entity(entity).remove::<Disabled>();
-        } else {
-            commands.entity(entity).insert(Disabled);
+            // enemy_appear
+            if Some(entity) == switch.enemy_appear.0 {
+                switch.enemy_appear = (switch.enemy_appear.0, !switch.enemy_appear.1);
+            }
+
+            // detect_test
+            if Some(entity) == switch.detect_test.0 {
+                switch.detect_test = (switch.detect_test.0, !switch.detect_test.1);
+                if switch.detect_test.1 {
+                    commands.entity(detect_entity).remove::<Disabled>();
+                } else {
+                    commands.entity(detect_entity).insert(Disabled);
+                }
+            }
+
+            // virtual_turret
+            if Some(entity) == switch.virtual_turret.0 {
+                switch.virtual_turret = (switch.virtual_turret.0, !switch.virtual_turret.1);
+                virtual_turret.0 = switch.virtual_turret.1;
+            }
+
+            // debug_render
+            if Some(entity) == switch.debug_render {
+                render_context.enabled = !render_context.enabled;
+                let Some(entity) = switch.background else {
+                    return Ok(());
+                };
+                if render_context.enabled {
+                    commands.entity(entity).remove::<Disabled>();
+                } else {
+                    commands.entity(entity).insert(Disabled);
+                }
+            }
+
+            if active.is_none() {
+                commands
+                    .entity(entity)
+                    .insert(ActiveButton)
+                    .insert(BackgroundColor(Color::srgb_u8(0, 128, 0)));
+            } else {
+                commands
+                    .entity(entity)
+                    .remove::<ActiveButton>()
+                    .insert(BackgroundColor(Color::BLACK));
+            }
         }
     }
-
-    // show infomation
-    let (entity, mut virtual_turret, _) = virtual_turret.into_inner();
-    if keyboard_input.just_pressed(KeyCode::KeyI) {
-        switch.detect_test = !switch.detect_test;
-        if switch.detect_test {
-            commands.entity(entity).remove::<Disabled>();
-        } else {
-            commands.entity(entity).insert(Disabled);
-        }
-    }
-    // Virtual turret rotate
-    if keyboard_input.just_pressed(KeyCode::KeyQ) {
-        virtual_turret.0 = !virtual_turret.0;
-    }
-    text.0 = format!(
-        "
-        Pause Game: Space
-        Switch Debug Render: Tab [{}]
-        Enemy Start: S [{}]
-        Detect Test: I [{}]
-        Virtual Turret: Q [{}]
-        Weapon Type: [{:?}]",
-        render_context.enabled,
-        switch.enemy_start,
-        switch.detect_test,
-        virtual_turret.0,
-        weapon.fire_type
-    );
+    Ok(())
 }

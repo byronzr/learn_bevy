@@ -1,4 +1,4 @@
-use bevy::{prelude::*, window::WindowResolution};
+use bevy::{prelude::*, window::WindowResolution, winit::WinitSettings};
 
 use bevy_rapier2d::prelude::*;
 
@@ -7,8 +7,9 @@ mod debug;
 mod enemy;
 mod player;
 mod switch;
+mod track;
+mod turret;
 mod ui;
-mod weapon;
 
 fn main() {
     let mut app = App::new();
@@ -27,12 +28,14 @@ fn main() {
     app.add_plugins(RapierDebugRenderPlugin::default());
 
     app.init_resource::<switch::SwitchResource>();
+    //app.insert_resource(WinitSettings::desktop_app());
 
     app.add_plugins(ui::UIPlugin);
     app.add_plugins(player::PlayerPlugin);
     app.add_plugins(control::ControlsPlugin);
     app.add_plugins(enemy::EnemyPlugin);
-    app.add_plugins(weapon::WeaponPlugin);
+    app.add_plugins(turret::WeaponPlugin);
+    app.add_plugins(debug::DebugPlugin);
 
     app.run();
 }

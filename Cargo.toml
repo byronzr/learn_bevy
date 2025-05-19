@@ -20,6 +20,7 @@ bevy_rapier2d = { git = "https://github.com/dimforge/bevy_rapier", branch = "mas
     "debug-render-2d",
     #"serde-serialize",
 ] }
+bitflags = "2.9.1"
 log = "0.4.27"
 rand = "0.9.1"
 rand_chacha = "*"

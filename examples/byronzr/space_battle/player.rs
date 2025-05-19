@@ -1,10 +1,14 @@
+use core::f32;
+
+use crate::track;
+
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use rand::{Rng, rng};
 
 use crate::{
     enemy::EnemyHull,
-    weapon::{WeaponResource, WeaponType},
+    turret::{WeaponResource, weapon::WeaponType},
 };
 
 // 船体其它部件
@@ -13,9 +17,18 @@ pub struct ShipPart;
 
 // 基础速度与扭力
 #[derive(Component, Debug)]
-struct BaseVelocity {
+pub struct BaseVelocity {
     speed: f32,
     torque: f32,
+    braking: Braking,
+}
+
+// 基础制动系数
+#[derive(Debug)]
+pub struct Braking {
+    distance: f32, // 制动距离
+    linear: f32,   // 线性力度
+    angular: f32,  // 扭力
 }
 
 // 安全距离,由武器决定
@@ -31,11 +44,16 @@ pub struct SafeDistance(f32);
     ColliderMassProperties::Mass(10.0),
     GravityScale(0.0),
     Damping{
-        linear_damping: 0.6,
-        angular_damping: 0.7,
+        linear_damping: 0.3,
+        angular_damping: 0.3,
     },
+    
     CollisionGroups::new(Group::GROUP_1, Group::GROUP_19),
-    BaseVelocity{speed:1.,torque:1.},
+    BaseVelocity{speed:1.,torque:1.,braking:Braking{
+        distance:50.,
+        linear: 0.0,
+        angular: 0.0,
+    },},
 )]
 pub struct ShipHull;
 
@@ -69,47 +87,30 @@ fn track_target(
     safe_distance: f32,
     base: &BaseVelocity,
     player: Entity,
-    ship_pos: Vec2,
     target: Vec2,
     delta_time: f32,
 ) {
-    // 最终目标方向
-    let final_front = (target - ship_pos).normalize();
-
-    // Y 轴测试
-    let enemy_y = (transform.rotation * Vec3::Y).xy();
-    let base_y = enemy_y.dot(final_front);
-    if (base_y - 1.0).abs() > f32::EPSILON {
-        // X 轴测试
-        let enemy_x = (transform.rotation * Vec3::X).xy();
-        let base_x = enemy_x.dot(final_front);
-
-        // 旋转方向
-        let rotation_sign = -f32::copysign(1.0, base_x);
-
-        // 获得弧度值
-        let max_angle = ops::acos(base_y.clamp(-1., 1.));
-
+    // 计算角度,NONE 表示无需旋转
+    let rotate = track::rotaion_to(target, transform);
+    if let Some((angle, clockwise)) = rotate {
         // 计算差值
-        let rotation_value = rotation_sign * (base.torque * delta_time).min(max_angle);
-
-        // 应用旋转
+        let rotation_value = clockwise * (base.torque * delta_time).min(angle);
+        // 按差值旋转
         transform.rotate_z(rotation_value);
     }
 
-    // 计算前进方向
-    let delta = target - ship_pos;
-    let distance = delta.length();
-    let front = (transform.rotation * Vec3::Y).xy();
+    // 从飞船到目标的向量 (目标-飞船)
+    let (forward, distance) = track::forward(target, transform);
     let max_step = distance - safe_distance;
+    // 计算速度差值
     let velocity = (distance * base.speed * delta_time).min(max_step);
-    // transform.translation += front.extend(0.) * velocity;
-
-    let force = front * velocity;
-
-    // let delta = target - ship_pos;
-    // let front = delta.normalize() * 100.0;
-    // 变更 ship 不再是悬浮状态
+    // 防止速度为负数(pulse反向)
+    if velocity < f32::EPSILON {
+        return;
+    }
+    // 当转向时移速会变慢
+    let force = forward * velocity * if rotate.is_none() { 0.5 } else { 1.0 };
+    // 施加驱动力(脉冲)
     commands.entity(player).insert(ExternalImpulse {
         impulse: force,
         torque_impulse: base.torque,
@@ -139,7 +140,6 @@ fn detect_enemy(
             safe.0,
             &base,
             player,
-            ship_pos,
             projection.point,
             time.delta_secs(),
         );
@@ -212,7 +212,9 @@ pub fn generate_player_ship(
         ))
         .insert(ChildOf(hull))
         .id();
-    weapons.weapon.push(WeaponType::Hamer.init(bow));
+    weapons
+        .weapon
+        .push(WeaponType::Beam.init(bow, f32::EPSILON));
 
     // front left
     let fl = commands
@@ -224,7 +226,7 @@ pub fn generate_player_ship(
         ))
         .insert(ChildOf(hull))
         .id();
-    weapons.weapon.push(WeaponType::Bullet.init(fl));
+    weapons.weapon.push(WeaponType::Bullet.init(fl, 45.));
 
     // front right
     let fr = commands
@@ -236,7 +238,7 @@ pub fn generate_player_ship(
         ))
         .insert(ChildOf(hull))
         .id();
-    weapons.weapon.push(WeaponType::Bullet.init(fr));
+    weapons.weapon.push(WeaponType::Bullet.init(fr, 45.));
 
     // back left
     let bl = commands
@@ -248,7 +250,9 @@ pub fn generate_player_ship(
         ))
         .insert(ChildOf(hull))
         .id();
-    weapons.weapon.push(WeaponType::Missile.init(bl));
+    weapons
+        .weapon
+        .push(WeaponType::Missile.init(bl, f32::EPSILON));
 
     // back right
     let br = commands
@@ -260,5 +264,7 @@ pub fn generate_player_ship(
         ))
         .insert(ChildOf(hull))
         .id();
-    weapons.weapon.push(WeaponType::Missile.init(br));
+    weapons
+        .weapon
+        .push(WeaponType::Missile.init(br, f32::EPSILON));
 }
