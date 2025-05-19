@@ -46,6 +46,7 @@ pub struct PerInfo {
     pub size: f32,
 }
 
+#[derive(Default, Debug)]
 pub struct PhaseInfo {
     pub speed: f32,
     pub range: f32,
@@ -86,7 +87,7 @@ impl WeaponType {
                 })
             }
             WeaponType::Beam => {
-                weapon.refire = 5.0;
+                weapon.refire = 2.0;
                 weapon.capacity = 1.0;
                 weapon.per.shot = 1.0;
                 weapon.per.flux = 1.0;

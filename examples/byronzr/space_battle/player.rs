@@ -47,7 +47,6 @@ pub struct SafeDistance(f32);
         linear_damping: 0.3,
         angular_damping: 0.3,
     },
-    
     CollisionGroups::new(Group::GROUP_1, Group::GROUP_19),
     BaseVelocity{speed:1.,torque:1.,braking:Braking{
         distance:50.,
@@ -104,10 +103,11 @@ fn track_target(
     let max_step = distance - safe_distance;
     // 计算速度差值
     let velocity = (distance * base.speed * delta_time).min(max_step);
-    // 防止速度为负数(pulse反向)
-    if velocity < f32::EPSILON {
-        return;
-    }
+    // 速度为负数(pulse反向)
+    // 有存在的必要...因为需要保持距离
+    // if velocity < f32::EPSILON {
+    //     return;
+    // }
     // 当转向时移速会变慢
     let force = forward * velocity * if rotate.is_none() { 0.5 } else { 1.0 };
     // 施加驱动力(脉冲)
@@ -133,7 +133,7 @@ fn detect_enemy(
     let filter = QueryFilter::default().groups(CollisionGroups::new(Group::ALL, Group::GROUP_19));
     let ship_pos = transform.translation.xy();
     if let Some((_enemy, projection)) = rapeir_context.project_point(ship_pos, true, filter) {
-        gizmos.arrow_2d(ship_pos, projection.point, Color::srgb_u8(0, 255, 255));
+        //gizmos.arrow_2d(ship_pos, projection.point, Color::srgb_u8(0, 16, 16));
         track_target(
             &mut commands,
             &mut transform,

@@ -15,6 +15,7 @@ pub struct Emit {
     pub start_position: Vec2,
 }
 
+#[derive(Component, Debug, Default)]
 pub struct Projectile {
     pub damage: f32,
     pub size: f32,
@@ -28,18 +29,27 @@ pub fn emit_observer(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
+    // TODO:  需要重新计算最新的向量发射
+
     commands.spawn((
-        Mesh2d(meshes.add(Circle::new(0.5))),
-        MeshMaterial2d(materials.add(ColorMaterial::from(Color::srgb(1., 0., 0.)))),
+        Mesh2d(meshes.add(Circle::new(3.))),
+        MeshMaterial2d(materials.add(ColorMaterial::from(Color::srgb(255., 255., 255.)))),
         RigidBody::Dynamic,
-        Collider::ball(0.5),
-        Friction::new(0.5),
+        Collider::ball(3.),
+        Friction::new(3.),
         Restitution::new(0.0),
         GravityScale(0.0),
-        CollisionGroups::new(Group::GROUP_1, Group::GROUP_19),
-        ExternalImpulse {
-            impulse: trigger.direction * 1000.,
-            torque_impulse: 0.,
+        ColliderMassProperties::Density(1.),
+        CollisionGroups::new(Group::GROUP_2, Group::GROUP_19),
+        SolverGroups::new(Group::GROUP_2, Group::GROUP_19),
+        // ExternalImpulse {
+        //     impulse: trigger.direction * 1000.,
+        //     torque_impulse: 0.,
+        // },
+        Projectile::default(),
+        ExternalForce {
+            force: trigger.direction * 100000.,
+            torque: 0.,
         },
         // 注意: 设置起始位置
         Transform::from_translation(trigger.start_position.extend(0.)),

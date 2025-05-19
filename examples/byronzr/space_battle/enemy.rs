@@ -4,7 +4,11 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use rand::{Rng, rng};
 
-use crate::switch::SwitchResource;
+use crate::{
+    player::{ShipHull, ShipPart},
+    switch::SwitchResource,
+    turret::projectile::Projectile,
+};
 
 pub struct EnemyPlugin;
 
@@ -14,7 +18,9 @@ pub struct EnemyPlugin;
     RigidBody::Dynamic,
     GravityScale(0.),
     ColliderMassProperties::Mass(1.),
-    CollisionGroups::new(Group::GROUP_19, Group::GROUP_1)
+    CollisionGroups::new(Group::GROUP_19, Group::GROUP_2),
+    SolverGroups::new(Group::GROUP_19, Group::GROUP_2),
+    ActiveEvents::COLLISION_EVENTS
 )]
 pub struct EnemyHull;
 
@@ -24,10 +30,10 @@ struct EnemyGenerateTimer(Timer);
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(EnemyGenerateTimer(Timer::new(
-            Duration::from_secs(10),
+            Duration::from_secs(5),
             TimerMode::Repeating,
         )));
-        app.add_systems(Update, random_enemies);
+        app.add_systems(Update, (random_enemies, enemy_collision));
     }
 }
 
@@ -62,5 +68,26 @@ fn random_enemies(
             EnemyHull,
             Transform::from_xyz(x, y, 0.),
         ));
+    }
+}
+
+fn enemy_collision(
+    mut commands: Commands,
+    mut collision_events: EventReader<CollisionEvent>,
+    query: Query<Entity, Or<(With<Projectile>, With<EnemyHull>)>>,
+) {
+    for event in collision_events.read() {
+        match event {
+            CollisionEvent::Started(e1, e2, _) => {
+                // 确保非船体以外的实体被清除
+                if query.contains(*e1) {
+                    commands.entity(*e1).try_despawn();
+                }
+                if query.contains(*e2) {
+                    commands.entity(*e2).try_despawn();
+                }
+            }
+            _ => {}
+        }
     }
 }

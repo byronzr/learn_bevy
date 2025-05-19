@@ -84,7 +84,7 @@ fn detect_enemy(
             rapier_context.project_point(mount_pos, true, filter)
         {
             // 先画个箭头
-            gizmos.arrow_2d(mount_pos, projection.point, Color::srgb_u8(0, 255, 255));
+            //gizmos.arrow_2d(mount_pos, projection.point, Color::srgb_u8(0, 255, 255));
 
             // 挂载点与目标向量
             let enemy_direction = projection.point - mount_pos;
@@ -93,17 +93,19 @@ fn detect_enemy(
             let angle = mount_direction.angle_to(enemy_direction);
             if angle < weapon.turn_rate {
                 weapon.fire_ready |= FireReady::TURNRATE;
+            } else {
+                weapon.fire_ready &= !FireReady::TURNRATE;
             }
 
             // 计算射程
             let distance = mount_pos.distance(projection.point);
             if let Some(range) = weapon.phase.get(0).and_then(|p| Some(p.range)) {
-                if distance < range {
+                // ! distance 过小,可能会重叠,可能会 panic
+                if distance < range && distance > 10.0 {
                     weapon.fire_ready |= FireReady::DISTANCE;
                 } else {
                     // NOTE: x & !mask 清除某位(始终为0)
                     weapon.fire_ready &= !FireReady::DISTANCE;
-                    continue;
                 }
             }
 
