@@ -1,35 +1,44 @@
 use bevy::prelude::*;
+use bevy_ecs::entity_disabling::Disabled;
 
-use crate::player;
-use crate::switch::SwitchResource;
-use crate::ui::{Inf, VirtualTurret};
+use crate::components::ship::ShipHull;
+use crate::resources::state::MainMenu;
 
-pub struct DebugPlugin;
-impl Plugin for DebugPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, direct_test);
-    }
-}
+// 虚拟炮台
+#[derive(Component)]
+pub struct VirtualTurret;
 
-fn direct_test(
+#[derive(Component, Debug)]
+pub struct UILayoutDetect;
+
+#[derive(Component, Debug)]
+pub struct DebugRenderMaker;
+
+pub fn direct_test(
+    mut commands: Commands,
     // 注意: Camera 不是 Camera2D
     camera_query: Single<(&Camera, &GlobalTransform)>,
-    //mut event_reader: EventReader<CursorMoved>,
+    // 注意: mut event_reader: EventReader<CursorMoved>,虽然性能更高,但是鼠标不移动时,不需产生事件,差值算法将被跳过
     window: Single<&Window>,
-    mut text_inf: Single<&mut Text, With<Inf>>,
+    mut text_inf: Single<&mut Text, With<UILayoutDetect>>,
     mut gizmos: Gizmos,
     // 注意: 两个 Single 都有 Transform 修改,需要用 Without 进行隔离
-    mut player: Single<&mut Transform, (With<player::ShipHull>, Without<VirtualTurret>)>,
-    virtual_turret: Single<(&mut VirtualTurret, &mut Transform)>,
+    mut player: Single<&mut Transform, (With<ShipHull>, Without<VirtualTurret>)>,
+    // 注意: virtual turret 是一个 gizmos 绘制的箭头,Visiblilty似乎对它无效
+    virtual_turret: Single<(Entity, &mut Transform, Option<&Disabled>), With<VirtualTurret>>,
     time: Res<Time>,
-    switch: Res<SwitchResource>,
+    menu: Res<MainMenu>,
 ) {
-    if !switch.detect_test.1 {
+    let (entity, mut transform, _) = virtual_turret.into_inner();
+    //TODO: 非激活状态,需要隐藏
+    if !menu.detect_test {
+        commands.entity(entity).insert_if_new(Disabled);
         return;
     }
+    // 注意: Disabled 需要在 query 中强制添加
+    commands.entity(entity).remove::<Disabled>();
 
-    println!("player: {:?}", virtual_turret.0.0);
-    // 我们永远用Y轴作为左右判断的参考线
+    // 我们永远用Y轴作为左右判断的参考线 (白色定位指针)
     // assuming player face Y axis
     gizmos.arrow_2d(
         Vec2::ZERO,
@@ -53,6 +62,7 @@ fn direct_test(
     let front1 = delta.normalize();
     let front2 = delta / delta.length();
 
+    // 跟随鼠标方向指针(绿色)
     gizmos.arrow_2d(Vec2::ZERO, world_pos, Color::srgb_u8(0, 255, 0));
 
     // 2. about cross
@@ -62,7 +72,7 @@ fn direct_test(
     player.rotation = Quat::from_mat3(&Mat3::from_cols(side, front0.extend(0.), up));
 
     // 3. about dot
-    let (vt, mut transform) = virtual_turret.into_inner();
+
     // 将四元数旋转,应用到单位向量 Y 上,
     // 这样就得到一个旋转的 Y 轴,
     let base_y = (transform.rotation * Vec3::Y).xy();
@@ -93,7 +103,7 @@ fn direct_test(
     // 获得一个最小的夹角
     let max_angle = ops::acos(val_y.clamp(-1., 1.));
 
-    if vt.0 {
+    if menu.virtual_turret {
         // 计算差值
         let speed = 0.1;
         let delta_angle = rotation_sign * (speed * time.delta_secs()).min(max_angle);
@@ -102,14 +112,14 @@ fn direct_test(
 
     text_inf.0 = format!(
         "
-        {:?} : {} / size.Y
-        x:{:.6} y:{:.6} / pos normalize
-        x:{:.6} y:{:.6} / delta normalize
-        x:{:.6} y:{:.6} / delta/length
-        {val_y:.1} / Y dot
-        {val_x:.1} / X dot
+        {:+.6} : {} / size.Y
+        x:{:+.6} y:{:+.6} / pos normalize
+        x:{:+.6} y:{:+.6} / delta normalize
+        x:{:+.6} y:{:+.6} / delta/length
+        {val_y:+.1} / Y dot
+        {val_x:+.1} / X dot
         {quadrant:?} / quadrant
-        {max_angle:.2} / max_angle
+        {max_angle:+.2} / max_angle
         ",
         side.y,
         if side.y > 0. { "left" } else { "right" },

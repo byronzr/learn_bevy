@@ -10,6 +10,7 @@ env = { "RUST_BACKTRACE" = "1" }
 [dependencies]
 bevy = { version = "0.16.0", features = ["track_location"] }
 bevy_ecs = "0.16.0"
+bevy_image = "0.16.0"
 # bevy_rapier2d = { version = "0.29.0", features = [
 #     "simd-stable",
 #     "debug-render-2d",
@@ -21,7 +22,10 @@ bevy_rapier2d = { git = "https://github.com/dimforge/bevy_rapier", branch = "mas
     #"serde-serialize",
 ] }
 bitflags = "2.9.1"
+contour = { version = "0.13.1", features = ["f32", "geojson"] }
+image = "0.25.6"
 log = "0.4.27"
+lyon = "1.0.1"
 rand = "0.9.1"
 rand_chacha = "*"
 serde = "1.0.219"

@@ -1,3 +1,4 @@
+use super::{PerInfo, PhaseInfo};
 use bevy::prelude::*;
 use bitflags::bitflags;
 
@@ -34,23 +35,6 @@ pub struct Weapon {
     pub phase: Vec<PhaseInfo>,
     pub turn_rate: f32,
     pub fire_ready: FireReady,
-}
-
-#[derive(Default)]
-pub struct PerInfo {
-    pub shot: f32,
-    // 将每秒 shot 转换成一个可用定时器
-    pub shot_timer: Option<Timer>,
-    pub flux: f32,
-    pub damage: f32,
-    pub size: f32,
-}
-
-#[derive(Default, Debug)]
-pub struct PhaseInfo {
-    pub speed: f32,
-    pub range: f32,
-    pub track: f32,
 }
 
 impl WeaponType {

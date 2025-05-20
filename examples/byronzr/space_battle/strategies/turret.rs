@@ -1,56 +1,18 @@
-use std::time::Duration;
-
+use crate::components::{
+    ship::{ShipHull, ShipPart},
+    weapon::FireReady,
+};
+use crate::events::Emit;
+use crate::resources::{player::PlayerShipResource, turret::TurretResource};
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
-use projectile::Emit;
-
-use crate::player::{ShipHull, ShipPart, ShipResource};
-
-pub mod projectile;
-pub mod weapon;
-use weapon::{FireReady, Weapon, WeaponType};
-
-#[derive(Resource)]
-pub struct WeaponResource {
-    pub weapon: Vec<Weapon>,
-    pub fire_type: WeaponType,
-    pub text: String,
-}
-
-impl WeaponResource {
-    pub fn set_type(&mut self, ty: WeaponType) {
-        self.fire_type = ty;
-        self.weapon.iter_mut().for_each(|w| {
-            w.refire_timer = None;
-            w.per.shot_timer = None;
-        });
-    }
-    pub fn available_weapons(&mut self) -> Vec<&mut Weapon> {
-        self.weapon
-            .iter_mut()
-            .filter(|w| w.weapon_type == self.fire_type)
-            .collect::<Vec<_>>()
-    }
-}
-
-pub struct WeaponPlugin;
-impl Plugin for WeaponPlugin {
-    fn build(&self, app: &mut App) {
-        app.insert_resource(WeaponResource {
-            weapon: vec![],
-            fire_type: WeaponType::default(),
-            text: format!("Weapon Type: {:?}", WeaponType::default(),),
-        });
-        app.add_systems(Update, detect_enemy);
-        app.add_observer(projectile::emit_observer);
-    }
-}
+use std::time::Duration;
 
 // 炮塔挂载点自行计算射程与角度
-fn detect_enemy(
+pub fn turret_detection(
     mut commands: Commands,
-    mut res_weapon: ResMut<WeaponResource>,
-    ship: Res<ShipResource>,
+    mut res_weapon: ResMut<TurretResource>,
+    ship: Res<PlayerShipResource>,
     // 注意: 这里我们使到的是 GlobalTransform,因为 ShipPart 是以 Children 方式与 ShipHull 绑定的
     query: Populated<(Entity, &GlobalTransform), With<ShipPart>>,
     hull: Single<&Transform, With<ShipHull>>,
@@ -101,7 +63,8 @@ fn detect_enemy(
             let distance = mount_pos.distance(projection.point);
             if let Some(range) = weapon.phase.get(0).and_then(|p| Some(p.range)) {
                 // ! distance 过小,可能会重叠,可能会 panic
-                if distance < range && distance > 10.0 {
+                // ! collider 已经绘制,会撞开 enemy 应该不会出现重叠
+                if distance < range {
                     weapon.fire_ready |= FireReady::DISTANCE;
                 } else {
                     // NOTE: x & !mask 清除某位(始终为0)
@@ -134,9 +97,8 @@ fn detect_enemy(
             }
 
             if weapon.fire_ready.bits() == FireReady::ALL.bits() {
-                //println!("refire: {:?}", weapon.fire_ready);
                 commands.trigger(Emit {
-                    direction: enemy_direction.normalize(),
+                    direction: mount_direction.normalize(),
                     start_position: mount_pos,
                 })
             }
