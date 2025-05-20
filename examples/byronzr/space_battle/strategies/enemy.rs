@@ -5,8 +5,8 @@ use rand::{Rng, rng};
 use crate::components::Projectile;
 use crate::components::ship::{EnemyHull, EnemyProjectPoint};
 use crate::resources::enemy::EnemyGenerateTimer;
+use crate::resources::menu::MainMenu;
 use crate::resources::player::PlayerShipResource;
-use crate::resources::state::MainMenu;
 use crate::utility;
 
 pub fn random_enemies(

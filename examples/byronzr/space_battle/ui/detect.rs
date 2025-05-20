@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_ecs::entity_disabling::Disabled;
 
 use crate::components::ship::ShipHull;
-use crate::resources::state::MainMenu;
+use crate::resources::menu::MainMenu;
 
 // 虚拟炮台
 #[derive(Component)]

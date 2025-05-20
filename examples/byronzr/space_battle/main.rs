@@ -25,8 +25,8 @@ fn main() {
     app.add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(100.));
     app.add_plugins(RapierDebugRenderPlugin::default());
 
-    app.init_resource::<resources::state::MainMenu>();
-    app.init_resource::<resources::state::GameMenu>();
+    app.init_resource::<resources::menu::MainMenu>();
+    app.init_resource::<resources::menu::GameMenu>();
 
     // 注意: 世界真奇妙, Interaction 响应延时的元凶居然是 magnet.app 或  BetterTouchTool.app
     // https://github.com/bevyengine/bevy/issues/10658

@@ -2,8 +2,8 @@ use bevy::prelude::*;
 use std::time::Duration;
 
 pub mod enemy;
+pub mod menu;
 pub mod player;
-pub mod state;
 pub mod turret;
 
 use crate::components::weapon::WeaponType;

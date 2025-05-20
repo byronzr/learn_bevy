@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
 use crate::components::weapon::WeaponType;
+use crate::resources::menu::MainMenu;
 use crate::resources::player::PlayerShipResource;
-use crate::resources::state::MainMenu;
 use crate::ui::button;
 
 use bevy_rapier2d::prelude::*;
