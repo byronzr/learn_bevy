@@ -13,7 +13,7 @@ pub fn emit_observer(
     // TODO:  可能需要重新计算最新的向量发射
     commands.spawn((
         Mesh2d(meshes.add(Circle::new(1.))),
-        MeshMaterial2d(materials.add(ColorMaterial::from(Color::srgb(3., 3., 5.)))),
+        MeshMaterial2d(materials.add(ColorMaterial::from(Color::srgb(13., 13., 15.)))),
         RigidBody::Dynamic,
         Collider::ball(1.),
         Friction::new(0.),
@@ -30,23 +30,10 @@ pub fn emit_observer(
         Ccd::enabled(),
         Projectile::default(),
         ExternalForce {
-            force: trigger.direction * 100000.,
+            force: trigger.direction * 50000.,
             torque: 0.,
         },
         // 注意: 设置起始位置
         Transform::from_translation(trigger.start_position.extend(0.)),
     ));
-}
-
-pub fn outside_clear(query: Query<(Entity, &Transform), With<Projectile>>, mut commands: Commands) {
-    // let min = Vec2::new(-1280., -720.);
-    // let max = Vec2::new(1280., 720.);
-    // for (entity, transform) in query {
-    //     // if entity outside despawn
-    //     if transform.translation.xy().cmple(max).all()
-    //         && transform.translation.xy().cmple(min).all()
-    //     {
-    //         commands.entity(entity).despawn();
-    //     }
-    // }
 }

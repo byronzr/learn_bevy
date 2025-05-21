@@ -14,6 +14,7 @@
     * StrategiesPlugin 策略
 		* enemy.rs
 			* [system] `random_enemies()` 随机生成敌舰
+			* [system] //TODO// `enemies_movement` 敌人向中心靠拢
 			* [system] `enemy_collision()` 敌般碰撞事件
         * player.rs
 			* [system] `generate_player_ship()` 初始化旗舰
@@ -24,13 +25,14 @@
         * projectile.rs
 			* [observer] `emit_observer()` 发射监视器
             * [system] //TODO// `projectile_detection()` 投射物(missile)寻敌
-			
+		* weapon.rs
+			* [system] ``weapon_maintenance` 武器上弹,充能,等计算
 			
 * ### ui 界面
     * UiPlugin 界面管理
 		* mod.rs
 			* [system] `setup()`, 初始化
-			* [system] //TODO// `perspective_interaction()` 场景缩放
+			* [system] //TODO// `zoom()` 场景缩放
 			* [system] `show_grid` 辅助网格
 			* [fn] `button()` 快速 button 函数
 		* main.rs
@@ -41,6 +43,8 @@
             * [system] `game_menu_interaction()` 
 		* detect.rs 
 			* [system] `direct_test()` 以中心点为起点,以Y轴为朝向的示例
+		* hud.rs
+			* // TODO // 仪表
 			
     
 * ### resources 资源

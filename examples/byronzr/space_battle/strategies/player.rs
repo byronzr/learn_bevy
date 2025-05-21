@@ -1,6 +1,6 @@
 use crate::components::{
     BaseVelocity, SafeDistance,
-    ship::{EnemyHull, ShipHull, ShipPart, ShipState},
+    ship::{EnemyHull, EnemyProjectPoint, ShipHull, ShipPart, ShipState},
     weapon::WeaponType,
 };
 use crate::resources::{player::PlayerShipResource, turret::TurretResource};
@@ -9,6 +9,8 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 use core::f32;
 use rand::{Rng, rng};
+
+use super::{enemy, projectile};
 
 // track target
 pub fn track_target(
@@ -50,9 +52,16 @@ pub fn track_target(
 // player_detection
 pub fn player_detection(
     mut commands: Commands,
-    _enemy_query: Populated<Entity, With<EnemyHull>>,
+    // 注意: 测试投射点是 EnemyProjectPoint,而不是 EnemyHull
+    enemy_query: Populated<
+        (Entity, &GlobalTransform),
+        (With<EnemyProjectPoint>, Without<ShipHull>),
+    >,
     // 注意: ShipHull 必须要有一个 Sprite或是Mesh才能有 Transform
-    player: Single<(Entity, &mut Transform, &BaseVelocity, &SafeDistance), With<ShipHull>>,
+    player: Single<
+        (Entity, &mut Transform, &BaseVelocity, &SafeDistance),
+        (With<ShipHull>, Without<EnemyHull>),
+    >,
     read_context: ReadRapierContext,
     time: Res<Time>,
     mut ship: ResMut<PlayerShipResource>,
@@ -63,19 +72,37 @@ pub fn player_detection(
     // 注意: 投射查询的是 EnemyProjectPoint,而不是 EnemyHull
     let filter = QueryFilter::default().groups(CollisionGroups::new(Group::ALL, Group::GROUP_18));
     let ship_pos = transform.translation.xy();
-    if let Some((_enemy, projection)) = rapeir_context.project_point(ship_pos, true, filter) {
-        //gizmos.arrow_2d(ship_pos, projection.point, Color::srgb_u8(0, 16, 16));
-        track_target(
-            &mut commands,
-            &mut transform,
-            safe.0,
-            &base,
-            player,
-            projection.point,
-            time.delta_secs(),
-        );
-        ship.state = ShipState::Moving;
-    }
+    // 敌人消失后,才会进行新的测试,防止策略摇摆
+    let point = if let Some(enemy) = ship.target_enmey {
+        if let Ok((_, transform)) = enemy_query.get(enemy) {
+            transform.translation().xy()
+        } else {
+            // 能够运行到这里,说明还有敌人存在,只是未进行投射,所以,我们将 target 设为 None
+            // 下次就进行投射了
+            ship.target_enmey = None;
+            Vec2::ZERO
+        }
+    } else {
+        if let Some((enemy, projection)) = rapeir_context.project_point(ship_pos, true, filter) {
+            ship.state = ShipState::Moving;
+            ship.target_enmey = Some(enemy);
+            projection.point
+        } else {
+            // 完全没有敌人了
+            Vec2::ZERO
+        }
+    };
+
+    // 进行跟踪
+    track_target(
+        &mut commands,
+        &mut transform,
+        safe.0,
+        &base,
+        player,
+        point,
+        time.delta_secs(),
+    );
 
     Ok(())
 }
@@ -109,7 +136,7 @@ pub fn generate_player_ship(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut asset_server: ResMut<AssetServer>,
-    mut weapons: ResMut<TurretResource>,
+    mut turret: ResMut<TurretResource>,
     mut ship: ResMut<PlayerShipResource>,
 ) -> Result {
     // color for weapon mount
@@ -134,6 +161,7 @@ pub fn generate_player_ship(
     ship.material = Some(material.clone());
 
     // 注意: ShipHull 必须要有一个 Sprite或是Mesh才能有 Transform
+    // 似乎当 Mesh2d 与 Sprite 同时存在时,会异致一些不可预测的行为(错误)
     let hull = commands.spawn((ShipHull, sprite)).id();
     // 添加 collider
     let Some(collider) = Collider::convex_hull(&vertices) else {
@@ -156,9 +184,7 @@ pub fn generate_player_ship(
         ))
         .insert(ChildOf(hull))
         .id();
-    weapons
-        .weapon
-        .push(WeaponType::Beam.init(bow, f32::EPSILON));
+    turret.weapon.push(WeaponType::Beam.init(bow, f32::EPSILON));
 
     // front left
     let fl = commands
@@ -170,7 +196,7 @@ pub fn generate_player_ship(
         ))
         .insert(ChildOf(hull))
         .id();
-    weapons.weapon.push(WeaponType::Bullet.init(fl, 45.));
+    turret.weapon.push(WeaponType::Bullet.init(fl, 45.));
 
     // front right
     let fr = commands
@@ -182,7 +208,7 @@ pub fn generate_player_ship(
         ))
         .insert(ChildOf(hull))
         .id();
-    weapons.weapon.push(WeaponType::Bullet.init(fr, 45.));
+    turret.weapon.push(WeaponType::Bullet.init(fr, 45.));
 
     // back left
     let bl = commands
@@ -194,7 +220,7 @@ pub fn generate_player_ship(
         ))
         .insert(ChildOf(hull))
         .id();
-    weapons
+    turret
         .weapon
         .push(WeaponType::Missile.init(bl, f32::EPSILON));
 
@@ -208,7 +234,7 @@ pub fn generate_player_ship(
         ))
         .insert(ChildOf(hull))
         .id();
-    weapons
+    turret
         .weapon
         .push(WeaponType::Missile.init(br, f32::EPSILON));
     Ok(())

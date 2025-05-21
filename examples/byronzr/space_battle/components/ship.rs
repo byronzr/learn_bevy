@@ -19,6 +19,8 @@ pub struct EnemyHull;
 #[require(
     Collider::cuboid(0.1, 0.1), // 只用于投射,越小越好
     CollisionGroups::new(Group::GROUP_18, Group::ALL),
+    // 注意: 投射点并不存在 Transform 所以我们要自已手动加入
+    Transform::default(),
 )]
 pub struct EnemyProjectPoint;
 

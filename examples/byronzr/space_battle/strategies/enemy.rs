@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
+use rand::seq::IndexedRandom;
 use rand::{Rng, rng};
 
 use crate::components::Projectile;
@@ -8,6 +9,13 @@ use crate::resources::enemy::EnemyGenerateTimer;
 use crate::resources::menu::MainMenu;
 use crate::resources::player::PlayerShipResource;
 use crate::utility;
+
+pub enum Bound {
+    Left(f32),
+    Top(f32),
+    Right(f32),
+    Bottom(f32),
+}
 
 pub fn random_enemies(
     mut commands: Commands,
@@ -24,15 +32,29 @@ pub fn random_enemies(
     if timer.0.tick(time.delta()).just_finished() {
         // todo
         let mut rng = rng();
-        // 1280 * 720
-        let (x, y) = (
-            rng.random_range(-100. ..100.),
-            rng.random_range(-100. ..100.),
-        );
-
-        // 确保在边缘
-        let x = if x < 0. { -440. - x } else { 440. + x };
-        let y = if y < 0. { -160. - y } else { 160. + y };
+        // 1920 * 1080
+        let axis = vec![
+            Bound::Right(960.),
+            Bound::Left(-960.),
+            Bound::Bottom(-540.),
+            Bound::Top(540.),
+        ];
+        // 获得一个单边轴
+        let transform = match axis.choose(&mut rng) {
+            Some(one) => match *one {
+                Bound::Top(y) | Bound::Bottom(y) => {
+                    let x = rng.random_range(-540. ..540.);
+                    Transform::from_xyz(x, y, 0.)
+                }
+                Bound::Left(x) | Bound::Right(x) => {
+                    let y = rng.random_range(-960. ..960.);
+                    Transform::from_xyz(x, y, 0.)
+                }
+            },
+            None => {
+                return Ok(());
+            }
+        };
 
         let (mesh, handle, vertices) =
             utility::png::load("space_battle/tempest.png", &mut *asset_server)?;
@@ -49,7 +71,7 @@ pub fn random_enemies(
             .spawn((
                 // MeshMaterial2d(materials.add(ColorMaterial::from(Color::WHITE))),
                 EnemyHull,
-                Transform::from_xyz(x, y, 0.),
+                transform,
                 children![EnemyProjectPoint],
             ))
             .id();

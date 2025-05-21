@@ -16,7 +16,7 @@
     * Rapier2d 实现 Collider Interscetion Test
 * **[space_battle](https://github.com/byronzr/learn_bevy/tree/main/examples/byronzr/space_battle)** Doing: 类 starsector 的太空战
     * 弹道,寻敌,护盾,伤害,炮塔转向,规避,幅能冷却
-* **[png_mesh]** TODO: 为 png 非透明区域进行 mesh 转换(为 Rapier 提供 Collider)
+
     
 # Rapier (bevy_rapier2d) 
 

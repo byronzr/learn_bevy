@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use bevy::{
     core_pipeline::{bloom::Bloom, tonemapping::Tonemapping},
+    input::mouse::AccumulatedMouseScroll,
     prelude::*,
 };
 
@@ -22,7 +23,10 @@ pub struct UIPlugin;
 impl Plugin for UIPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, (setup, main::ui_main_setup, show_grid).chain());
-        app.add_systems(Update, (detect::direct_test, main::button_interaction));
+        app.add_systems(
+            Update,
+            (detect::direct_test, main::button_interaction, zoom),
+        );
     }
 }
 
@@ -100,6 +104,35 @@ fn setup(
         },
         Disabled,
     ));
+}
+
+fn zoom(
+    camera: Single<&mut Projection, With<Camera>>,
+    mouse_wheel_input: Res<AccumulatedMouseScroll>,
+) {
+    // Usually, you won't need to handle both types of projection,
+    // but doing so makes for a more complete example.
+    match *camera.into_inner() {
+        Projection::Orthographic(ref mut orthographic) => {
+            // We want scrolling up to zoom in, decreasing the scale, so we negate the delta.
+            let delta_zoom = -mouse_wheel_input.delta.y * 0.05;
+            // When changing scales, logarithmic changes are more intuitive.
+            // To get this effect, we add 1 to the delta, so that a delta of 0
+            // results in no multiplicative effect, positive values result in a multiplicative increase,
+            // and negative values result in multiplicative decreases.
+            let multiplicative_zoom = 1. + delta_zoom;
+
+            orthographic.scale = (orthographic.scale * multiplicative_zoom).clamp(0.1, 10.);
+        }
+        Projection::Perspective(ref mut perspective) => {
+            // We want scrolling up to zoom in, decreasing the scale, so we negate the delta.
+            let delta_zoom = -mouse_wheel_input.delta.y * 0.05;
+
+            // Adjust the field of view, but keep it within our stated range.
+            perspective.fov = (perspective.fov + delta_zoom).clamp(0.1, 10.);
+        }
+        _ => (),
+    }
 }
 
 // 显示网格方便观察

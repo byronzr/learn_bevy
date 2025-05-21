@@ -1,7 +1,4 @@
-use crate::components::{
-    ship::{ShipHull, ShipPart},
-    weapon::FireReady,
-};
+use crate::components::ship::{ShipHull, ShipPart};
 use crate::events::Emit;
 use crate::resources::{player::PlayerShipResource, turret::TurretResource};
 use bevy::prelude::*;
@@ -37,6 +34,8 @@ pub fn turret_detection(
         let Ok((_entity, transform)) = query.get(entity) else {
             continue;
         };
+        // 第一阶段信息
+        let phase = &weapon.phase[0];
         // 炮塔挂载点
         let mount_pos = transform.translation().truncate();
         // 通过 hull_pos 与 挂载点,得到发射向量
@@ -45,62 +44,19 @@ pub fn turret_detection(
         if let Some((_enemy_entity, projection)) =
             rapier_context.project_point(mount_pos, true, filter)
         {
-            // 先画个箭头
-            //gizmos.arrow_2d(mount_pos, projection.point, Color::srgb_u8(0, 255, 255));
-
             // 挂载点与目标向量
             let enemy_direction = projection.point - mount_pos;
 
+            let distance = enemy_direction.length();
+
             // 计算 direction 向量与 hull_direction 向量的夹角
             let angle = mount_direction.angle_to(enemy_direction);
-            if angle < weapon.turn_rate {
-                weapon.fire_ready |= FireReady::TURNRATE;
-            } else {
-                weapon.fire_ready &= !FireReady::TURNRATE;
-            }
-
-            // 计算射程
-            let distance = mount_pos.distance(projection.point);
-            if let Some(range) = weapon.phase.get(0).and_then(|p| Some(p.range)) {
-                // ! distance 过小,可能会重叠,可能会 panic
-                // ! collider 已经绘制,会撞开 enemy 应该不会出现重叠
-                if distance < range {
-                    weapon.fire_ready |= FireReady::DISTANCE;
-                } else {
-                    // NOTE: x & !mask 清除某位(始终为0)
-                    weapon.fire_ready &= !FireReady::DISTANCE;
-                }
-            }
-
-            // TODO: flux
-            weapon.fire_ready |= FireReady::FLUX;
-
-            // TODO: capacity
-            weapon.fire_ready |= FireReady::CAPACITY;
-
-            // refire
-            if weapon.refire_timer.is_none() {
-                weapon.refire_timer = Some(Timer::new(
-                    Duration::from_secs_f32(weapon.refire),
-                    TimerMode::Repeating,
-                ));
-                continue;
-            }
-
-            if let Some(timer) = weapon.refire_timer.as_mut() {
-                timer.tick(time.delta());
-                if timer.just_finished() {
-                    weapon.fire_ready |= FireReady::REFIRE;
-                } else {
-                    weapon.fire_ready &= !FireReady::REFIRE;
-                }
-            }
-
-            if weapon.fire_ready.bits() == FireReady::ALL.bits() {
+            if angle.abs() < weapon.fire_angle && weapon.fire() && distance < phase.range {
                 commands.trigger(Emit {
-                    direction: mount_direction.normalize(),
+                    direction: mount_direction,
                     start_position: mount_pos,
-                })
+                });
+                println!("fire! capacity: {}, angle: {}", weapon.capacity, angle);
             }
         }
     }
