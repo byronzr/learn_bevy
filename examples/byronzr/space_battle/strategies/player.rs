@@ -1,16 +1,22 @@
-use crate::components::{
-    BaseVelocity, SafeDistance,
-    ship::{EnemyHull, EnemyProjectPoint, ShipHull, ShipPart, ShipState},
-    weapon::WeaponType,
-};
+use crate::components::effects::EngineFlame;
 use crate::resources::{player::PlayerShipResource, turret::TurretResource};
 use crate::utility::{self, track};
+use crate::{
+    components::{
+        BaseVelocity, SafeDistance,
+        ship::{EnemyHull, EnemyProjectPoint, ShipHull, ShipPart, ShipState},
+        weapon::WeaponType,
+    },
+    resources::menu::MainMenu,
+};
+
 use bevy::prelude::*;
+
+use crate::shader::MaterialEngineFlame;
 use bevy_rapier2d::prelude::*;
 use core::f32;
 use rand::{Rng, rng};
-
-use super::{enemy, projectile};
+use std::f32::consts::FRAC_PI_2;
 
 // track target
 pub fn track_target(
@@ -21,7 +27,9 @@ pub fn track_target(
     player: Entity,
     target: Vec2,
     delta_time: f32,
-) {
+    log: bool,
+) -> bool {
+    let mut flame = false;
     // 计算角度,NONE 表示无需旋转
     let rotate = track::rotaion_to(target, transform);
     if let Some((angle, clockwise)) = rotate {
@@ -38,21 +46,42 @@ pub fn track_target(
     let velocity = (distance * base.speed * delta_time).min(max_step);
     // 速度为负数(pulse反向)
     if velocity < f32::EPSILON {
-        return;
+        return flame;
     }
+
+    //if rotate.is_some() {
+    // 施加脉冲
+    flame = true;
+    //}
+
     // 当转向时移速会变慢
-    let force = forward * velocity * if rotate.is_none() { 0.5 } else { 1.0 };
+    let force = forward
+        * velocity
+        * if rotate.is_some() || distance < safe_distance {
+            0.5
+        } else {
+            1.0
+        };
     // 施加驱动力(脉冲)
     commands.entity(player).insert(ExternalImpulse {
         impulse: force,
         torque_impulse: base.torque,
     });
+    if log {
+        println!(
+            "player: {:?}, target: {:?}, distance: {}, force: {}",
+            player, target, distance, force
+        );
+    }
+    flame
 }
 
 // player_detection
 pub fn player_detection(
     mut commands: Commands,
-    // 注意: 测试投射点是 EnemyProjectPoint,而不是 EnemyHull
+    // 注意: 测试投射点是 EnemyProjectPoint,而不是 EnemyHull,
+    // EnemyProjectPoint 是 EnemyHull 的子节点,所以 Transform 是相对于 EnemyHull 的
+    // 但是我们需要的是全局坐标,所以我们使用 GlobalTransform
     enemy_query: Populated<
         (Entity, &GlobalTransform),
         (With<EnemyProjectPoint>, Without<ShipHull>),
@@ -65,6 +94,7 @@ pub fn player_detection(
     read_context: ReadRapierContext,
     time: Res<Time>,
     mut ship: ResMut<PlayerShipResource>,
+    menu: Res<MainMenu>,
 ) -> Result {
     // 出现敌人后,Populated会使 system 开始运行
     let rapeir_context = read_context.single()?;
@@ -94,7 +124,7 @@ pub fn player_detection(
     };
 
     // 进行跟踪
-    track_target(
+    ship.engine_flame = track_target(
         &mut commands,
         &mut transform,
         safe.0,
@@ -102,6 +132,7 @@ pub fn player_detection(
         player,
         point,
         time.delta_secs(),
+        menu.log,
     );
 
     Ok(())
@@ -135,6 +166,7 @@ pub fn generate_player_ship(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    mut custom_materials: ResMut<Assets<MaterialEngineFlame>>,
     mut asset_server: ResMut<AssetServer>,
     mut turret: ResMut<TurretResource>,
     mut ship: ResMut<PlayerShipResource>,
@@ -150,24 +182,55 @@ pub fn generate_player_ship(
         utility::png::load("space_battle/lasher_ff.png", &mut *asset_server)?;
 
     let mesh2d = meshes.add(mesh);
-    let material = materials.add(ColorMaterial::from(Color::srgb(0., 0.5, 0.)));
+    let material = materials.add(ColorMaterial::from(Color::srgb(0., 1., 0.)));
 
     let sprite = Sprite {
         image: texture_handle.clone(),
         ..default()
     };
     ship.sprite = Some(sprite.clone());
-    ship.mesh2d = Some(mesh2d.clone());
-    ship.material = Some(material.clone());
+    // ship.mesh2d = Some(mesh2d.clone());
+    // ship.material = Some(material.clone());
 
     // 注意: ShipHull 必须要有一个 Sprite或是Mesh才能有 Transform
     // 似乎当 Mesh2d 与 Sprite 同时存在时,会异致一些不可预测的行为(错误)
-    let hull = commands.spawn((ShipHull, sprite)).id();
+    let hull = commands
+        .spawn((
+            ShipHull,
+            sprite,
+            // add Mesh2d with children
+            children![(Mesh2d(mesh2d), MeshMaterial2d(material))],
+        ))
+        .id();
     // 添加 collider
     let Some(collider) = Collider::convex_hull(&vertices) else {
         return Err(BevyError::from("Failed to create hull collider"))?;
     };
     commands.entity(hull).insert(collider);
+
+    // engine flame
+    // 这里使用自定义的 shader,而不是 Sprite,mesh与 vertices 被丢弃
+    // let (_flame_mesh, flame_handle, _flame_vertices) =
+    //     utility::png::load("space_battle/engineflame32-orig.png", &mut *asset_server)?;
+    let flame_handle = asset_server.load("space_battle/engineflame32-orig2.png");
+
+    let mut transform = Transform::from_xyz(0., -60., -1.);
+    transform.rotate(Quat::from_rotation_z(-FRAC_PI_2));
+    transform.scale = Vec3::splat(24.);
+    commands
+        .spawn((
+            //Mesh2d(meshes.add(flame_mesh)),
+            Mesh2d(meshes.add(Rectangle::default())),
+            MeshMaterial2d(custom_materials.add(MaterialEngineFlame {
+                my_texture: flame_handle.clone(),
+                lumina: LinearRgba::WHITE,
+                time: -1.,
+                lumina_value: 0.0,
+            })),
+            transform,
+            EngineFlame,
+        ))
+        .insert(ChildOf(hull));
 
     // 记录飞船与状态
     ship.ship_entity = Some(hull);

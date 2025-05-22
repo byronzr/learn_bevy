@@ -1,4 +1,5 @@
-use bevy::prelude::*;
+use crate::shader::MaterialEngineFlame;
+use bevy::{prelude::*, sprite::Material2dPlugin};
 
 pub mod enemy;
 pub mod player;
@@ -9,6 +10,7 @@ pub mod weapon;
 pub struct StrategiesPlugin;
 impl Plugin for StrategiesPlugin {
     fn build(&self, app: &mut App) {
+        app.add_plugins(Material2dPlugin::<MaterialEngineFlame>::default());
         app.add_systems(Startup, player::generate_player_ship);
         app.add_systems(
             Update,

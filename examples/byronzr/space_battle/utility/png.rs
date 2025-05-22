@@ -18,6 +18,7 @@ pub fn load<'a>(
     let file_path = file_path.into();
     // 1. 加载纹理
     let texture_handle: Handle<bevy_image::Image> = asset_server.load(format!("{}", file_path));
+
     // 实际加载图片地址(服务于ImageReader)
     let file_asset_path = format!("assets/{}", file_path);
     // 加载图片

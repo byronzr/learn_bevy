@@ -9,6 +9,7 @@ pub struct MainMenu {
     pub virtual_turret: bool,
     pub detect_test: bool,
     pub weapon_type: WeaponType,
+    pub log: bool,
 }
 
 #[derive(Resource, Default)]

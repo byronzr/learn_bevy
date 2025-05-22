@@ -4,7 +4,7 @@ use super::PhaseInfo;
 use bevy::prelude::*;
 //use bitflags::bitflags;
 
-#[derive(Component, Default, Clone, Debug, Eq, PartialEq)]
+#[derive(Component, Default, Clone, Debug, Eq, PartialEq, Copy)]
 pub enum WeaponType {
     Bullet,
     Missile,
@@ -60,7 +60,7 @@ impl WeaponType {
         match *self {
             WeaponType::Bullet => {
                 weapon.shot_timer = Some(Timer::from_seconds(2., TimerMode::Once));
-                weapon.fire_angle = 0.2;
+                weapon.fire_angle = 0.5;
                 weapon.capacity = 0;
                 weapon.capacity_max = 10;
                 weapon.capacity_repeat = true;
@@ -94,7 +94,7 @@ impl WeaponType {
             }
             WeaponType::Beam => {
                 weapon.shot_timer = Some(Timer::from_seconds(2., TimerMode::Once));
-                weapon.fire_angle = 0.01;
+                weapon.fire_angle = 0.2;
                 weapon.capacity = 0;
                 weapon.capacity_max = 1;
                 weapon.capacity_repeat = true;

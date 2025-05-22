@@ -3,8 +3,10 @@ use bevy::{prelude::*, window::WindowResolution};
 use bevy_rapier2d::prelude::*;
 
 mod components;
+mod effects;
 mod events;
 mod resources;
+mod shader;
 mod strategies;
 mod ui;
 mod utility;
@@ -13,7 +15,7 @@ fn main() {
     let mut app = App::new();
     app.add_plugins(
         DefaultPlugins
-            .set(ImagePlugin::default_nearest())
+            //.set(ImagePlugin::default_linear())
             .set(WindowPlugin {
                 primary_window: Some(Window {
                     resolution: WindowResolution::new(1920., 1080.),
@@ -35,6 +37,7 @@ fn main() {
     app.add_plugins(ui::UIPlugin);
     app.add_plugins(strategies::StrategiesPlugin);
     app.add_plugins(resources::ResourcePlugin);
+    app.add_plugins(effects::EffectsPlugin);
 
     app.run();
 }

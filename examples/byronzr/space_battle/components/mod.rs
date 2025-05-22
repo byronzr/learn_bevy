@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+pub mod effects;
 pub mod ship;
 pub mod weapon;
 

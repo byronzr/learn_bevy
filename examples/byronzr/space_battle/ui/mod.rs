@@ -1,7 +1,10 @@
 use std::borrow::Cow;
 
 use bevy::{
-    core_pipeline::{bloom::Bloom, tonemapping::Tonemapping},
+    core_pipeline::{
+        bloom::{Bloom, BloomCompositeMode},
+        tonemapping::{DebandDither, Tonemapping},
+    },
     input::mouse::AccumulatedMouseScroll,
     prelude::*,
 };
@@ -10,7 +13,7 @@ use bevy_ecs::entity_disabling::Disabled;
 use detect::DebugRenderMaker;
 pub mod detect;
 pub mod game;
-pub mod main;
+pub mod panel;
 
 // UI 提示
 #[derive(Component, Eq, PartialEq, Debug)]
@@ -22,10 +25,10 @@ pub enum ButtonStatus {
 pub struct UIPlugin;
 impl Plugin for UIPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (setup, main::ui_main_setup, show_grid).chain());
+        app.add_systems(Startup, (setup, panel::ui_main_setup, show_grid).chain());
         app.add_systems(
             Update,
-            (detect::direct_test, main::button_interaction, zoom),
+            (detect::direct_test, panel::button_interaction, zoom),
         );
     }
 }
@@ -37,6 +40,11 @@ fn setup(
 ) {
     let mut gizmos = GizmoAsset::default();
     // camera
+    let mut bloom = Bloom::default();
+    bloom.intensity = 0.15;
+    bloom.prefilter.threshold = 0.2;
+    bloom.low_frequency_boost = 1.0;
+    bloom.composite_mode = BloomCompositeMode::Additive;
     commands.spawn((
         Camera {
             hdr: true,
@@ -45,12 +53,25 @@ fn setup(
         },
         Camera2d,
         Tonemapping::TonyMcMapface,
-        Bloom::default(),
+        bloom,
+        DebandDither::Enabled,
     ));
 
-    // UI layout main 下面
+    // spawn background with sprite texture
     commands.spawn((
-        main::UILayoutMain,
+        Sprite {
+            // ! 不敢相信,JPEG 不是默认开启的 feature
+            image: asset_server.load("space_battle/background4.jpg"),
+            ..default()
+        },
+        Transform::from_translation(Vec3::new(0., 0., -100.)),
+        // ! Bevy 居然有一个默认组件是 Name 我居然现在
+        Name::new("Background"),
+    ));
+
+    // UI layout 下面
+    commands.spawn((
+        game::UILayoutGame,
         Node {
             position_type: PositionType::Absolute,
             bottom: Val::Px(12.),
@@ -61,9 +82,9 @@ fn setup(
         },
     ));
 
-    // UI layout game 左上方
+    // UI layout 左上方
     commands.spawn((
-        game::UILayoutGame,
+        panel::UILayoutMain,
         Node {
             position_type: PositionType::Absolute,
             top: Val::Px(12.),
@@ -145,7 +166,7 @@ fn show_grid(mut commands: Commands, mut gizom_assets: ResMut<Assets<GizmoAsset>
             Isometry2d::IDENTITY,                   // 投影模式
             UVec2::new(96, 54),                     // 单元格数量
             Vec2::new(20., 20.),                    // 单元格大小
-            LinearRgba::gray(0.05).with_alpha(0.2), // 网格颜色
+            LinearRgba::gray(0.05).with_alpha(0.1), // 网格颜色
         )
         .outer_edges();
     commands.spawn((
@@ -170,7 +191,7 @@ fn button<T: Component>(
             ButtonStatus::Inactive
         },
         if active {
-            BackgroundColor(Color::srgb_u8(0, 128, 0))
+            BackgroundColor(Color::srgb_u8(0, 84, 0))
         } else {
             BackgroundColor(Color::BLACK)
         },
@@ -187,10 +208,11 @@ fn button<T: Component>(
             ..default()
         },
         BorderRadius::all(Val::Px(5.0)),
+        BorderColor(Color::WHITE.with_alpha(0.2)),
         children![(
             Text::new(name),
             TextFont {
-                font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                font: asset_server.load("fonts/FiraMono-Medium.ttf"),
                 font_size: 12.0,
                 ..default()
             },

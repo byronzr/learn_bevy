@@ -1,21 +1,19 @@
 use crate::components::ship::{ShipHull, ShipPart};
 use crate::events::Emit;
-use crate::resources::{player::PlayerShipResource, turret::TurretResource};
+use crate::resources::menu::MainMenu;
+use crate::resources::turret::TurretResource;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
-use std::time::Duration;
 
 // 炮塔挂载点自行计算射程与角度
 pub fn turret_detection(
     mut commands: Commands,
     mut res_weapon: ResMut<TurretResource>,
-    ship: Res<PlayerShipResource>,
     // 注意: 这里我们使到的是 GlobalTransform,因为 ShipPart 是以 Children 方式与 ShipHull 绑定的
     query: Populated<(Entity, &GlobalTransform), With<ShipPart>>,
     hull: Single<&Transform, With<ShipHull>>,
     read_rapier: ReadRapierContext,
-    mut gizmos: Gizmos,
-    time: Res<Time>,
+    menu: Res<MainMenu>,
 ) -> Result {
     // 当前可用武器列表
     let available_weapons = res_weapon.available_weapons();
@@ -35,7 +33,8 @@ pub fn turret_detection(
             continue;
         };
         // 第一阶段信息
-        let phase = &weapon.phase[0];
+        // ! 注意: 这里不能持有 weapon.phase 的引用,这是 rust 的限制,weapon 不能同时有一个可写引用与一个借用
+        let phase_range = weapon.phase[0].range;
         // 炮塔挂载点
         let mount_pos = transform.translation().truncate();
         // 通过 hull_pos 与 挂载点,得到发射向量
@@ -51,12 +50,17 @@ pub fn turret_detection(
 
             // 计算 direction 向量与 hull_direction 向量的夹角
             let angle = mount_direction.angle_to(enemy_direction);
-            if angle.abs() < weapon.fire_angle && weapon.fire() && distance < phase.range {
+            if angle.abs() < weapon.fire_angle && weapon.fire() && distance < phase_range {
                 commands.trigger(Emit {
                     direction: mount_direction,
                     start_position: mount_pos,
                 });
-                println!("fire! capacity: {}, angle: {}", weapon.capacity, angle);
+            }
+            if menu.log {
+                println!(
+                    "fire! capacity: {}, angle: {} , distance: {}",
+                    weapon.capacity, angle, distance
+                );
             }
         }
     }
