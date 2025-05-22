@@ -54,6 +54,7 @@ pub fn turret_detection(
                 commands.trigger(Emit {
                     direction: mount_direction,
                     start_position: mount_pos,
+                    weapon_type: weapon.weapon_type.clone(),
                 });
             }
             if menu.log {

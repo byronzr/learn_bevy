@@ -1,5 +1,5 @@
-use crate::components::ship::ShipState;
-use bevy::prelude::*;
+use crate::components::{ship::ShipState, weapon::WeaponType};
+use bevy::{platform::collections::HashMap, prelude::*};
 
 #[derive(Resource, Default)]
 pub struct PlayerShipResource {
@@ -8,4 +8,6 @@ pub struct PlayerShipResource {
     pub sprite: Option<Sprite>,       // 飞船精灵
     pub target_enmey: Option<Entity>, // 锁定目标敌人
     pub engine_flame: bool,           // 引擎尾焰
+    // sounds of weapon
+    pub weapon_sounds: HashMap<WeaponType, Handle<AudioSource>>,
 }

@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+pub mod audio;
 pub mod effects;
 pub mod ship;
 pub mod weapon;
@@ -24,8 +25,8 @@ pub struct BaseVelocity {
 #[derive(Debug)]
 pub struct Braking {
     pub distance: f32, // 制动距离
-    pub linear: f32,   // 线性力度
-    pub angular: f32,  // 扭力
+    pub speed: f32,    // 线性力度
+    pub torque: f32,   // 扭力
 }
 
 // 安全距离,由武器决定

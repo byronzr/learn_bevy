@@ -8,11 +8,16 @@ pub struct MainMenu {
     pub mesh_mode: bool,
     pub virtual_turret: bool,
     pub detect_test: bool,
-    pub weapon_type: WeaponType,
     pub log: bool,
+    pub engine_flame: bool,
+
+    // audio
+    pub ui_button_pressed: Handle<AudioSource>,
 }
 
 #[derive(Resource, Default)]
 pub struct GameMenu {
-    //todo
+    pub weapon_type: WeaponType,
+
+    pub ui_button_pressed: Handle<AudioSource>,
 }

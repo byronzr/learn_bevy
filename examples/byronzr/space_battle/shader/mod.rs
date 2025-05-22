@@ -16,7 +16,7 @@ pub struct MaterialEngineFlame {
 
 impl Material2d for MaterialEngineFlame {
     fn fragment_shader() -> ShaderRef {
-        "space_battle/engine_flame.wgsl".into()
+        "space_battle/shader/engine_flame.wgsl".into()
     }
 
     fn alpha_mode(&self) -> AlphaMode2d {

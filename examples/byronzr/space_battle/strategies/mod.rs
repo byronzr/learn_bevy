@@ -11,7 +11,10 @@ pub struct StrategiesPlugin;
 impl Plugin for StrategiesPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(Material2dPlugin::<MaterialEngineFlame>::default());
-        app.add_systems(Startup, player::generate_player_ship);
+        app.add_systems(
+            Startup,
+            (player::generate_player_ship, player::load_weapon_sounds),
+        );
         app.add_systems(
             Update,
             (

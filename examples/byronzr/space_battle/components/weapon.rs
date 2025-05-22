@@ -4,7 +4,7 @@ use super::PhaseInfo;
 use bevy::prelude::*;
 //use bitflags::bitflags;
 
-#[derive(Component, Default, Clone, Debug, Eq, PartialEq, Copy)]
+#[derive(Component, Default, Clone, Debug, Eq, PartialEq, Copy, Hash)]
 pub enum WeaponType {
     Bullet,
     Missile,

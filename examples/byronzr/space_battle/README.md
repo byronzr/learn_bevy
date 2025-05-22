@@ -8,7 +8,7 @@
     * projectile.rs
         * [system] //TODO// `projectile_trail()` 投射物(炮弹)尾焰轨迹
     * engine.rs
-        * [system] //TODO// `engine_flame()` 引擎尾焰
+        * [system] `engine_flame()` 引擎尾焰
 		
 * ### strategies 策略
     * StrategiesPlugin 策略
@@ -16,10 +16,14 @@
 			* [system] `random_enemies()` 随机生成敌舰
 			* [system] //TODO// `enemies_movement` 敌人向中心靠拢
 			* [system] `enemy_collision()` 敌般碰撞事件
-        * player.rs
-			* [system] `generate_player_ship()` 初始化旗舰
-			* [system] `drift()` idle 漂移状态
-            * [system] `player_detection()` 玩家寻敌
+        * player/
+			* generate.rs
+				* [system] `generate_player_ship()` 初始化旗舰
+			* drift.rs
+				* [system] `drift()` idle 漂移状态
+			* player_detection.rs
+				* [system] `player_detection()` 玩家寻敌
+				* [fn] `track_target()` 
         * turret.rs
             * [system] `turret_detection()` 炮塔寻敌
         * projectile.rs
@@ -35,9 +39,11 @@
 			* [system] //TODO// `zoom()` 场景缩放
 			* [system] `show_grid` 辅助网格
 			* [fn] `button()` 快速 button 函数
-		* main.rs
-			* [system] `ui_main_setup()` 主控菜单
-			* [system] `main_menu_interaction()` 
+		* panel/ 
+			* setup.rs
+				* [system] `ui_main_setup()` 主控菜单
+			* interaction.rs
+				* [system] `main_menu_interaction()` 
 		* game.rs
 			* [system] `ui_game_setup()` 游戏菜单
             * [system] `game_menu_interaction()` 
@@ -52,6 +58,9 @@
     * turret.rs 武器挂载点
     * player.rs 玩家旗舰
     * enemy.rs 敌舰统一资源
+
+* ### events 事件
+* ### shader 着色器
        
 			
 * ### components 组件

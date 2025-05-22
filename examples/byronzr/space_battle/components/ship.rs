@@ -50,8 +50,8 @@ pub struct ShipPart;
                 torque:1.,
                 braking:Braking{
                     distance:50.,
-                    linear: 0.0,
-                    angular: 0.0,
+                    speed: 0.0,
+                    torque: 0.0,
                 },
             },
             SafeDistance(150.),

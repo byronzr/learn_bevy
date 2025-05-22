@@ -14,6 +14,7 @@ use detect::DebugRenderMaker;
 pub mod detect;
 pub mod game;
 pub mod panel;
+pub mod statistic;
 
 // UI 提示
 #[derive(Component, Eq, PartialEq, Debug)]
@@ -22,13 +23,32 @@ pub enum ButtonStatus {
     Inactive,
 }
 
+// 可能会用的 ui 全局定位资源
+#[derive(Resource, Debug, Default)]
+pub struct UIResource {
+    pub panel: Option<Entity>,
+    pub game: Option<Entity>,
+    pub detect: Option<Entity>,
+    pub statistic: Option<Entity>,
+}
+
 pub struct UIPlugin;
 impl Plugin for UIPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, (setup, panel::ui_main_setup, show_grid).chain());
+        app.init_resource::<UIResource>();
+        app.add_systems(
+            Startup,
+            (setup, panel::ui_main_setup, game::ui_game_setup, show_grid).chain(),
+        );
         app.add_systems(
             Update,
-            (detect::direct_test, panel::button_interaction, zoom),
+            (
+                detect::direct_test,
+                panel::button_interaction,
+                game::button_interaction,
+                zoom,
+                statistic::statistic,
+            ),
         );
     }
 }
@@ -37,6 +57,7 @@ fn setup(
     mut commands: Commands,
     asset_server: ResMut<AssetServer>,
     mut gizom_assets: ResMut<Assets<GizmoAsset>>,
+    mut ui_resource: ResMut<UIResource>,
 ) {
     let mut gizmos = GizmoAsset::default();
     // camera
@@ -70,49 +91,80 @@ fn setup(
     ));
 
     // UI layout 下面
-    commands.spawn((
-        game::UILayoutGame,
-        Node {
-            position_type: PositionType::Absolute,
-            bottom: Val::Px(12.),
-            left: Val::Px(12.),
-            flex_direction: FlexDirection::Row,
-            column_gap: Val::Px(12.),
-            ..default()
-        },
-    ));
+    let id = commands
+        .spawn((
+            game::UILayoutGame,
+            Node {
+                position_type: PositionType::Absolute,
+                bottom: Val::Px(12.),
+                left: Val::Px(12.),
+                flex_direction: FlexDirection::Row,
+                column_gap: Val::Px(12.),
+                ..default()
+            },
+        ))
+        .id();
+    ui_resource.game = Some(id);
 
     // UI layout 左上方
-    commands.spawn((
-        panel::UILayoutMain,
-        Node {
-            position_type: PositionType::Absolute,
-            top: Val::Px(12.),
-            left: Val::Px(12.),
-            flex_direction: FlexDirection::Column,
-            row_gap: Val::Px(12.),
-            ..default()
-        },
-    ));
+    let id = commands
+        .spawn((
+            panel::UILayoutMain,
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Px(12.),
+                left: Val::Px(12.),
+                flex_direction: FlexDirection::Column,
+                row_gap: Val::Px(12.),
+                ..default()
+            },
+        ))
+        .id();
+    ui_resource.panel = Some(id);
 
     // UI layout debug 右上方
-    commands.spawn((
-        Text::default(),
-        TextFont {
-            font: asset_server.load("fonts/FiraMono-Medium.ttf"),
-            font_size: 12.0,
-            ..default()
-        },
-        detect::UILayoutDetect,
-        Node {
-            position_type: PositionType::Absolute,
-            top: Val::Px(12.),
-            right: Val::Px(12.),
-            flex_direction: FlexDirection::Column,
-            row_gap: Val::Px(12.),
-            ..default()
-        },
-    ));
+    let id = commands
+        .spawn((
+            Text::default(),
+            TextFont {
+                font: asset_server.load("fonts/FiraMono-Medium.ttf"),
+                font_size: 12.0,
+                ..default()
+            },
+            detect::UILayoutDetect,
+            Node {
+                position_type: PositionType::Absolute,
+                top: Val::Px(12.),
+                right: Val::Px(12.),
+                flex_direction: FlexDirection::Column,
+                row_gap: Val::Px(12.),
+                ..default()
+            },
+        ))
+        .id();
+    ui_resource.detect = Some(id);
+
+    // UI layout statistic 右下方
+    let id = commands
+        .spawn((
+            Text::default(),
+            TextFont {
+                font: asset_server.load("fonts/FiraMono-Medium.ttf"),
+                font_size: 12.0,
+                ..default()
+            },
+            statistic::UILayoutStatistic,
+            Node {
+                position_type: PositionType::Absolute,
+                bottom: Val::Px(12.),
+                right: Val::Px(12.),
+                flex_direction: FlexDirection::Column,
+                row_gap: Val::Px(12.),
+                ..default()
+            },
+        ))
+        .id();
+    ui_resource.statistic = Some(id);
 
     // virtual turret
     // (虚拟炮塔方向指针)红色
