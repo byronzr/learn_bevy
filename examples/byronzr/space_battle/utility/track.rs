@@ -1,4 +1,4 @@
-use crate::components::BaseVelocity;
+use crate::components::{BaseVelocity, Braking};
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
@@ -70,23 +70,28 @@ pub fn forward_to(
     flame = true;
     //}
 
-    // 当转向时移速会变慢
-    let force = forward
-        * velocity
-        * if rotate.is_some() || distance < safe_distance {
-            0.5
-        } else {
-            1.0
-        };
-    // 施加驱动力(脉冲)
-    commands.entity(entity).insert(ExternalImpulse {
-        impulse: force,
+    let impluse = ExternalImpulse {
+        impulse: forward * velocity,
         torque_impulse: base.torque,
-    });
+    };
+
+    let mut daming = Damping {
+        linear_damping: base.braking.speed / base.speed,
+        angular_damping: base.braking.torque / base.torque,
+    };
+    if rotate.is_some() {
+        daming.linear_damping = 0.1;
+    }
+    if distance < safe_distance {
+        daming.linear_damping = 0.1;
+    }
+
+    // 施加驱动力(脉冲)
+    commands.entity(entity).insert(impluse).insert(daming);
     if log {
         println!(
-            "entity: {:?}, target: {:?}, distance: {}, force: {}",
-            entity, target, distance, force
+            "entity: {:?}, target: {:?}, distance: {}, impulse: {:?}, daming: {:?}",
+            entity, target, distance, impluse, daming,
         );
     }
     flame

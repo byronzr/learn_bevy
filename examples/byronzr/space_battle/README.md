@@ -3,10 +3,10 @@
 * ### effects 视效
     * EffectsPlugin 特效
     * explode.rs
-        * [system] //TODO// `enemy_explode()` 敌人爆炸
-        * [system] //TODO// `projectile_explode()` 投射物爆炸
+        * [system] //Deferred// `enemy_explode()` 敌人爆炸
+        * [system] //Deferred// `projectile_explode()` 投射物爆炸
     * projectile.rs
-        * [system] //TODO// `projectile_trail()` 投射物(炮弹)尾焰轨迹
+        * [system] //Deferred// `projectile_trail()` 投射物(炮弹)尾焰轨迹
     * engine.rs
         * [system] `engine_flame()` 引擎尾焰
 		
@@ -16,7 +16,8 @@
 			* random.rs
 				* [system] `random_enemies()` 随机生成敌舰
 			* movement.rs
-				* [system] //TODO// `enemies_movement` 敌人向中心靠拢
+				* [system] `enemy_movement` 敌人向中心靠拢
+				* [system] `enemy_locked` 炮塔锁定着色
 			* collision.rs
 				* [system] `enemy_collision()` 敌般碰撞事件
         * player/
@@ -31,7 +32,9 @@
             * [system] `turret_detection()` 炮塔寻敌
         * projectile.rs
 			* [observer] `emit_observer()` 发射监视器
-            * [system] //TODO// `projectile_detection()` 投射物(missile)寻敌
+			* [observer] `seek_observer` 炮塔索敌监视器
+			* [system] `seek_target_clean` 炮塔标记清理
+            * [system] //Deferred// `Projectile_detection()` 投射物(missile)寻敌
 		* weapon.rs
 			* [system] ``weapon_maintenance` 武器上弹,充能,等计算
 			
@@ -39,7 +42,8 @@
     * UiPlugin 界面管理
 		* mod.rs
 			* [system] `setup()`, 初始化
-			* [system] //TODO// `zoom()` 场景缩放
+			* [system] `zoom()` 场景缩放
+			* [system] `lock_player` 锁定跟随玩家
 			* [system] `show_grid` 辅助网格
 			* [fn] `button()` 快速 button 函数
 		* panel/ 
@@ -47,13 +51,18 @@
 				* [system] `ui_main_setup()` 主控菜单
 			* interaction.rs
 				* [system] `main_menu_interaction()` 
-		* game.rs
-			* [system] `ui_game_setup()` 游戏菜单
-            * [system] `game_menu_interaction()` 
+		* game/
+			* interaction.rs
+	            * [system] `game_menu_interaction()` 
+			* setup.rs
+				* [system] `ui_game_setup()` 游戏菜单
 		* detect.rs 
 			* [system] `direct_test()` 以中心点为起点,以Y轴为朝向的示例
-		* hud.rs
-			* // TODO // 仪表
+		* hud/
+			* init.rs
+				* [system] `init_hud` 初始化 hud
+			* sync.rs
+				* [system] `sync_hud` 同步 hud 数据
 			
     
 * ### resources 资源
@@ -64,6 +73,7 @@
 
 * ### events 事件
 * ### shader 着色器
+	* [struct] WGSL shder 尾焰效果
        
 			
 * ### components 组件
@@ -79,6 +89,6 @@
     * png.rs 图像加载
         * [fn] `load()` 加载 PNG 图片,生成 Collider 所需要 vertices
 	* curve.rs 曲线函数
-		* [fn] //TODO// `ease_in()` 缓入
-		* [fn] //TODO// `ease_out()` 缓出
-		* [fn] //TODO// `ease_in_out()` 缓入缓出
+		* [fn] //Deferred// `ease_in()` 缓入
+		* [fn] //Deferred// `ease_out()` 缓出
+		* [fn] //Deferred// `ease_in_out()` 缓入缓出

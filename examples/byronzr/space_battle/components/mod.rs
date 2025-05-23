@@ -22,16 +22,22 @@ pub struct BaseVelocity {
 }
 
 // 基础制动系数
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Braking {
     pub distance: f32, // 制动距离
     pub speed: f32,    // 线性力度
     pub torque: f32,   // 扭力
 }
 
-// 安全距离,由武器决定
-#[derive(Component, Debug)]
-pub struct SafeDistance(pub f32);
+impl Default for Braking {
+    fn default() -> Self {
+        Self {
+            distance: 5.0,
+            speed: 1.0,
+            torque: 0.1,
+        }
+    }
+}
 
 #[derive(Default, Debug)]
 pub struct PhaseInfo {

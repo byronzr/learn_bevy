@@ -30,7 +30,7 @@ pub fn direct_test(
     menu: Res<MainMenu>,
 ) {
     let (entity, mut transform, _) = virtual_turret.into_inner();
-    //TODO: 非激活状态,需要隐藏
+
     if !menu.detect_test {
         commands.entity(entity).insert_if_new(Disabled);
         return;

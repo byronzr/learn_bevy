@@ -7,7 +7,6 @@ use bevy::{
     },
     input::mouse::AccumulatedMouseScroll,
     prelude::*,
-    time,
 };
 
 use bevy_ecs::entity_disabling::Disabled;
@@ -16,6 +15,7 @@ use detect::DebugRenderMaker;
 use crate::{components::ship::ShipHull, resources::menu::MainMenu};
 pub mod detect;
 pub mod game;
+pub mod hud;
 pub mod panel;
 pub mod statistic;
 
@@ -41,7 +41,14 @@ impl Plugin for UIPlugin {
         app.init_resource::<UIResource>();
         app.add_systems(
             Startup,
-            (setup, panel::ui_main_setup, game::ui_game_setup, show_grid).chain(),
+            (
+                setup,
+                panel::ui_main_setup,
+                game::ui_game_setup,
+                show_grid,
+                hud::init_hud,
+            )
+                .chain(),
         );
         app.add_systems(
             Update,
@@ -52,6 +59,7 @@ impl Plugin for UIPlugin {
                 zoom,
                 lock_player,
                 statistic::statistic,
+                hud::sync_hud,
             ),
         );
     }

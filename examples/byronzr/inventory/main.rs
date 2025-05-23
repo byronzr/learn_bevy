@@ -442,7 +442,7 @@ fn setup_sprite_ui(
                 start_offset.y - row as f32 * SLOT_SIZE,
                 SLOT_LAYER,
             ));
-            // TODO: 还差半格 slot_size 未处理
+            // 还差半格 slot_size 未处理
             let custom_size = Vec2::splat(SLOT_SIZE - SLOT_GAP);
             commands
                 .spawn((

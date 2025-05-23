@@ -1,6 +1,10 @@
 use bevy::prelude::*;
 
-use crate::{resources::menu::GameMenu, ui::UIResource, ui::button};
+use crate::{
+    components::weapon::WeaponType,
+    resources::menu::GameMenu,
+    ui::{UIResource, button},
+};
 
 use super::GameMenuButton;
 
@@ -16,7 +20,7 @@ pub fn ui_game_setup(
     commands
         .spawn(button(
             &mut asset_server,
-            "Weapon: ?".into(),
+            format!("Weapon: {:?}", WeaponType::Beam).into(),
             GameMenuButton::WeaponType,
             false,
         ))
@@ -71,7 +75,7 @@ pub fn ui_game_setup(
     commands
         .spawn(button(
             &mut asset_server,
-            "Add Speed".into(),
+            "Speed +100".into(),
             GameMenuButton::AddSpeed,
             false,
         ))
@@ -80,7 +84,7 @@ pub fn ui_game_setup(
     commands
         .spawn(button(
             &mut asset_server,
-            "Sub Speed".into(),
+            "Speed -10".into(),
             GameMenuButton::SubSpeed,
             false,
         ))
@@ -90,7 +94,7 @@ pub fn ui_game_setup(
     commands
         .spawn(button(
             &mut asset_server,
-            "Add Torque".into(),
+            "Torque +0.05".into(),
             GameMenuButton::AddTorque,
             false,
         ))
@@ -99,7 +103,7 @@ pub fn ui_game_setup(
     commands
         .spawn(button(
             &mut asset_server,
-            "Sub Torque".into(),
+            "Torque -0.05".into(),
             GameMenuButton::SubTorque,
             false,
         ))
@@ -109,7 +113,7 @@ pub fn ui_game_setup(
     commands
         .spawn(button(
             &mut asset_server,
-            "Add BK Speed".into(),
+            "BK Speed +100".into(),
             GameMenuButton::AddBrakingSpeed,
             false,
         ))
@@ -118,7 +122,7 @@ pub fn ui_game_setup(
     commands
         .spawn(button(
             &mut asset_server,
-            "Sub BK Speed".into(),
+            "BK Speed -10".into(),
             GameMenuButton::SubBrakingSpeed,
             false,
         ))
@@ -128,7 +132,7 @@ pub fn ui_game_setup(
     commands
         .spawn(button(
             &mut asset_server,
-            "Add BK Torque".into(),
+            "BK Torque +0.05".into(),
             GameMenuButton::AddBrakingTorque,
             false,
         ))
@@ -137,7 +141,7 @@ pub fn ui_game_setup(
     commands
         .spawn(button(
             &mut asset_server,
-            "Sub BK Torque".into(),
+            "BK Torque -0.05".into(),
             GameMenuButton::SubBrakingTorque,
             false,
         ))
@@ -147,7 +151,7 @@ pub fn ui_game_setup(
     commands
         .spawn(button(
             &mut asset_server,
-            "Add BK Distance".into(),
+            "BK Distance +10".into(),
             GameMenuButton::AddBrakingDistance,
             false,
         ))
@@ -156,7 +160,7 @@ pub fn ui_game_setup(
     commands
         .spawn(button(
             &mut asset_server,
-            "Sub BK Distance".into(),
+            "BK Distance -5".into(),
             GameMenuButton::SubBrakingDistance,
             false,
         ))

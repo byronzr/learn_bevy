@@ -1,6 +1,6 @@
+use super::{BaseVelocity, Braking};
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
-use super::{SafeDistance, Braking, BaseVelocity};
 
 // 敌舰主体(也是标识)
 #[derive(Component)]
@@ -8,7 +8,7 @@ use super::{SafeDistance, Braking, BaseVelocity};
     //Collider::cuboid(10., 10.),
     RigidBody::Dynamic,
     GravityScale(0.),
-    ColliderMassProperties::Mass(100.),
+    ColliderMassProperties::Mass(10.),
     CollisionGroups::new(Group::GROUP_19, Group::GROUP_2|Group::GROUP_1),
     ActiveEvents::COLLISION_EVENTS,
     BaseVelocity{
@@ -16,11 +16,10 @@ use super::{SafeDistance, Braking, BaseVelocity};
         torque:1.,
         braking:Braking{
             distance:50.,
-            speed: 0.0,
-            torque: 0.0,
+            speed: 1.0,
+            torque: 1.0,
         },
     },
-    SafeDistance(150.),
 )]
 pub struct EnemyHull;
 
@@ -46,10 +45,6 @@ pub struct ShipPart;
     Restitution::new(0.5),
     ColliderMassProperties::Mass(10.0),
     GravityScale(0.0),
-    // Damping{
-    //     linear_damping: 0.3,
-    //     angular_damping: 0.3,
-    // },
     Damping{
         linear_damping: 0.1,
         angular_damping: 0.1,
@@ -60,12 +55,10 @@ pub struct ShipPart;
         torque:1.,
         braking:Braking{
             distance:50.,
-            speed: 0.0,
-            torque: 0.0,
+            speed: 1.0,
+            torque: 1.0,
         },
     },
-    SafeDistance(150.),
-    
 )]
 pub struct ShipHull;
 
@@ -77,5 +70,18 @@ pub enum ShipState {
     Moving,
 }
 
-#[derive(Debug,Component)]
+#[derive(Debug, Component)]
 pub struct Hud;
+
+#[derive(Debug, Component, Clone, Copy)]
+pub enum HudText {
+    Flux,
+    Capacity,
+    Speed,
+    Torque,
+    BkSpeed,
+    BkTorque,
+    BkDistance,
+    Cooldown,
+    Hitpoint,
+}

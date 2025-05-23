@@ -13,16 +13,42 @@ use crate::ui::ButtonStatus;
 pub fn button_interaction(
     mut commands: Commands,
     interaction_query: Query<
-        (Entity, &Interaction, &ButtonStatus, &PanelMenuButton),
+        (
+            Entity,
+            &Interaction,
+            &ButtonStatus,
+            &PanelMenuButton,
+            &Children,
+        ),
         (Changed<Interaction>, With<Button>),
     >,
     mut menu: ResMut<MainMenu>,
     mut render_context: ResMut<DebugRenderContext>,
     player_res: Res<PlayerShipResource>,
+    mut time: ResMut<Time<Virtual>>,
+    mut text_query: Query<&mut Text>,
 ) -> Result {
-    for (entity, interaction, active, button) in interaction_query {
+    for (entity, interaction, active, button, children) in interaction_query {
         if matches!(interaction, Interaction::Pressed) {
             match button {
+                PanelMenuButton::GameSpeed => {
+                    menu.game_speed = match menu.game_speed {
+                        1. => 2.,
+                        2. => 4.,
+                        4. => 8.,
+                        8. => 16.,
+                        16. => 32.,
+                        _ => 1.,
+                    };
+                    time.set_relative_speed(menu.game_speed);
+
+                    // 需要更新文本
+                    let Some(text_entity) = children.get(0) else {
+                        continue;
+                    };
+                    let mut text = text_query.get_mut(*text_entity).unwrap();
+                    **text = format!("Game Speed: {:?}", menu.game_speed);
+                }
                 PanelMenuButton::EngineFlame => {
                     menu.engine_flame = !menu.engine_flame;
                 }
@@ -44,21 +70,10 @@ pub fn button_interaction(
                     let Some(sprite) = player_res.sprite.clone() else {
                         return Ok(());
                     };
-                    // let Some(mesh) = player_res.mesh2d.clone() else {
-                    //     return Ok(());
-                    // };
-                    // let Some(material) = player_res.material.clone() else {
-                    //     return Ok(());
-                    // };
                     if menu.mesh_mode {
                         commands.entity(player_entity).remove::<Sprite>();
-                        //.insert((Mesh2d(mesh.clone()), MeshMaterial2d(material.clone())));
                     } else {
-                        commands
-                            .entity(player_entity)
-                            // .remove::<Mesh2d>()
-                            // .remove::<MeshMaterial2d<ColorMaterial>>()
-                            .insert(sprite);
+                        commands.entity(player_entity).insert(sprite);
                     }
                 }
                 PanelMenuButton::VirtualTurret => {

@@ -2,7 +2,7 @@ use crate::resources::player::PlayerShipResource;
 use crate::utility::track::forward_to;
 use crate::{
     components::{
-        BaseVelocity, SafeDistance,
+        BaseVelocity,
         ship::{EnemyHull, EnemyProjectPoint, ShipHull, ShipState},
     },
     resources::menu::MainMenu,
@@ -21,10 +21,7 @@ pub fn player_detection(
     // Populated 会使 system 在无结果时不会进入,这不是我们想要的,当没有 enemy 时我们希望 ship 回到 中心点
     enemy_query: Query<(Entity, &GlobalTransform), (With<EnemyProjectPoint>, Without<ShipHull>)>,
     // 注意: ShipHull 必须要有一个 Sprite或是Mesh才能有 Transform
-    player: Single<
-        (Entity, &mut Transform, &BaseVelocity, &SafeDistance),
-        (With<ShipHull>, Without<EnemyHull>),
-    >,
+    player: Single<(Entity, &mut Transform, &BaseVelocity), (With<ShipHull>, Without<EnemyHull>)>,
     read_context: ReadRapierContext,
     time: Res<Time>,
     mut ship: ResMut<PlayerShipResource>,
@@ -32,7 +29,7 @@ pub fn player_detection(
 ) -> Result {
     // 出现敌人后,Populated会使 system 开始运行
     let rapeir_context = read_context.single()?;
-    let (player, mut transform, base, safe) = player.into_inner();
+    let (player, mut transform, base) = player.into_inner();
     // 注意: 投射查询的是 EnemyProjectPoint,而不是 EnemyHull
     let filter = QueryFilter::default().groups(CollisionGroups::new(Group::ALL, Group::GROUP_18));
     let ship_pos = transform.translation.xy();
@@ -56,16 +53,21 @@ pub fn player_detection(
             Vec2::ZERO
         }
     };
+    let safe_distance = ship.weapon_range;
 
     if menu.log {
-        println!("enemy: {:?}", point);
+        println!(
+            "enemy: {:?} / enemy count: {}",
+            point,
+            enemy_query.iter().count()
+        );
     }
 
     // 进行跟踪
     ship.engine_flame = forward_to(
         &mut commands,
         &mut transform,
-        safe.0,
+        safe_distance,
         &base,
         player,
         point,

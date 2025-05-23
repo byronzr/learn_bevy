@@ -1,5 +1,5 @@
 use crate::components::ship::{ShipHull, ShipPart};
-use crate::events::Emit;
+use crate::events::{Emit, SeekEnemy};
 use crate::resources::menu::MainMenu;
 use crate::resources::turret::TurretResource;
 use bevy::prelude::*;
@@ -8,7 +8,7 @@ use bevy_rapier2d::prelude::*;
 // 炮塔挂载点自行计算射程与角度
 pub fn turret_detection(
     mut commands: Commands,
-    mut res_weapon: ResMut<TurretResource>,
+    mut turret: ResMut<TurretResource>,
     // 注意: 这里我们使到的是 GlobalTransform,因为 ShipPart 是以 Children 方式与 ShipHull 绑定的
     query: Populated<(Entity, &GlobalTransform), With<ShipPart>>,
     hull: Single<&Transform, With<ShipHull>>,
@@ -16,7 +16,7 @@ pub fn turret_detection(
     menu: Res<MainMenu>,
 ) -> Result {
     // 当前可用武器列表
-    let available_weapons = res_weapon.available_weapons();
+    let available_weapons = turret.available_weapons();
 
     // hull position
     let hull_pos = hull.into_inner().translation.truncate();
@@ -40,9 +40,13 @@ pub fn turret_detection(
         // 通过 hull_pos 与 挂载点,得到发射向量
         let mount_direction = (mount_pos - hull_pos).normalize();
         // 是否存在敌人
-        if let Some((_enemy_entity, projection)) =
+        if let Some((enemy_entity, projection)) =
             rapier_context.project_point(mount_pos, true, filter)
         {
+            commands.trigger(SeekEnemy {
+                enemy_entity: enemy_entity,
+            });
+
             // 挂载点与目标向量
             let enemy_direction = projection.point - mount_pos;
 
@@ -50,18 +54,22 @@ pub fn turret_detection(
 
             // 计算 direction 向量与 hull_direction 向量的夹角
             let angle = mount_direction.angle_to(enemy_direction);
+            if menu.log {
+                println!(
+                    "fire! capacity: {}, angle: {}/{} , distance: {}/{}",
+                    weapon.capacity,
+                    angle.abs(),
+                    weapon.fire_angle,
+                    distance,
+                    phase_range,
+                );
+            }
             if angle.abs() < weapon.fire_angle && weapon.fire() && distance < phase_range {
                 commands.trigger(Emit {
                     direction: mount_direction,
                     start_position: mount_pos,
                     weapon_type: weapon.weapon_type.clone(),
                 });
-            }
-            if menu.log {
-                println!(
-                    "fire! capacity: {}, angle: {} , distance: {}",
-                    weapon.capacity, angle, distance
-                );
             }
         }
     }

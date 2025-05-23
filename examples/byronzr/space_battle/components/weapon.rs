@@ -69,7 +69,7 @@ impl WeaponType {
                 weapon.explode_size = 3.0;
                 weapon.phase.push(PhaseInfo {
                     speed: 100.0,
-                    range: 700.0,
+                    range: 500.0,
                     track: 0.0,
                     lifecycle: Some(Timer::from_seconds(5.0, TimerMode::Once)),
                 })
@@ -86,7 +86,7 @@ impl WeaponType {
                 weapon.explode_size = 5.0;
                 weapon.phase.push(PhaseInfo {
                     speed: 70.0,
-                    range: 1200.0,
+                    range: 1000.0,
                     track: 3.0,
                     lifecycle: Some(Timer::from_seconds(15.0, TimerMode::Once)),
                 })
@@ -103,7 +103,7 @@ impl WeaponType {
                 weapon.explode_size = 1.0;
                 weapon.phase.push(PhaseInfo {
                     speed: 0.0,
-                    range: 550.0,
+                    range: 350.0,
                     track: 0.0,
                     lifecycle: Some(Timer::from_seconds(5., TimerMode::Once)),
                 })

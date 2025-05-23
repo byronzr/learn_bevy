@@ -10,6 +10,11 @@ pub struct Emit {
 }
 
 #[derive(Event, Debug)]
+pub struct SeekEnemy {
+    pub enemy_entity: Entity,
+}
+
+#[derive(Event, Debug)]
 pub struct EventFlame {
     pub start: bool,
 }

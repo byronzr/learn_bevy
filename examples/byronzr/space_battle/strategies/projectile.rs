@@ -2,7 +2,8 @@ use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 
 use crate::components::Projectile;
-use crate::events::Emit;
+use crate::components::effects::SeekFlag;
+use crate::events::{Emit, SeekEnemy};
 use crate::resources::player::PlayerShipResource;
 
 pub fn emit_observer(
@@ -10,9 +11,8 @@ pub fn emit_observer(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut ship: ResMut<PlayerShipResource>,
+    ship: Res<PlayerShipResource>,
 ) {
-    // TODO:  可能需要重新计算最新的向量发射
     commands.spawn((
         Mesh2d(meshes.add(Circle::new(1.))),
         MeshMaterial2d(materials.add(ColorMaterial::from(Color::srgb(3., 3., 5.)))),
@@ -45,4 +45,32 @@ pub fn emit_observer(
     };
 
     commands.spawn((AudioPlayer::new(sound), PlaybackSettings::DESPAWN));
+}
+
+pub fn seek_observer(
+    trigger: Trigger<SeekEnemy>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    commands
+        .spawn((
+            SeekFlag(Timer::from_seconds(3., TimerMode::Repeating)),
+            Mesh2d(meshes.add(Annulus::new(60., 61.))),
+            MeshMaterial2d(materials.add(Color::srgba(0.5, 0.5, 0., 5.))),
+        ))
+        .insert(ChildOf(trigger.enemy_entity));
+}
+
+pub fn seek_target_clean(
+    mut flags: Query<(Entity, &mut SeekFlag)>,
+    time: Res<Time>,
+    mut commands: Commands,
+) {
+    for (entity, mut timer) in flags.iter_mut() {
+        timer.0.tick(time.delta());
+        if timer.0.just_finished() {
+            commands.entity(entity).despawn();
+        }
+    }
 }

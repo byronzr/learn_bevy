@@ -16,6 +16,7 @@ pub enum PanelMenuButton {
     MeshMode,
     EngineFlame,
     LockPlayer,
+    GameSpeed,
 }
 
 #[derive(Component, Debug)]

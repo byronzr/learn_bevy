@@ -28,7 +28,6 @@ pub fn random_enemies(
         return Ok(());
     }
     if timer.0.tick(time.delta()).just_finished() {
-        // todo
         let mut rng = rng();
         // 1920 * 1080
         let axis = vec![

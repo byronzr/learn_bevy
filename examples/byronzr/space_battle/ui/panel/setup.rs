@@ -2,7 +2,7 @@ use crate::ui::button;
 use crate::{resources::menu::MainMenu, ui::UIResource};
 use bevy::prelude::*;
 
-use super::{PanelMenuButton, UILayoutMain};
+use super::PanelMenuButton;
 use bevy_rapier2d::prelude::*;
 
 pub fn ui_main_setup(
@@ -84,6 +84,15 @@ pub fn ui_main_setup(
             &mut asset_server,
             "Lock Player".into(),
             PanelMenuButton::LockPlayer,
+            false,
+        ))
+        .insert(ChildOf(ui_layout));
+
+    commands
+        .spawn(button(
+            &mut asset_server,
+            "Game Speed: 1.0".into(),
+            PanelMenuButton::GameSpeed,
             false,
         ))
         .insert(ChildOf(ui_layout));

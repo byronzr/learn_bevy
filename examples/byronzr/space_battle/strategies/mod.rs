@@ -27,12 +27,7 @@ impl Plugin for StrategiesPlugin {
         );
         app.add_systems(
             Startup,
-            (
-                player::generate_player_ship,
-                player::load_weapon_sounds,
-                player::init_hud,
-            )
-                .chain(),
+            (player::generate_player_ship, player::load_weapon_sounds).chain(),
         );
 
         app.add_systems(
@@ -40,20 +35,24 @@ impl Plugin for StrategiesPlugin {
             (
                 (
                     player::drift,
-                    player::player_detection,
-                    turret::turret_detection,
+                    player::player_detection, // ! 可能放到 PostUpdate 中会好一些
+                    turret::turret_detection, // ! 同上
                     outside_clear,
                     enemy::random_enemies,
                     enemy::enemy_movement,
+                    enemy::enemy_locked,
                     weapon::weapons_maintenance,
-                    player::sync_hud,
+                    projectile::seek_target_clean,
                 )
                     .in_set(GameSet::Movement),
-                (enemy::enemy_collision,).in_set(GameSet::Collision),
+                (enemy::enemy_collision,).in_set(GameSet::Collision), // ! collision 会 despawn文档好像说 ApplyDeferred 会在 PostUpdate 之前执行
             ),
         );
 
+        //app.add_systems(PostUpdate, );
+
         app.add_observer(projectile::emit_observer);
+        app.add_observer(projectile::seek_observer);
     }
 }
 

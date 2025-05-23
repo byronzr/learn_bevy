@@ -9,9 +9,6 @@ pub use generate::*;
 pub mod drift;
 pub use drift::*;
 
-pub mod hud;
-pub use hud::*;
-
 use crate::resources::player::PlayerShipResource;
 
 pub fn load_weapon_sounds(

@@ -1,5 +1,4 @@
 use crate::components::effects::EngineFlame;
-use crate::components::ship::Hud;
 use crate::components::{
     ship::{ShipHull, ShipPart, ShipState},
     weapon::WeaponType,
@@ -71,6 +70,7 @@ pub fn generate_player_ship(
         .spawn((
             //Mesh2d(meshes.add(flame_mesh)),
             Mesh2d(meshes.add(Rectangle::default())),
+            //Mesh2d(meshes.add(Rectangle::new(48., 24.))),
             MeshMaterial2d(custom_materials.add(MaterialEngineFlame {
                 my_texture: flame_handle.clone(),
                 lumina: LinearRgba::WHITE,
@@ -150,5 +150,15 @@ pub fn generate_player_ship(
     turret
         .weapon
         .push(WeaponType::Missile.init(br, f32::EPSILON));
+
+    // default fire_type
+    turret.fire_type = WeaponType::Beam;
+    ship.weapon_range = turret.current_range();
+
+    // default bk.distance
+    ship.bk_distance = 10.0;
+    ship.bk_speed = 1.0;
+    ship.bk_torque = 0.1;
+
     Ok(())
 }
