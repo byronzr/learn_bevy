@@ -10,6 +10,7 @@ pub struct MainMenu {
     pub detect_test: bool,
     pub log: bool,
     pub engine_flame: bool,
+    pub lock_player: bool,
 
     // audio
     pub ui_button_pressed: Handle<AudioSource>,

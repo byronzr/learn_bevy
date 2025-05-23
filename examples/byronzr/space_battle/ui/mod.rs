@@ -7,10 +7,13 @@ use bevy::{
     },
     input::mouse::AccumulatedMouseScroll,
     prelude::*,
+    time,
 };
 
 use bevy_ecs::entity_disabling::Disabled;
 use detect::DebugRenderMaker;
+
+use crate::{components::ship::ShipHull, resources::menu::MainMenu};
 pub mod detect;
 pub mod game;
 pub mod panel;
@@ -47,6 +50,7 @@ impl Plugin for UIPlugin {
                 panel::button_interaction,
                 game::button_interaction,
                 zoom,
+                lock_player,
                 statistic::statistic,
             ),
         );
@@ -205,6 +209,23 @@ fn zoom(
             perspective.fov = (perspective.fov + delta_zoom).clamp(0.1, 10.);
         }
         _ => (),
+    }
+}
+
+fn lock_player(
+    mut camera: Single<&mut Transform, (Without<ShipHull>, With<Camera2d>)>,
+    player: Single<&Transform, (Without<Camera2d>, With<ShipHull>)>,
+    menu: Res<MainMenu>,
+    time: Res<Time>,
+) {
+    // 需要锁定玩家
+    if menu.lock_player {
+        let Vec3 { x, y, .. } = player.translation;
+        let direction = Vec3::new(x, y, camera.translation.z);
+        // 平滑轻微调整
+        camera
+            .translation
+            .smooth_nudge(&direction, 2.0, time.delta_secs());
     }
 }
 

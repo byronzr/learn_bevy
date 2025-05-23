@@ -1,5 +1,5 @@
 use crate::resources::player::PlayerShipResource;
-use crate::utility::track;
+use crate::utility::track::forward_to;
 use crate::{
     components::{
         BaseVelocity, SafeDistance,
@@ -11,65 +11,6 @@ use crate::{
 use bevy::prelude::*;
 
 use bevy_rapier2d::prelude::*;
-use core::f32;
-
-// track target
-pub fn track_target(
-    commands: &mut Commands,
-    transform: &mut Transform,
-    safe_distance: f32,
-    base: &BaseVelocity,
-    player: Entity,
-    target: Vec2,
-    delta_time: f32,
-    log: bool,
-) -> bool {
-    let mut flame = false;
-    // 计算角度,NONE 表示无需旋转
-    let rotate = track::rotaion_to(target, transform);
-    if let Some((angle, clockwise)) = rotate {
-        // 计算差值
-        let rotation_value = clockwise * (base.torque * delta_time).min(angle);
-        // 按差值旋转
-        transform.rotate_z(rotation_value);
-    }
-
-    // 从飞船到目标的向量 (目标-飞船)
-    let (forward, distance) = track::forward(target, transform);
-    let max_step = distance - safe_distance;
-    // 计算速度差值
-    let velocity = (distance * base.speed * delta_time).min(max_step);
-    // 速度为负数(pulse反向)
-    if velocity < f32::EPSILON {
-        return flame;
-    }
-
-    //if rotate.is_some() {
-    // 施加脉冲
-    flame = true;
-    //}
-
-    // 当转向时移速会变慢
-    let force = forward
-        * velocity
-        * if rotate.is_some() || distance < safe_distance {
-            0.5
-        } else {
-            1.0
-        };
-    // 施加驱动力(脉冲)
-    commands.entity(player).insert(ExternalImpulse {
-        impulse: force,
-        torque_impulse: base.torque,
-    });
-    if log {
-        println!(
-            "player: {:?}, target: {:?}, distance: {}, force: {}",
-            player, target, distance, force
-        );
-    }
-    flame
-}
 
 // player_detection
 pub fn player_detection(
@@ -121,7 +62,7 @@ pub fn player_detection(
     }
 
     // 进行跟踪
-    ship.engine_flame = track_target(
+    ship.engine_flame = forward_to(
         &mut commands,
         &mut transform,
         safe.0,
@@ -129,7 +70,7 @@ pub fn player_detection(
         player,
         point,
         time.delta_secs(),
-        menu.log,
+        false,
     );
 
     Ok(())

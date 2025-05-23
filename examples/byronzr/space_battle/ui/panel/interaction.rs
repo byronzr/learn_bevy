@@ -66,23 +66,10 @@ pub fn button_interaction(
                 }
                 PanelMenuButton::DetectTest => {
                     menu.detect_test = !menu.detect_test;
-                } // PanelMenuButton::WeaponType => {
-                  //     menu.weapon_type = match menu.weapon_type {
-                  //         WeaponType::Beam => WeaponType::Bullet,
-                  //         WeaponType::Bullet => WeaponType::Missile,
-                  //         WeaponType::Missile => WeaponType::Beam,
-                  //     };
-                  //     //player_res
-                  //     turret_res.fire_type = menu.weapon_type;
-                  //     // 需要更新文本
-                  //     let Some(text_entity) = children.get(0) else {
-                  //         continue;
-                  //     };
-                  //     let mut text = text_query.get_mut(*text_entity).unwrap();
-                  //     **text = format!("Weapon: {:?}", menu.weapon_type);
-                  //     // no color change
-                  //     continue;
-                  // }
+                }
+                PanelMenuButton::LockPlayer => {
+                    menu.lock_player = !menu.lock_player;
+                }
             }
 
             // 更新按钮状态颜色

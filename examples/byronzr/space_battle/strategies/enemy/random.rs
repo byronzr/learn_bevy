@@ -3,11 +3,9 @@ use bevy_rapier2d::prelude::*;
 use rand::seq::IndexedRandom;
 use rand::{Rng, rng};
 
-use crate::components::Projectile;
 use crate::components::ship::{EnemyHull, EnemyProjectPoint};
 use crate::resources::enemy::EnemyGenerateTimer;
 use crate::resources::menu::MainMenu;
-use crate::resources::player::PlayerShipResource;
 use crate::utility;
 
 pub enum Bound {
@@ -43,11 +41,11 @@ pub fn random_enemies(
         let transform = match axis.choose(&mut rng) {
             Some(one) => match *one {
                 Bound::Top(y) | Bound::Bottom(y) => {
-                    let x = rng.random_range(-540. ..540.);
+                    let x = rng.random_range(-960. ..960.);
                     Transform::from_xyz(x, y, 0.)
                 }
                 Bound::Left(x) | Bound::Right(x) => {
-                    let y = rng.random_range(-960. ..960.);
+                    let y = rng.random_range(-540. ..540.);
                     Transform::from_xyz(x, y, 0.)
                 }
             },
@@ -91,33 +89,4 @@ pub fn random_enemies(
         }
     }
     Ok(())
-}
-
-pub fn enemy_collision(
-    mut commands: Commands,
-    mut collision_events: EventReader<CollisionEvent>,
-    query: Query<Entity, Or<(With<Projectile>, With<EnemyHull>)>>,
-    res: Res<PlayerShipResource>,
-) {
-    let Some(player) = res.ship_entity else {
-        return;
-    };
-    for event in collision_events.read() {
-        match event {
-            CollisionEvent::Started(e1, e2, _) => {
-                // 如果碰撞由于玩家船体则不删除
-                if e1 == &player || e2 == &player {
-                    continue;
-                }
-                // 确保非船体以外的实体被清除
-                if query.contains(*e1) {
-                    commands.entity(*e1).try_despawn();
-                }
-                if query.contains(*e2) {
-                    commands.entity(*e2).try_despawn();
-                }
-            }
-            _ => {}
-        }
-    }
 }

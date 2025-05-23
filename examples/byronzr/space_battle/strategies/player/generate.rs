@@ -1,4 +1,5 @@
 use crate::components::effects::EngineFlame;
+use crate::components::ship::Hud;
 use crate::components::{
     ship::{ShipHull, ShipPart, ShipState},
     weapon::WeaponType,
@@ -27,22 +28,19 @@ pub fn generate_player_ship(
     let mount_color = materials.add(ColorMaterial::from(Color::srgb(0., 0., 0.5)));
     // _shape.png 文件是没有透明过渡单色文件,可为 Mesh 提供准确的轮廓,
     // 但我们使用的是纹理素材,而 rapier 优化了这个结果(只注重外轮廓)
-    // let (mesh, texture_handle, vertices) =
-    //     resources::png::load_png("space_battle/lasher_ff_shape.png", &mut *asset_server)?;
-
     let (mesh, texture_handle, vertices) =
         utility::png::load("space_battle/lasher_ff.png", &mut *asset_server)?;
 
+    // 应用勾边后的 mesh
     let mesh2d = meshes.add(mesh);
     let material = materials.add(ColorMaterial::from(Color::srgb(0., 1., 0.)));
 
+    // 实际皮肤
     let sprite = Sprite {
         image: texture_handle.clone(),
         ..default()
     };
     ship.sprite = Some(sprite.clone());
-    // ship.mesh2d = Some(mesh2d.clone());
-    // ship.material = Some(material.clone());
 
     // 注意: ShipHull 必须要有一个 Sprite或是Mesh才能有 Transform
     // 似乎当 Mesh2d 与 Sprite 同时存在时,会异致一些不可预测的行为(错误)
@@ -51,7 +49,7 @@ pub fn generate_player_ship(
             ShipHull,
             sprite,
             // add Mesh2d with children
-            children![(Mesh2d(mesh2d), MeshMaterial2d(material))],
+            children![(Mesh2d(mesh2d), MeshMaterial2d(material)),],
         ))
         .id();
     // 添加 collider

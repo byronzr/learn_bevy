@@ -1,4 +1,6 @@
+use crate::components::BaseVelocity;
 use bevy::prelude::*;
+use bevy_rapier2d::prelude::*;
 
 // 获得转角度
 pub fn rotaion_to(target: Vec2, orgin_transform: &Transform) -> Option<(f32, f32)> {
@@ -30,4 +32,62 @@ pub fn forward(target: Vec2, orgin_transform: &Transform) -> (Vec2, f32) {
     let distance = delta.length();
     // 获得旋转后的向量
     ((orgin_transform.rotation * Vec3::Y).xy(), distance)
+}
+
+// track target
+pub fn forward_to(
+    commands: &mut Commands,
+    transform: &mut Transform,
+    safe_distance: f32,
+    base: &BaseVelocity,
+    entity: Entity,
+    target: Vec2,
+    delta_time: f32,
+    log: bool,
+) -> bool {
+    let mut flame = false;
+    // 计算角度,NONE 表示无需旋转
+    let rotate = rotaion_to(target, transform);
+    if let Some((angle, clockwise)) = rotate {
+        // 计算差值
+        let rotation_value = clockwise * (base.torque * delta_time).min(angle);
+        // 按差值旋转
+        transform.rotate_z(rotation_value);
+    }
+
+    // 从飞船到目标的向量 (目标-飞船)
+    let (forward, distance) = forward(target, transform);
+    let max_step = distance - safe_distance;
+    // 计算速度差值
+    let velocity = (base.speed * delta_time).min(max_step);
+    // 速度为负数(pulse反向)
+    if velocity < f32::EPSILON {
+        return flame;
+    }
+
+    //if rotate.is_some() {
+    // 施加脉冲
+    flame = true;
+    //}
+
+    // 当转向时移速会变慢
+    let force = forward
+        * velocity
+        * if rotate.is_some() || distance < safe_distance {
+            0.5
+        } else {
+            1.0
+        };
+    // 施加驱动力(脉冲)
+    commands.entity(entity).insert(ExternalImpulse {
+        impulse: force,
+        torque_impulse: base.torque,
+    });
+    if log {
+        println!(
+            "entity: {:?}, target: {:?}, distance: {}, force: {}",
+            entity, target, distance, force
+        );
+    }
+    flame
 }

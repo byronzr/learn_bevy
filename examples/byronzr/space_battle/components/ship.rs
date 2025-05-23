@@ -10,7 +10,17 @@ use super::{SafeDistance, Braking, BaseVelocity};
     GravityScale(0.),
     ColliderMassProperties::Mass(100.),
     CollisionGroups::new(Group::GROUP_19, Group::GROUP_2|Group::GROUP_1),
-    ActiveEvents::COLLISION_EVENTS
+    ActiveEvents::COLLISION_EVENTS,
+    BaseVelocity{
+        speed:1.,
+        torque:1.,
+        braking:Braking{
+            distance:50.,
+            speed: 0.0,
+            torque: 0.0,
+        },
+    },
+    SafeDistance(150.),
 )]
 pub struct EnemyHull;
 
@@ -45,16 +55,16 @@ pub struct ShipPart;
         angular_damping: 0.1,
     },
     CollisionGroups::new(Group::GROUP_1, Group::GROUP_19),
-                BaseVelocity{
-                speed:1.,
-                torque:1.,
-                braking:Braking{
-                    distance:50.,
-                    speed: 0.0,
-                    torque: 0.0,
-                },
-            },
-            SafeDistance(150.),
+    BaseVelocity{
+        speed:1.,
+        torque:1.,
+        braking:Braking{
+            distance:50.,
+            speed: 0.0,
+            torque: 0.0,
+        },
+    },
+    SafeDistance(150.),
     
 )]
 pub struct ShipHull;
@@ -66,3 +76,6 @@ pub enum ShipState {
     Idle,
     Moving,
 }
+
+#[derive(Debug,Component)]
+pub struct Hud;

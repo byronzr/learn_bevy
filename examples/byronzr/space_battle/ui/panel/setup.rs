@@ -79,14 +79,14 @@ pub fn ui_main_setup(
         ))
         .insert(ChildOf(ui_layout));
 
-    // commands
-    //     .spawn(button(
-    //         &mut asset_server,
-    //         format!("Weapon: {:?}", menu.weapon_type).into(),
-    //         PanelMenuButton::WeaponType,
-    //         false,
-    //     ))
-    //     .insert(ChildOf(ui_layout));
+    commands
+        .spawn(button(
+            &mut asset_server,
+            "Lock Player".into(),
+            PanelMenuButton::LockPlayer,
+            false,
+        ))
+        .insert(ChildOf(ui_layout));
 
     // audio
     let sound = asset_server.load("space_battle/audio/ui_button_pressed.ogg");

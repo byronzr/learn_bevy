@@ -7,24 +7,49 @@ pub mod projectile;
 pub mod turret;
 pub mod weapon;
 
+#[derive(SystemSet, Hash, Debug, PartialEq, Eq, Clone)]
+pub enum GameSet {
+    Movement,
+    Collision,
+}
+
 pub struct StrategiesPlugin;
 impl Plugin for StrategiesPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(Material2dPlugin::<MaterialEngineFlame>::default());
+        app.configure_sets(Update, (GameSet::Movement, GameSet::Collision).chain());
+        // 创建一个刷新点,确保碰撞完成后的 Despawn 不再被查询
+        app.add_systems(
+            Update,
+            ApplyDeferred
+                .after(GameSet::Movement)
+                .before(GameSet::Collision),
+        );
         app.add_systems(
             Startup,
-            (player::generate_player_ship, player::load_weapon_sounds),
+            (
+                player::generate_player_ship,
+                player::load_weapon_sounds,
+                player::init_hud,
+            )
+                .chain(),
         );
+
         app.add_systems(
             Update,
             (
-                player::drift,
-                player::player_detection,
-                turret::turret_detection,
-                outside_clear,
-                enemy::random_enemies,
-                enemy::enemy_collision,
-                weapon::weapons_maintenance,
+                (
+                    player::drift,
+                    player::player_detection,
+                    turret::turret_detection,
+                    outside_clear,
+                    enemy::random_enemies,
+                    enemy::enemy_movement,
+                    weapon::weapons_maintenance,
+                    player::sync_hud,
+                )
+                    .in_set(GameSet::Movement),
+                (enemy::enemy_collision,).in_set(GameSet::Collision),
             ),
         );
 

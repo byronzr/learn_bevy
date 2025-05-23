@@ -22,7 +22,6 @@ pub struct Weapon {
     pub capacity_max: u32,           // 最大容量
     pub capacity_repeat: bool,       // 是否可以重复发射
     pub charge_timer: Option<Timer>, // 充能时间
-    pub range: f32,                  // 有效射程
     pub shot_timer: Option<Timer>,   // 每发射击间隔
     pub flux: f32,                   // 每发射击消耗
     pub damage: f32,                 // 每发射击伤害

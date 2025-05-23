@@ -12,10 +12,13 @@
 		
 * ### strategies 策略
     * StrategiesPlugin 策略
-		* enemy.rs
-			* [system] `random_enemies()` 随机生成敌舰
-			* [system] //TODO// `enemies_movement` 敌人向中心靠拢
-			* [system] `enemy_collision()` 敌般碰撞事件
+		* enemy/
+			* random.rs
+				* [system] `random_enemies()` 随机生成敌舰
+			* movement.rs
+				* [system] //TODO// `enemies_movement` 敌人向中心靠拢
+			* collision.rs
+				* [system] `enemy_collision()` 敌般碰撞事件
         * player/
 			* generate.rs
 				* [system] `generate_player_ship()` 初始化旗舰

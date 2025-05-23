@@ -13,9 +13,9 @@ pub enum PanelMenuButton {
     DebugRender,
     VirtualTurret,
     DetectTest,
-
     MeshMode,
     EngineFlame,
+    LockPlayer,
 }
 
 #[derive(Component, Debug)]

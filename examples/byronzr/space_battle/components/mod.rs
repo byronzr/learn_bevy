@@ -22,7 +22,7 @@ pub struct BaseVelocity {
 }
 
 // 基础制动系数
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Braking {
     pub distance: f32, // 制动距离
     pub speed: f32,    // 线性力度
