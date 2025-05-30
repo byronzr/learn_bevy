@@ -14,7 +14,7 @@ pub struct SeekEnemy {
     pub enemy_entity: Entity,
 }
 
-#[derive(Event, Debug)]
-pub struct EventFlame {
-    pub start: bool,
-}
+// #[derive(Event, Debug)]
+// pub struct EventFlame {
+//     pub start: bool,
+// }

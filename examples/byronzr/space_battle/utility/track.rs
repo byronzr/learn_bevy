@@ -1,4 +1,4 @@
-use crate::components::{BaseVelocity, Braking};
+use crate::components::BaseVelocity;
 use bevy::prelude::*;
 use bevy_rapier2d::prelude::*;
 

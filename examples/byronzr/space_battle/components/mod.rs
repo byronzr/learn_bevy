@@ -1,6 +1,6 @@
+#![allow(dead_code)]
 use bevy::prelude::*;
 
-pub mod audio;
 pub mod effects;
 pub mod ship;
 pub mod weapon;

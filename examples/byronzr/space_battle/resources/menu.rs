@@ -11,7 +11,6 @@ pub struct MainMenu {
     pub log: bool,
     pub engine_flame: bool,
     pub lock_player: bool,
-    pub curve: bool,
     pub game_speed: f32,
 
     // audio

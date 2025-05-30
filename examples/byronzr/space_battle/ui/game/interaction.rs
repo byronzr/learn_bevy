@@ -55,7 +55,6 @@ pub fn button_interaction(
                 GameMenuButton::SubBrakingDistance => {
                     player_res.bk_distance -= if player_res.bk_distance > 0. { 5.0 } else { 0. }
                 }
-                _ => {}
             }
 
             // audio
