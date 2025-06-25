@@ -1,45 +1,33 @@
-use bevy::prelude::*;
-use crossbeam_channel::{Receiver, Sender, bounded};
-use std::io::{BufRead, BufReader};
-use std::process::{Child, Command, Stdio};
-use std::time::Duration;
+pub mod resource;
+pub use resource::*;
 
-#[derive(Debug, Component)]
-pub struct Container;
+pub mod custom;
+pub use custom::*;
 
-#[derive(Debug, Component)]
-pub struct IndexOfline(pub usize);
+pub mod component;
+pub use component::*;
 
-#[derive(Debug, Resource)]
-pub struct ProcessState {
-    pub rx: Receiver<String>,
-    pub tx: Sender<String>,
-}
+use tokio::io::{AsyncBufReadExt, BufReader};
+use tokio::process::{Child, Command};
 
-#[derive(Debug, Resource, Default)]
-pub struct PathDatas {
-    pub lines: Vec<String>,
-    pub entities: Vec<Option<Entity>>,
-    pub changed: bool,
-}
+use crate::TOKIO_RT;
 
 pub struct ManagedProcess {
-    child: Child,
+    pub child: Child,
 }
 
 impl ManagedProcess {
-    pub fn new(
-        command: &mut Command,
-    ) -> std::io::Result<(
-        Self,
-        BufReader<std::process::ChildStdout>,
-        BufReader<std::process::ChildStderr>,
-    )> {
-        let mut child = command.spawn()?;
+    pub fn new(command: &mut Command) -> std::io::Result<Self> {
+        let child = TOKIO_RT.block_on(async { command.spawn() })?;
 
-        let stdout = BufReader::new(child.stdout.take().unwrap());
-        let stderr = BufReader::new(child.stderr.take().unwrap());
-        Ok((Self { child }, stdout, stderr))
+        Ok(Self { child })
+    }
+    pub fn stdout(&mut self) -> BufReader<tokio::process::ChildStdout> {
+        BufReader::new(self.child.stdout.take().unwrap())
+    }
+
+    pub fn stderr(&mut self) -> BufReader<tokio::process::ChildStderr> {
+        BufReader::new(self.child.stderr.take().unwrap())
     }
 }
 

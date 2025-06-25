@@ -15,10 +15,11 @@ pub fn shortcuts(keyboard: Res<ButtonInput<KeyCode>>, mut data: ResMut<PathDatas
                 lines.push(line.to_string());
             }
         }
-        if data.lines == lines {
+        if data.state.lines == lines {
             return Ok(());
         } else {
-            data.lines = lines;
+            data.state.lines = lines;
+            data.state.done = vec![false; data.state.lines.len()];
             data.changed = true;
             println!("storage in PathDatas");
         }
