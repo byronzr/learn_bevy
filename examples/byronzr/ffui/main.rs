@@ -30,6 +30,7 @@ fn main() {
                 ui::progress_bar_update,
                 ui::setup::on_window_close,
                 ui::show_hide_row,
+                ui::update_task_button_text,
             )
                 .chain(),
         )

@@ -41,8 +41,16 @@ impl ProgressInfo {
     }
 }
 
+#[derive(Debug, Default, Clone)]
+pub enum TaskStatus {
+    #[default]
+    Waiting,
+    Running,
+    Done,
+}
+
 #[derive(Debug, Default)]
 pub struct FilesState {
     pub lines: Vec<String>,
-    pub done: Vec<bool>,
+    pub status: Vec<TaskStatus>,
 }

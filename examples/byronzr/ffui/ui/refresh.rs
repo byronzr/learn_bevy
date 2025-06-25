@@ -1,7 +1,7 @@
 use std::os::unix::process;
 
 use crate::define::*;
-use crate::ui::ui_task_button;
+use crate::ui::{ui_replace_button, ui_task_button};
 use bevy::{prelude::*, ui};
 
 // switch show and hide row
@@ -15,7 +15,7 @@ pub fn show_hide_row(
         let Some(entity) = entity else {
             continue; // skip if entity is None
         };
-        if menu.hide_done && data.state.done[idx] {
+        if menu.hide_done && matches!(data.state.status[idx], TaskStatus::Done) {
             // despawn entity if it is done and hide_done is true
             let Ok((_, mut node)) = file_line_query.get_mut(*entity) else {
                 continue;
@@ -68,6 +68,8 @@ pub fn refresh_lines(
                 children![
                     // task button
                     ui_task_button(&asset_server, index),
+                    // replace button
+                    ui_replace_button(&asset_server, index),
                     // info layout (right)
                     (
                         Node {
@@ -199,6 +201,6 @@ pub fn progress_bar_update(
                 break;
             }
         }
-        paths_data.state.done[idx] = true;
+        paths_data.state.status[idx] = TaskStatus::Done;
     }
 }

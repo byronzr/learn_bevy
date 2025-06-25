@@ -1,10 +1,18 @@
 use bevy::prelude::*;
 //use std::io::{BufRead, BufReader};
+use std::path::Path;
 use std::process::Stdio;
-use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 
 pub fn create_ffmpeg_command(path: String) -> Command {
+    let Some(filename) = Path::new(&path)
+        .file_stem()
+        .and_then(|name| name.to_str())
+        .map(|name_str| format!("{}.mp4", name_str))
+    else {
+        panic!("Invalid file path: {}", path);
+    };
+
     let mut cmd = Command::new("ffmpeg");
     cmd.arg("-hwaccel")
         .arg("videotoolbox")
@@ -23,7 +31,7 @@ pub fn create_ffmpeg_command(path: String) -> Command {
         .args(["-loglevel", "info"])
         .args(["-progress", "pipe:1"])
         .arg("-y")
-        .arg("out.mp4") // 覆盖输出文件
+        .arg(filename) // 覆盖输出文件
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     cmd

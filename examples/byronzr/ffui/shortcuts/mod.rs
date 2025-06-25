@@ -19,7 +19,7 @@ pub fn shortcuts(keyboard: Res<ButtonInput<KeyCode>>, mut data: ResMut<PathDatas
             return Ok(());
         } else {
             data.state.lines = lines;
-            data.state.done = vec![false; data.state.lines.len()];
+            data.state.status = vec![TaskStatus::Waiting; data.state.lines.len()];
             data.changed = true;
             println!("storage in PathDatas");
         }

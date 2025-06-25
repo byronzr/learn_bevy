@@ -17,3 +17,6 @@ pub struct MenuButton;
 
 #[derive(Debug, Component)]
 pub struct FileLineBar;
+
+#[derive(Debug, Component)]
+pub struct ReplaceButton;
