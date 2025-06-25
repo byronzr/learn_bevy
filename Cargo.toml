@@ -8,6 +8,7 @@ env = { "RUST_BACKTRACE" = "1" }
 
 
 [dependencies]
+arboard = "3.5.0"
 bevy = { version = "0.16.0", features = ["track_location", "jpeg"] }
 bevy_ecs = "0.16.0"
 bevy_image = "0.16.0"
@@ -23,6 +24,7 @@ bevy_rapier2d = { git = "https://github.com/dimforge/bevy_rapier", branch = "mas
 ] }
 bitflags = "2.9.1"
 contour = { version = "0.13.1", features = ["f32", "geojson"] }
+crossbeam-channel = "0.5.15"
 image = "0.25.6"
 log = "0.4.27"
 lyon = "1.0.1"
@@ -31,6 +33,7 @@ rand_chacha = "*"
 serde = "1.0.219"
 serde_json = "1.0.140"
 thiserror = "2.0.12"
+tokio = { version = "1.45.1", features = ["full"] }
 
 
 [profile.dev.package.bevy_rapier2d]
@@ -109,3 +112,8 @@ path = "examples/rapier2d/scene_queries_intersections.rs"
 [[example]]
 name = "rapier_advanced_detection"
 path = "examples/rapier2d/advanced_detection.rs"
+
+
+[[example]]
+name = "ffui"
+path = "examples/byronzr/ffui/main.rs"
