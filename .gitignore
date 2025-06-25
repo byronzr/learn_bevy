@@ -3,3 +3,4 @@
 Cargo.lock
 *.plist
 .gitignore
+out.mp4
