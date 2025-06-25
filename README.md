@@ -14,8 +14,10 @@
     * 以纯数学函数实现
     * MeshPickingPlugin 加入后,支持 Mesh2d 的 picking 事件
     * Rapier2d 实现 Collider Interscetion Test
-* **[space_battle](https://github.com/byronzr/learn_bevy/tree/main/examples/byronzr/space_battle)** Doing: 类 starsector 的太空战
+* **[space_battle](https://github.com/byronzr/learn_bevy/tree/main/examples/byronzr/space_battle)** 类 starsector 的太空战
     * 弹道,寻敌,护盾,伤害,炮塔转向,规避,幅能冷却
+* **[ffui](https://github.com/byronzr/learn_bevy/tree/main/examples/byronzr/ffui)** ffmpeg 套壳
+    * 基于 bevy / tokio / ffmpeg 实现粘贴板导入文件,进行批量(单个)视频转换,替换等操作
 
     
 # Rapier (bevy_rapier2d) 
