@@ -7,7 +7,7 @@ pub mod setup;
 pub use interaction::*;
 pub use refresh::*;
 
-pub fn ui_task_button(asset_server: &AssetServer, index: usize) -> impl Bundle {
+pub fn ui_task_button(index: usize, font: Handle<Font>) -> impl Bundle {
     (
         Button,
         IndexOfline(index),
@@ -28,7 +28,7 @@ pub fn ui_task_button(asset_server: &AssetServer, index: usize) -> impl Bundle {
         children![(
             Text::new("convert"),
             TextFont {
-                font: asset_server.load("fonts/SourceHanSansCN-Normal.otf"),
+                font,
                 font_size: 12.0,
                 ..default()
             },
@@ -38,7 +38,7 @@ pub fn ui_task_button(asset_server: &AssetServer, index: usize) -> impl Bundle {
     )
 }
 
-pub fn ui_replace_button(asset_server: &AssetServer, index: usize) -> impl Bundle {
+pub fn ui_replace_button(index: usize, font: Handle<Font>) -> impl Bundle {
     (
         Button,
         IndexOfline(index),
@@ -59,7 +59,7 @@ pub fn ui_replace_button(asset_server: &AssetServer, index: usize) -> impl Bundl
         children![(
             Text::new("replace"),
             TextFont {
-                font: asset_server.load("fonts/SourceHanSansCN-Normal.otf"),
+                font,
                 font_size: 12.0,
                 ..default()
             },
@@ -69,7 +69,7 @@ pub fn ui_replace_button(asset_server: &AssetServer, index: usize) -> impl Bundl
     )
 }
 
-pub fn ui_open_button(asset_server: &AssetServer, index: usize) -> impl Bundle {
+pub fn ui_open_button(index: usize, font: Handle<Font>) -> impl Bundle {
     (
         Button,
         IndexOfline(index),
@@ -90,7 +90,7 @@ pub fn ui_open_button(asset_server: &AssetServer, index: usize) -> impl Bundle {
         children![(
             Text::new("open"),
             TextFont {
-                font: asset_server.load("fonts/SourceHanSansCN-Normal.otf"),
+                font,
                 font_size: 12.0,
                 ..default()
             },
@@ -100,7 +100,7 @@ pub fn ui_open_button(asset_server: &AssetServer, index: usize) -> impl Bundle {
     )
 }
 
-pub fn ui_menu_button(name: String, asset_server: &AssetServer) -> impl Bundle {
+pub fn ui_menu_button(name: String, font: Handle<Font>) -> impl Bundle {
     (
         Button,
         Name::new(name.clone()),
@@ -121,7 +121,7 @@ pub fn ui_menu_button(name: String, asset_server: &AssetServer) -> impl Bundle {
         children![(
             Text::new(name),
             TextFont {
-                font: asset_server.load("fonts/SourceHanSansCN-Normal.otf"),
+                font,
                 font_size: 12.0,
                 ..default()
             },

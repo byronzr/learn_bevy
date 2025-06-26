@@ -23,3 +23,6 @@ pub struct ProcessMenu {
     pub lock_import: bool,
     pub hide_done: bool,
 }
+
+#[derive(Debug, Resource)]
+pub struct FontHandle(pub Handle<Font>);

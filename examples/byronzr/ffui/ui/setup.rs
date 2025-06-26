@@ -2,11 +2,15 @@ use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use tokio::sync::{broadcast, mpsc};
 
-use crate::{define::*, ui::ui_menu_button};
+use crate::{FONT_BYTES, define::*, ui::ui_menu_button};
 
 // initialize
-pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn setup(mut commands: Commands, mut fonts: ResMut<Assets<Font>>) {
     commands.spawn(Camera2d);
+
+    let font = Font::try_from_bytes(FONT_BYTES.to_vec()).unwrap();
+    let font_handle = fonts.add(font);
+    commands.insert_resource(FontHandle(font_handle.clone()));
 
     // layout
     let layout_id = commands
@@ -41,11 +45,11 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             },
             BackgroundColor(Color::srgb_u8(50, 50, 50)),
             children![
-                ui_menu_button("Lock Import".to_string(), &asset_server,),
-                ui_menu_button("Save Status".to_string(), &asset_server,),
-                ui_menu_button("Clear".to_string(), &asset_server,),
-                ui_menu_button("Hide Done".to_string(), &asset_server,),
-                ui_menu_button("Exit".to_string(), &asset_server,),
+                ui_menu_button("Lock Import".to_string(), font_handle.clone()),
+                ui_menu_button("Save Status".to_string(), font_handle.clone()),
+                ui_menu_button("Clear".to_string(), font_handle.clone()),
+                ui_menu_button("Hide Done".to_string(), font_handle.clone()),
+                ui_menu_button("Exit".to_string(), font_handle.clone()),
             ],
         ))
         .id();

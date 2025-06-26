@@ -10,6 +10,7 @@ mod utility;
 use crate::define::*;
 
 static TOKIO_RT: Lazy<Runtime> = Lazy::new(|| Runtime::new().unwrap());
+const FONT_BYTES: &[u8] = include_bytes!("../../../assets/fonts/SourceHanSansCN-Normal.otf");
 
 fn main() {
     App::new()

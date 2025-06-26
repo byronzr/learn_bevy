@@ -33,8 +33,8 @@ pub fn show_hide_row(
 pub fn refresh_lines(
     mut commands: Commands,
     container_query: Single<Entity, With<Container>>,
-    asset_server: Res<AssetServer>,
     mut data: ResMut<PathDatas>,
+    font: Res<FontHandle>,
 ) -> Result {
     // no changes, just return
     if !data.changed {
@@ -65,11 +65,11 @@ pub fn refresh_lines(
                 },
                 children![
                     // task button
-                    ui_task_button(&asset_server, index),
+                    ui_task_button(index, font.0.clone()),
                     // replace button
-                    ui_replace_button(&asset_server, index),
+                    ui_replace_button(index, font.0.clone()),
                     // open button
-                    ui_open_button(&asset_server, index),
+                    ui_open_button(index, font.0.clone()),
                     // info layout (right)
                     (
                         Node {
@@ -101,7 +101,7 @@ pub fn refresh_lines(
                                 children![(
                                     Text::new(path.clone()),
                                     TextFont {
-                                        font: asset_server.load("fonts/SourceHanSansCN-Normal.otf"),
+                                        font: font.0.clone(),
                                         font_size: 12.0,
                                         ..default()
                                     },
