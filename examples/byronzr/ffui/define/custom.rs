@@ -47,6 +47,7 @@ pub enum TaskStatus {
     Waiting,
     Running,
     Done,
+    Replaced,
 }
 
 #[derive(Debug, Default)]

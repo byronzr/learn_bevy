@@ -1,5 +1,5 @@
+use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
-use bevy::{asset::processor::Process, platform::collections::HashMap};
 use tokio::sync::{broadcast, mpsc};
 
 use crate::{define::*, ui::ui_menu_button};
@@ -45,6 +45,7 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                 ui_menu_button("Save Status".to_string(), &asset_server,),
                 ui_menu_button("Clear".to_string(), &asset_server,),
                 ui_menu_button("Hide Done".to_string(), &asset_server,),
+                ui_menu_button("Exit".to_string(), &asset_server,),
             ],
         ))
         .id();
@@ -91,8 +92,8 @@ pub fn on_window_close(
     process_state: Res<ProcessState>,
 ) -> Result {
     for _event in close_events.read() {
-        println!("interrupt ffmpeg process by window close event");
-        process_state.main_tx.send(ProcessSignal::WindowClose)?;
+        info!("interrupt ffmpeg process by window close event");
+        let _ = process_state.main_tx.send(ProcessSignal::WindowClose);
     }
     Ok(())
 }

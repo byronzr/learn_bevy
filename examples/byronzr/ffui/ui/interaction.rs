@@ -1,7 +1,7 @@
-use crate::utility::task::task;
-use crate::utility::{create_ffmpeg_command, parse_duration};
-use crate::{TOKIO_RT, define::*};
+use crate::define::*;
+use crate::utility::task::{open_dir, replace, task};
 use bevy::prelude::*;
+use log::info;
 
 // set task_button text content according to the status
 pub fn update_task_button_text(
@@ -13,7 +13,7 @@ pub fn update_task_button_text(
     for (children, idx) in button_query.iter() {
         // get the first child entity, which is the text entity
         let Some(childen_entity) = children.get(0) else {
-            println!("No children entity found for index {}", idx.0);
+            info!("No children entity found for index {}", idx.0);
             continue;
         };
         // update the text content according to the status
@@ -22,6 +22,7 @@ pub fn update_task_button_text(
                 TaskStatus::Waiting => "convert".into(),
                 TaskStatus::Running => "running".to_string(),
                 TaskStatus::Done => "done".to_string(),
+                TaskStatus::Replaced => "replaced".to_string(),
             };
         }
     }
@@ -50,23 +51,26 @@ pub fn task_interaction(
                 }
             }
             Interaction::Pressed => {
-                // skip if the status is Done
-                if matches!(status, TaskStatus::Done) {
-                    continue;
+                match status {
+                    // start a task when status is Waiting
+                    TaskStatus::Waiting => {
+                        data.state.status[idx.0] = TaskStatus::Running;
+                        *bg = BackgroundColor(Color::srgb_u8(64, 84, 64));
+                        task(idx.0, &process_state, path);
+                        continue;
+                    }
+                    // if the status is Running, stop the task
+                    TaskStatus::Running => {
+                        *bg = BackgroundColor(Color::srgb_u8(84, 84, 84));
+                        // TODO:  or interrupt task
+                    }
+                    // skip if the status is Done and Replaced
+                    TaskStatus::Done | TaskStatus::Replaced => {
+                        continue;
+                    }
                 }
 
-                // start a task when status is Waiting
-                if matches!(status, TaskStatus::Waiting) {
-                    data.state.status[idx.0] = TaskStatus::Running;
-                    *bg = BackgroundColor(Color::srgb_u8(64, 84, 64));
-                    task(idx.0, &process_state, path);
-                    continue;
-                }
-                // if the status is Running, stop the task
-                if matches!(status, TaskStatus::Running) {
-                    *bg = BackgroundColor(Color::srgb_u8(84, 84, 84));
-                    // TODO:  or interrupt task
-                }
+                if matches!(status, TaskStatus::Running) {}
             }
             Interaction::None => match status {
                 // how to revert the background color change according to the status
@@ -78,7 +82,7 @@ pub fn task_interaction(
                     // (green)
                     *bg = BackgroundColor(Color::srgb_u8(32, 128, 32));
                 }
-                TaskStatus::Done => {
+                TaskStatus::Done | TaskStatus::Replaced => {
                     // (blue)
                     *bg = BackgroundColor(Color::srgb_u8(32, 32, 128));
                 }
@@ -88,14 +92,74 @@ pub fn task_interaction(
     Ok(())
 }
 
-// menu button interaction
+pub fn replace_interaction(
+    mut interaction_query: Query<
+        (Entity, &Interaction, &IndexOfline, &mut BackgroundColor),
+        (Changed<Interaction>, With<ReplaceButton>),
+    >,
+    mut data: ResMut<PathDatas>,
+) -> Result {
+    for (_entity, interaction, idx, mut bg) in interaction_query.iter_mut() {
+        let Some(path) = data.state.lines.get(idx.0).cloned() else {
+            return Ok(());
+        };
+        let status = &mut data.state.status[idx.0];
+        if matches!(status, TaskStatus::Replaced) {
+            continue;
+        }
+        match *interaction {
+            Interaction::Hovered => {
+                *bg = BackgroundColor(Color::srgb_u8(0, 84, 0));
+            }
+            Interaction::Pressed => {
+                // replace the source file only when the status is Done
+                if matches!(status, TaskStatus::Done) {
+                    replace(idx.0, path, &mut data);
+                }
+            }
+            Interaction::None => {
+                *bg = BackgroundColor(Color::srgb_u8(16, 16, 16));
+            }
+        }
+    }
+    Ok(())
+}
 
+pub fn opendir_interaction(
+    mut interaction_query: Query<
+        (Entity, &Interaction, &IndexOfline, &mut BackgroundColor),
+        (Changed<Interaction>, With<OpenButton>),
+    >,
+    data: Res<PathDatas>,
+) -> Result {
+    for (_entity, interaction, idx, mut bg) in interaction_query.iter_mut() {
+        let Some(path) = data.state.lines.get(idx.0).cloned() else {
+            return Ok(());
+        };
+        match *interaction {
+            Interaction::Hovered => {
+                *bg = BackgroundColor(Color::srgb_u8(0, 84, 0));
+            }
+            Interaction::Pressed => {
+                // replace the source file only when the status is Done
+                open_dir(path);
+            }
+            Interaction::None => {
+                *bg = BackgroundColor(Color::srgb_u8(16, 16, 16));
+            }
+        }
+    }
+    Ok(())
+}
+
+// menu button interaction
 pub fn menu_interaction(
     mut interaction_query: Query<
         (Entity, &Interaction, &Name, &mut BackgroundColor),
         (Changed<Interaction>, With<MenuButton>),
     >,
     mut process_menu: ResMut<ProcessMenu>,
+    mut exit_events: EventWriter<bevy::app::AppExit>,
 ) -> Result {
     for (_entity, interaction, name, mut bg) in interaction_query.iter_mut() {
         match *interaction {
@@ -110,6 +174,10 @@ pub fn menu_interaction(
                     }
                     "Hide Done" => {
                         process_menu.hide_done = !process_menu.hide_done;
+                    }
+                    "Exit" => {
+                        exit_events.write(bevy::app::AppExit::Success);
+                        continue;
                     }
                     _ => {}
                 }
@@ -128,6 +196,7 @@ pub fn menu_interaction(
                             continue;
                         }
                     }
+
                     _ => {}
                 }
                 *bg = BackgroundColor(Color::srgb_u8(64, 64, 64));

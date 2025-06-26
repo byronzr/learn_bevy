@@ -20,3 +20,6 @@ pub struct FileLineBar;
 
 #[derive(Debug, Component)]
 pub struct ReplaceButton;
+
+#[derive(Debug, Component)]
+pub struct OpenButton;

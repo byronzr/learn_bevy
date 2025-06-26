@@ -1,14 +1,12 @@
-use std::os::unix::process;
-
 use crate::define::*;
-use crate::ui::{ui_replace_button, ui_task_button};
-use bevy::{prelude::*, ui};
+use crate::ui::{ui_open_button, ui_replace_button, ui_task_button};
+use bevy::prelude::*;
+use log::info;
 
 // switch show and hide row
 pub fn show_hide_row(
-    mut commands: Commands,
-    mut data: ResMut<PathDatas>,
-    mut menu: Res<ProcessMenu>,
+    data: ResMut<PathDatas>,
+    menu: Res<ProcessMenu>,
     mut file_line_query: Query<(Entity, &mut Node), With<FileLineBar>>,
 ) -> Result {
     for (idx, entity) in data.entities.iter().enumerate() {
@@ -70,6 +68,8 @@ pub fn refresh_lines(
                     ui_task_button(&asset_server, index),
                     // replace button
                     ui_replace_button(&asset_server, index),
+                    // open button
+                    ui_open_button(&asset_server, index),
                     // info layout (right)
                     (
                         Node {
@@ -131,7 +131,6 @@ pub fn refresh_lines(
     data.entities = entities;
     data.changed = false;
 
-    println!("showed done");
     return Ok(());
 }
 
@@ -150,7 +149,7 @@ pub fn progress_bar_update(
     let progress = &mut process_state.progress;
 
     let Some(idx) = message.progress_index else {
-        println!("Received none (index): {:?}", message);
+        info!("Received none (index): {:?}", message);
         return;
     };
     // target progress statistics
