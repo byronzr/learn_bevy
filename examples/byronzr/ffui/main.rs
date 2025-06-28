@@ -37,6 +37,7 @@ fn main() {
                 ui::progress_bar_update,
                 ui::setup::on_window_close,
                 ui::show_hide_row,
+                ui::show_import_type,
                 ui::update_task_button_text,
                 move_or_resize_windows,
             )

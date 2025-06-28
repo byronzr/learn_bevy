@@ -31,6 +31,32 @@ pub fn show_hide_row(
     }
     Ok(())
 }
+
+// show  import type
+pub fn show_import_type(
+    //process_menu: Res<ProcessMenu>,
+    import_query: Query<(&MenuButton, &Children), Changed<Interaction>>,
+    mut text_query: Query<&mut Text>,
+) -> Result {
+    for (menu, child) in import_query.iter() {
+        let Some(button_type) = menu
+            .button_type // button_type is a Box::new()
+            .as_ref() // so,first we need to get a reference,it's Important.
+            .as_any() // then we can downcast it to MenuImportButton
+            .downcast_ref::<MenuImportButton>()
+        else {
+            continue;
+        };
+        // println!("MenuButton: {:?}", menu.button_type);
+        // println!("ProcessMenu: {:?}", process_menu.import_type);
+
+        let Ok(mut text) = text_query.get_mut(child[0]) else {
+            continue;
+        };
+        text.0 = button_type.to_string();
+    }
+    Ok(())
+}
 // refresh lines when import files changed
 pub fn refresh_lines(
     mut commands: Commands,

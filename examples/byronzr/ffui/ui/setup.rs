@@ -106,7 +106,7 @@ pub fn setup(mut commands: Commands, mut fonts: ResMut<Assets<Font>>) {
     });
 
     commands.insert_resource(ProcessMenu {
-        lock_import: false,
+        import_type: MenuImportButton::Sequence,
         hide_done: false,
     });
 }

@@ -164,15 +164,18 @@ pub fn ui_open_button(index: usize, font: Handle<Font>) -> impl Bundle {
     )
 }
 
-pub fn ui_menu_button<T: MenuButtonType + std::fmt::Display>(
+pub fn ui_menu_button<T: MenuButtonType + MenuButtonNext + std::fmt::Debug>(
     bt: T,
     font: Handle<Font>,
 ) -> impl Bundle {
     let name = bt.to_string();
+
     (
         Button,
         Name::new(name.clone()),
-        MenuButton,
+        MenuButton {
+            button_type: Box::new(bt),
+        },
         Node {
             width: Val::Px(160.),
             height: Val::Px(30.0),

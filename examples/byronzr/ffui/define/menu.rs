@@ -1,9 +1,27 @@
-pub trait MenuButtonType {
-    fn next(&mut self);
+use std::any::Any;
+
+pub trait MenuButtonNext: std::fmt::Display {
+    fn next(&mut self) -> bool {
+        false
+    }
+}
+
+pub trait MenuButtonType: std::any::Any + Send + Sync + 'static {
+    fn as_any(&self) -> &dyn Any;
+    fn as_any_mut(&mut self) -> &mut dyn Any;
+}
+
+impl<T: Any + Send + Sync> MenuButtonType for T {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn as_any_mut(&mut self) -> &mut dyn Any {
+        self
+    }
 }
 
 // import button
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Copy)]
 pub enum MenuImportButton {
     Lock,
     Once,
@@ -20,13 +38,18 @@ impl std::fmt::Display for MenuImportButton {
     }
 }
 
-impl MenuButtonType for MenuImportButton {
-    fn next(&mut self) {
+impl MenuButtonNext for MenuImportButton {
+    fn next(&mut self) -> bool {
         *self = match self {
             MenuImportButton::Lock => MenuImportButton::Once,
             MenuImportButton::Once => MenuImportButton::Sequence,
             MenuImportButton::Sequence => MenuImportButton::Lock,
         };
+        if matches!(self, MenuImportButton::Lock) {
+            true
+        } else {
+            false
+        }
     }
 }
 
@@ -38,25 +61,18 @@ impl std::fmt::Display for MenuSaveButton {
         write!(f, "Save")
     }
 }
-impl MenuButtonType for MenuSaveButton {
-    fn next(&mut self) {}
-}
+impl MenuButtonNext for MenuSaveButton {}
 
 // clear button
 #[derive(Debug, Default)]
-pub struct MenuClearButton {
-    pub checked: bool,
-}
+pub struct MenuClearButton;
 impl std::fmt::Display for MenuClearButton {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Clear")
     }
 }
-impl MenuButtonType for MenuClearButton {
-    fn next(&mut self) {
-        self.checked != self.checked;
-    }
-}
+impl MenuButtonNext for MenuClearButton {}
+
 // hide button
 #[derive(Debug, Default)]
 pub struct MenuHideButton {
@@ -67,9 +83,10 @@ impl std::fmt::Display for MenuHideButton {
         write!(f, "Hide")
     }
 }
-impl MenuButtonType for MenuHideButton {
-    fn next(&mut self) {
-        self.checked != self.checked;
+impl MenuButtonNext for MenuHideButton {
+    fn next(&mut self) -> bool {
+        self.checked = !self.checked;
+        self.checked
     }
 }
 
@@ -81,6 +98,4 @@ impl std::fmt::Display for MenuExitButton {
         write!(f, "Exit")
     }
 }
-impl MenuButtonType for MenuExitButton {
-    fn next(&mut self) {}
-}
+impl MenuButtonNext for MenuExitButton {}

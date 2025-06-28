@@ -1,3 +1,5 @@
+use crate::define::MenuImportButton;
+
 use super::custom::*;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
@@ -20,7 +22,7 @@ pub struct PathDatas {
 
 #[derive(Debug, Resource)]
 pub struct ProcessMenu {
-    pub lock_import: bool,
+    pub import_type: MenuImportButton,
     pub hide_done: bool,
 }
 
