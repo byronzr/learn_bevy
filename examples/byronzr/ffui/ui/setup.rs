@@ -1,9 +1,14 @@
 use crate::define::*;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
+use bevy::{
+    input::mouse::{MouseScrollUnit, MouseWheel},
+    picking::hover::HoverMap,
+};
 use tokio::sync::{broadcast, mpsc};
 
 use crate::{FONT_BYTES, define::*, ui::ui_menu_button};
+const LINE_HEIGHT: f32 = 30.0;
 
 // initialize
 pub fn setup(mut commands: Commands, mut fonts: ResMut<Assets<Font>>) {
@@ -64,11 +69,14 @@ pub fn setup(mut commands: Commands, mut fonts: ResMut<Assets<Font>>) {
                 //size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
                 width: Val::Percent(100.0),
                 height: Val::Percent(100.0),
+                //height: Val::Px(300.0), // or Val::Percent(50.0)
                 position_type: PositionType::Relative,
                 //margin: UiRect::all(Val::Px(10.0)),
                 padding: UiRect::all(Val::Px(10.0)),
                 flex_direction: FlexDirection::Column,
                 row_gap: Val::Px(5.0),
+                overflow: Overflow::scroll_y(),
+                align_self: AlignSelf::Stretch,
                 ..default()
             },
         ))
@@ -120,4 +128,30 @@ pub fn on_window_close(
         let _ = process_state.main_tx.send(ProcessSignal::WindowClose);
     }
     Ok(())
+}
+
+/// Updates the scroll position of scrollable nodes in response to mouse input
+pub fn update_scroll_position(
+    mut mouse_wheel_events: EventReader<MouseWheel>,
+    hover_map: Res<HoverMap>,
+    mut scrolled_node_query: Query<&mut ScrollPosition>,
+) {
+    for mouse_wheel_event in mouse_wheel_events.read() {
+        let (dx, dy) = match mouse_wheel_event.unit {
+            MouseScrollUnit::Line => (
+                mouse_wheel_event.x * LINE_HEIGHT,
+                mouse_wheel_event.y * LINE_HEIGHT,
+            ),
+            MouseScrollUnit::Pixel => (mouse_wheel_event.x, mouse_wheel_event.y),
+        };
+
+        for (_pointer, pointer_map) in hover_map.iter() {
+            for (entity, _hit) in pointer_map.iter() {
+                if let Ok(mut scroll_position) = scrolled_node_query.get_mut(*entity) {
+                    scroll_position.offset_x -= dx;
+                    scroll_position.offset_y -= dy;
+                }
+            }
+        }
+    }
 }

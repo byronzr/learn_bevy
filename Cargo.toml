@@ -8,6 +8,7 @@ env = { "RUST_BACKTRACE" = "1" }
 
 
 [dependencies]
+accesskit = "0.18.0"
 arboard = "3.5.0"
 bevy = { version = "0.16.0", features = ["track_location", "jpeg"] }
 bevy_ecs = "0.16.0"

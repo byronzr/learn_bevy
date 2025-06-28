@@ -7,8 +7,16 @@ pub mod setup;
 pub use interaction::*;
 pub use refresh::*;
 
+use accesskit::{Node as Accessible, Role};
+use bevy::a11y::AccessibilityNode;
+
 pub fn ui_task_button(index: usize, font: Handle<Font>) -> impl Bundle {
     (
+        AccessibilityNode(Accessible::new(Role::ListItem)),
+        Pickable {
+            should_block_lower: false,
+            ..default()
+        },
         Button,
         IndexOfline(index),
         TaskButton,

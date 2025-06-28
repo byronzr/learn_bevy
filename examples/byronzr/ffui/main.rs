@@ -36,6 +36,7 @@ fn main() {
                 ui::opendir_interaction,
                 ui::progress_bar_update,
                 ui::setup::on_window_close,
+                ui::setup::update_scroll_position,
                 ui::show_hide_row,
                 ui::show_import_type,
                 ui::update_task_button_text,

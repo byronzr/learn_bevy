@@ -2,6 +2,8 @@ use crate::define::*;
 use crate::ui::{
     ui_open_button, ui_replace_button, ui_snap_button, ui_task_button, ui_task_ex_button,
 };
+use accesskit::{Node as Accessible, Role};
+use bevy::a11y::AccessibilityNode;
 use bevy::prelude::*;
 use log::info;
 
@@ -89,9 +91,20 @@ pub fn refresh_lines(
                     width: Val::Percent(100.0),
                     height: Val::Px(30.0),
                     column_gap: Val::Px(5.0),
+                    align_self: AlignSelf::Stretch,
+                    ..default()
+                },
+                AccessibilityNode(Accessible::new(Role::ListItem)),
+                Pickable {
+                    should_block_lower: false,
                     ..default()
                 },
                 children![
+                    AccessibilityNode(Accessible::new(Role::ListItem)),
+                    Pickable {
+                        should_block_lower: false,
+                        ..default()
+                    },
                     // task button
                     ui_task_button(index, font.0.clone()),
                     // libx265
@@ -104,6 +117,11 @@ pub fn refresh_lines(
                     ui_open_button(index, font.0.clone()),
                     // info layout (right)
                     (
+                        AccessibilityNode(Accessible::new(Role::ListItem)),
+                        Pickable {
+                            should_block_lower: false,
+                            ..default()
+                        },
                         Node {
                             width: Val::Percent(100.),
                             height: Val::Px(30.0),
@@ -119,6 +137,11 @@ pub fn refresh_lines(
                         children![
                             // path text
                             (
+                                AccessibilityNode(Accessible::new(Role::ListItem)),
+                                Pickable {
+                                    should_block_lower: false,
+                                    ..default()
+                                },
                                 Node {
                                     width: Val::Percent(100.),
                                     height: Val::Px(25.0),
@@ -131,6 +154,11 @@ pub fn refresh_lines(
                                     ..default()
                                 },
                                 children![(
+                                    AccessibilityNode(Accessible::new(Role::ListItem)),
+                                    Pickable {
+                                        should_block_lower: false,
+                                        ..default()
+                                    },
                                     Text::new(path.clone()),
                                     TextFont {
                                         font: font.0.clone(),
@@ -143,6 +171,11 @@ pub fn refresh_lines(
                             ),
                             // bar
                             (
+                                AccessibilityNode(Accessible::new(Role::ListItem)),
+                                Pickable {
+                                    should_block_lower: false,
+                                    ..default()
+                                },
                                 ProgressBar,
                                 IndexOfline(index),
                                 Node {
