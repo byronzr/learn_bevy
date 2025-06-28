@@ -7,6 +7,9 @@ pub use custom::*;
 pub mod component;
 pub use component::*;
 
+pub mod menu;
+pub use menu::*;
+
 use tokio::io::BufReader;
 use tokio::process::{Child, Command};
 

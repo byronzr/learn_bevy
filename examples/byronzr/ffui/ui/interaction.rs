@@ -1,16 +1,17 @@
 use crate::define::*;
-use crate::utility::task::{open_dir, replace, task};
+use crate::utility::task::{open_dir, replace, snapshot, task};
+use bevy::asset::RenderAssetUsages;
 use bevy::prelude::*;
 use log::info;
 
 // set task_button text content according to the status
 pub fn update_task_button_text(
-    button_query: Query<(&Children, &IndexOfline), With<TaskButton>>,
+    button_query: Query<(&Children, &IndexOfline, &TaskButtonType), With<TaskButton>>,
     mut text_query: Query<&mut Text>,
     data: Res<PathDatas>,
 ) -> Result {
     // dependent on the iterator,because there is no Interaction event
-    for (children, idx) in button_query.iter() {
+    for (children, idx, btty) in button_query.iter() {
         // get the first child entity, which is the text entity
         let Some(childen_entity) = children.get(0) else {
             info!("No children entity found for index {}", idx.0);
@@ -19,7 +20,13 @@ pub fn update_task_button_text(
         // update the text content according to the status
         if let Ok(mut text) = text_query.get_mut(*childen_entity) {
             text.0 = match data.state.status[idx.0] {
-                TaskStatus::Waiting => "convert".into(),
+                TaskStatus::Waiting => {
+                    if btty.0 {
+                        "sf".into()
+                    } else {
+                        "hw".into()
+                    }
+                }
                 TaskStatus::Running => "running".to_string(),
                 TaskStatus::Done => "done".to_string(),
                 TaskStatus::Replaced => "replaced".to_string(),
@@ -32,13 +39,19 @@ pub fn update_task_button_text(
 // task button interaction
 pub fn task_interaction(
     mut interaction_query: Query<
-        (Entity, &Interaction, &IndexOfline, &mut BackgroundColor),
+        (
+            Entity,
+            &Interaction,
+            &IndexOfline,
+            &mut BackgroundColor,
+            &TaskButtonType,
+        ),
         (Changed<Interaction>, With<TaskButton>),
     >,
     mut data: ResMut<PathDatas>,
     process_state: Res<ProcessState>,
 ) -> Result {
-    for (_entity, interaction, idx, mut bg) in interaction_query.iter_mut() {
+    for (_entity, interaction, idx, mut bg, btty) in interaction_query.iter_mut() {
         let Some(path) = data.state.lines.get(idx.0).cloned() else {
             return Ok(());
         };
@@ -56,7 +69,7 @@ pub fn task_interaction(
                     TaskStatus::Waiting => {
                         data.state.status[idx.0] = TaskStatus::Running;
                         *bg = BackgroundColor(Color::srgb_u8(64, 84, 64));
-                        task(idx.0, &process_state, path);
+                        task(idx.0, &process_state, path, btty.0);
                         continue;
                     }
                     // if the status is Running, stop the task
@@ -125,6 +138,57 @@ pub fn replace_interaction(
     Ok(())
 }
 
+pub fn snapshot_interaction(
+    mut commands: Commands,
+    mut interaction_query: Query<
+        (Entity, &Interaction, &IndexOfline, &mut BackgroundColor),
+        (Changed<Interaction>, With<SnapshotButton>),
+    >,
+    mut data: ResMut<PathDatas>,
+    preview_query: Single<Entity, With<PreviewWindow>>,
+    mut images: ResMut<Assets<Image>>,
+) -> Result {
+    for (_entity, interaction, idx, mut bg) in interaction_query.iter_mut() {
+        let Some(path) = data.state.lines.get(idx.0).cloned() else {
+            return Ok(());
+        };
+
+        match *interaction {
+            Interaction::Hovered => {
+                *bg = BackgroundColor(Color::srgb_u8(0, 84, 0));
+            }
+            Interaction::Pressed => {
+                // replace the source file only when the status is Done
+                // if matches!(status, TaskStatus::Done) {
+                //     snapshot(path);
+                // }
+
+                let buf = snapshot(path);
+                let img = image::load_from_memory(&buf).unwrap();
+                let preview_entity = *preview_query;
+                let bevy_img = bevy::image::Image::from_dynamic(
+                    img,
+                    true,
+                    bevy::render::render_asset::RenderAssetUsages::default(),
+                );
+                let handle = images.add(bevy_img);
+
+                commands.entity(preview_entity).insert((
+                    Visibility::Visible,
+                    ImageNode {
+                        image: handle,
+                        ..default()
+                    },
+                ));
+            }
+            Interaction::None => {
+                *bg = BackgroundColor(Color::srgb_u8(16, 16, 16));
+            }
+        }
+    }
+    Ok(())
+}
+
 pub fn opendir_interaction(
     mut interaction_query: Query<
         (Entity, &Interaction, &IndexOfline, &mut BackgroundColor),
@@ -154,12 +218,14 @@ pub fn opendir_interaction(
 
 // menu button interaction
 pub fn menu_interaction(
+    mut commands: Commands,
     mut interaction_query: Query<
         (Entity, &Interaction, &Name, &mut BackgroundColor),
         (Changed<Interaction>, With<MenuButton>),
     >,
     mut process_menu: ResMut<ProcessMenu>,
     mut exit_events: EventWriter<bevy::app::AppExit>,
+    preview_query: Single<Entity, With<PreviewWindow>>,
 ) -> Result {
     for (_entity, interaction, name, mut bg) in interaction_query.iter_mut() {
         match *interaction {
@@ -169,11 +235,15 @@ pub fn menu_interaction(
             Interaction::Pressed => {
                 *bg = BackgroundColor(Color::srgb_u8(84, 84, 84));
                 match name.as_str() {
-                    "Lock Import" => {
+                    "Lock" => {
                         process_menu.lock_import = !process_menu.lock_import;
                     }
-                    "Hide Done" => {
+                    "Hide" => {
                         process_menu.hide_done = !process_menu.hide_done;
+                    }
+                    "Clear" => {
+                        //process_menu.hide_done = !process_menu.hide_done;
+                        commands.entity(*preview_query).insert(Visibility::Hidden);
                     }
                     "Exit" => {
                         exit_events.write(bevy::app::AppExit::Success);
@@ -184,13 +254,13 @@ pub fn menu_interaction(
             }
             Interaction::None => {
                 match name.as_str() {
-                    "Lock Import" => {
+                    "Lock" => {
                         if process_menu.lock_import {
                             *bg = BackgroundColor(Color::srgb_u8(64, 0, 0));
                             continue;
                         }
                     }
-                    "Hide Done" => {
+                    "Hide" => {
                         if process_menu.hide_done {
                             *bg = BackgroundColor(Color::srgb_u8(64, 0, 0));
                             continue;

@@ -1,11 +1,14 @@
+use std::io::Write;
+
 use crate::define::*;
+use crate::utility::{create_ffmpeg_command_libx265, snapshot_ffmpeg_command};
 use super::ffmpeg::{create_ffmpeg_command};
 use super::time::parse_duration;
-use tokio::io::{AsyncBufReadExt};
+use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 use log::info;
 use crate::TOKIO_RT;
 
-pub fn task(index:usize,process_state: &ProcessState, path: String) {
+pub fn task(index:usize,process_state: &ProcessState, path: String,soft:bool) {
     // preparse variations and move them into the background thread
     let tx = process_state.progress_tx.clone();
     let mut main_rx = process_state.main_tx.subscribe();
@@ -13,7 +16,11 @@ pub fn task(index:usize,process_state: &ProcessState, path: String) {
     // start a background thread to run ffmpeg
     std::thread::spawn(move || {
         info!("start ffmpeg process");
-        let mut cmd = create_ffmpeg_command(path);
+        let mut cmd = if soft {
+            create_ffmpeg_command_libx265(path)
+        }else{
+            create_ffmpeg_command(path)
+        };
 
         let mut process = ManagedProcess::new(&mut cmd).unwrap();
         let (stdout, stderr) = (process.stdout(), process.stderr());
@@ -134,6 +141,26 @@ pub fn replace(index:usize,path:String,data: &mut PathDatas) {
     std::fs::write(metadata_path, new_content).unwrap();
 
     data.state.status[index] = TaskStatus::Replaced;
+}
+
+pub fn snapshot(path:String)->Vec<u8>{
+
+        info!("snapshot ffmpeg process");
+        let mut cmd = snapshot_ffmpeg_command(path);
+
+        let mut process = ManagedProcess::new(&mut cmd).unwrap();
+        let buf = TOKIO_RT.block_on(async move {
+            let mut png_bytes = Vec::new();
+            process.child.stdout.as_mut().unwrap().read_to_end(&mut png_bytes).await.unwrap();
+            println!("snapshot bytes: {}", png_bytes.len());
+            //let mut file = std::fs::File::create("output.png").unwrap();
+            // file.write_all(&png_bytes).unwrap();
+            // info!("snapshot saved to output.png");
+            process.child.wait().await.unwrap();
+            png_bytes
+        });
+        info!("snapshot completed");
+        buf
 }
 
 pub fn open_dir(path:String){

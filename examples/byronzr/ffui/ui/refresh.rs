@@ -1,5 +1,7 @@
 use crate::define::*;
-use crate::ui::{ui_open_button, ui_replace_button, ui_task_button};
+use crate::ui::{
+    ui_open_button, ui_replace_button, ui_snap_button, ui_task_button, ui_task_ex_button,
+};
 use bevy::prelude::*;
 use log::info;
 
@@ -66,8 +68,12 @@ pub fn refresh_lines(
                 children![
                     // task button
                     ui_task_button(index, font.0.clone()),
+                    // libx265
+                    ui_task_ex_button(index, font.0.clone()),
                     // replace button
                     ui_replace_button(index, font.0.clone()),
+                    // snapshot button
+                    ui_snap_button(index, font.0.clone()),
                     // open button
                     ui_open_button(index, font.0.clone()),
                     // info layout (right)

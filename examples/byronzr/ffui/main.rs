@@ -32,6 +32,7 @@ fn main() {
                 ui::refresh_lines,
                 ui::task_interaction,
                 ui::replace_interaction,
+                ui::snapshot_interaction,
                 ui::opendir_interaction,
                 ui::progress_bar_update,
                 ui::setup::on_window_close,

@@ -1,3 +1,4 @@
+use crate::define::*;
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use tokio::sync::{broadcast, mpsc};
@@ -45,11 +46,11 @@ pub fn setup(mut commands: Commands, mut fonts: ResMut<Assets<Font>>) {
             },
             BackgroundColor(Color::srgb_u8(50, 50, 50)),
             children![
-                ui_menu_button("Lock Import".to_string(), font_handle.clone()),
-                ui_menu_button("Save Status".to_string(), font_handle.clone()),
-                ui_menu_button("Clear".to_string(), font_handle.clone()),
-                ui_menu_button("Hide Done".to_string(), font_handle.clone()),
-                ui_menu_button("Exit".to_string(), font_handle.clone()),
+                ui_menu_button(MenuImportButton::default(), font_handle.clone()),
+                ui_menu_button(MenuSaveButton::default(), font_handle.clone()),
+                ui_menu_button(MenuClearButton::default(), font_handle.clone()),
+                ui_menu_button(MenuHideButton::default(), font_handle.clone()),
+                ui_menu_button(MenuExitButton::default(), font_handle.clone()),
             ],
         ))
         .id();
@@ -73,6 +74,25 @@ pub fn setup(mut commands: Commands, mut fonts: ResMut<Assets<Font>>) {
         ))
         .id();
     commands.entity(layout_id).add_child(container_id);
+
+    // preivew window
+    let preview_id = commands
+        .spawn((
+            PreviewWindow,
+            Node {
+                width: Val::Percent(25.0),
+                height: Val::Percent(25.0),
+                position_type: PositionType::Absolute,
+                bottom: Val::Px(10.0),
+                right: Val::Px(10.0),
+                display: Display::Block,
+                ..default()
+            },
+            Visibility::Hidden,
+            BackgroundColor(Color::srgb_u8(40, 40, 40)),
+        ))
+        .id();
+    commands.entity(container_id).add_child(preview_id);
 
     let (progress_tx, progress_rx) = mpsc::channel::<ProgressInfo>(100);
     let (main_tx, _) = broadcast::channel::<ProcessSignal>(100);

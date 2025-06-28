@@ -13,6 +13,9 @@ pub struct IndexOfline(pub usize);
 pub struct TaskButton;
 
 #[derive(Debug, Component)]
+pub struct TaskButtonType(pub bool);
+
+#[derive(Debug, Component)]
 pub struct MenuButton;
 
 #[derive(Debug, Component)]
@@ -22,4 +25,9 @@ pub struct FileLineBar;
 pub struct ReplaceButton;
 
 #[derive(Debug, Component)]
+pub struct SnapshotButton;
+
+#[derive(Debug, Component)]
 pub struct OpenButton;
+#[derive(Debug, Component)]
+pub struct PreviewWindow;
