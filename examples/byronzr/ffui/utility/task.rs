@@ -1,4 +1,3 @@
-use std::io::Write;
 
 use crate::define::*;
 use crate::utility::{create_ffmpeg_command_libx265, snapshot_ffmpeg_command};
@@ -143,10 +142,10 @@ pub fn replace(index:usize,path:String,data: &mut PathDatas) {
     data.state.status[index] = TaskStatus::Replaced;
 }
 
-pub fn snapshot(path:String)->Vec<u8>{
+pub fn snapshot(path:String,source:bool,total_secs:u64)->Vec<u8>{
 
         info!("snapshot ffmpeg process");
-        let mut cmd = snapshot_ffmpeg_command(path);
+        let mut cmd = snapshot_ffmpeg_command(path,source,total_secs);
 
         let mut process = ManagedProcess::new(&mut cmd).unwrap();
         let buf = TOKIO_RT.block_on(async move {

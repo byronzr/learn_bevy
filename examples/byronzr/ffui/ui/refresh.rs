@@ -82,6 +82,7 @@ pub fn refresh_lines(
 
     let mut entities = vec![];
     for (index, path) in data.state.lines.iter().enumerate() {
+        let total_secs = data.state.progress.get(&index).map_or(0, |s| s.total);
         // create row
         let id = commands
             .spawn((
@@ -91,7 +92,7 @@ pub fn refresh_lines(
                     width: Val::Percent(100.0),
                     height: Val::Px(30.0),
                     column_gap: Val::Px(5.0),
-                    align_self: AlignSelf::Stretch,
+                    //align_self: AlignSelf::Stretch,
                     ..default()
                 },
                 AccessibilityNode(Accessible::new(Role::ListItem)),
@@ -105,14 +106,89 @@ pub fn refresh_lines(
                         should_block_lower: false,
                         ..default()
                     },
+                    // index number
+                    (
+                        AccessibilityNode(Accessible::new(Role::ListItem)),
+                        Pickable {
+                            should_block_lower: false,
+                            ..default()
+                        },
+                        Node {
+                            width: Val::Px(35.),
+                            height: Val::Px(30.0),
+                            border: UiRect::all(Val::Px(1.0)),
+                            // horizontally center child text
+                            justify_content: JustifyContent::Start,
+                            // vertically center child text
+                            align_items: AlignItems::Center,
+                            padding: UiRect::all(Val::Px(5.0)),
+                            ..default()
+                        },
+                        BorderRadius::all(Val::Px(5.0)),
+                        BorderColor(Color::WHITE.with_alpha(0.2)),
+                        children![(
+                            AccessibilityNode(Accessible::new(Role::ListItem)),
+                            Pickable {
+                                should_block_lower: false,
+                                ..default()
+                            },
+                            Text::new(format!("{:0>3}", index + 1)),
+                            TextFont {
+                                font: font.0.clone(),
+                                font_size: 12.0,
+                                ..default()
+                            },
+                            TextColor(Color::srgb(0.9, 0.9, 0.9)),
+                            //TextShadow::default(),
+                        )],
+                    ),
+                    // total seconds
+                    (
+                        AccessibilityNode(Accessible::new(Role::ListItem)),
+                        Pickable {
+                            should_block_lower: false,
+                            ..default()
+                        },
+                        Node {
+                            width: Val::Px(55.),
+                            height: Val::Px(30.0),
+                            border: UiRect::all(Val::Px(1.0)),
+                            // horizontally center child text
+                            justify_content: JustifyContent::Start,
+                            // vertically center child text
+                            align_items: AlignItems::Center,
+                            padding: UiRect::all(Val::Px(5.0)),
+                            ..default()
+                        },
+                        BorderRadius::all(Val::Px(5.0)),
+                        BorderColor(Color::WHITE.with_alpha(0.2)),
+                        children![(
+                            AccessibilityNode(Accessible::new(Role::ListItem)),
+                            Pickable {
+                                should_block_lower: false,
+                                ..default()
+                            },
+                            Text::new(format!("{:>}", total_secs)),
+                            IndexOfline(index),
+                            TextFont {
+                                font: font.0.clone(),
+                                font_size: 12.0,
+                                ..default()
+                            },
+                            TextColor(Color::srgb(0.9, 0.9, 0.9)),
+                            //TextShadow::default(),
+                        )],
+                    ),
                     // task button
                     ui_task_button(index, font.0.clone()),
                     // libx265
                     ui_task_ex_button(index, font.0.clone()),
                     // replace button
                     ui_replace_button(index, font.0.clone()),
-                    // snapshot button
-                    ui_snap_button(index, font.0.clone()),
+                    // snapshot button A
+                    ui_snap_button(index, font.0.clone(), true),
+                    // snapshot button B
+                    ui_snap_button(index, font.0.clone(), false),
                     // open button
                     ui_open_button(index, font.0.clone()),
                     // info layout (right)
@@ -203,15 +279,20 @@ pub fn progress_bar_update(
     mut process_state: ResMut<ProcessState>,
     mut paths_data: ResMut<PathDatas>,
     mut bar_query: Query<(&mut Node, &IndexOfline, &mut BackgroundColor), With<ProgressBar>>,
+    mut text_query: Query<
+        (&mut Text, &IndexOfline),
+        (With<IndexOfline>, With<Text>, Without<ProgressBar>),
+    >,
 ) {
     //let mut rx = process_state.progress_tx.subscribe();
+    //paths_data.changed = true; // mark data as changed
 
     // 处理接收的消息
     let Ok(message) = process_state.progress_rx.try_recv() else {
         return;
     };
 
-    let progress = &mut process_state.progress;
+    let progress = &mut paths_data.state.progress;
 
     let Some(idx) = message.progress_index else {
         info!("Received none (index): {:?}", message);
@@ -252,6 +333,15 @@ pub fn progress_bar_update(
         if idx.0 == message.progress_index.unwrap() {
             // update bar width
             node.width = Val::Percent(statistics.percent as f32);
+            break;
+        }
+    }
+
+    // update total seconds text
+    for (mut text, idx) in text_query.iter_mut() {
+        if idx.0 == message.progress_index.unwrap() {
+            // update text with total seconds
+            text.0 = format!("{:>6}", statistics.total);
             break;
         }
     }

@@ -1,14 +1,16 @@
+use crate::utility::analyze_ffprobe_command;
+use crate::{TOKIO_RT, define::*};
 use arboard::Clipboard;
-use bevy::{prelude::*, text::cosmic_text::ttf_parser::apple_layout::state};
+use bevy::prelude::*;
 use log::info;
-
-use crate::define::*;
+use tokio::sync::mpsc;
 
 // observer shortcuts
 pub fn shortcuts(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut data: ResMut<PathDatas>,
     process_menu: Res<ProcessMenu>,
+    process_state: Res<ProcessState>,
 ) -> Result {
     let mut clipboard = Clipboard::new()?;
     if keyboard.pressed(KeyCode::SuperLeft) && keyboard.just_pressed(KeyCode::KeyV) {
@@ -40,9 +42,47 @@ pub fn shortcuts(
         } else {
             data.state.lines = lines;
             data.state.status = vec![TaskStatus::Waiting; data.state.lines.len()];
+            // start analyze duration
+            analyze_duration(data.state.lines.clone(), process_state.progress_tx.clone());
             data.changed = true;
             info!("storage in PathDatas");
         }
     }
     Ok(())
+}
+
+fn analyze_duration(lines: Vec<String>, tx: mpsc::Sender<ProgressInfo>) {
+    for (index, line) in lines.iter().enumerate() {
+        TOKIO_RT.block_on(async {
+            let mut cmd = analyze_ffprobe_command(line.to_string());
+            let total_secs = match cmd.output().await {
+                Ok(output) => {
+                    if output.status.success() {
+                        let stdout = String::from_utf8_lossy(&output.stdout);
+                        if let Some(duration) = stdout.lines().next() {
+                            // parse f64 from str
+                            duration.parse::<f64>().unwrap_or_else(|_| {
+                                info!("Failed to parse duration from output: {}", duration);
+                                0.0 // default to 0.0 if parsing fails
+                            })
+                        } else {
+                            0.0 // default to 0 if no duration found
+                        }
+                    } else {
+                        info!(
+                            "ffprobe command failed: {}",
+                            String::from_utf8_lossy(&output.stderr)
+                        );
+                        0.0 // default to 0 on failure
+                    }
+                }
+                Err(e) => {
+                    info!("ffprobe command error: {}", e);
+                    0.0 // default to 0 on error
+                }
+            };
+            info!("analyze duration: {} secs", total_secs);
+            let _ = tx.send(ProgressInfo::total(total_secs as u64, index)).await;
+        });
+    }
 }

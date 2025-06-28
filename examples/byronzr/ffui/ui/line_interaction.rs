@@ -26,9 +26,9 @@ pub fn update_task_button_text(
                         "hw".into()
                     }
                 }
-                TaskStatus::Running => "running".to_string(),
+                TaskStatus::Running => "...".to_string(),
                 TaskStatus::Done => "done".to_string(),
-                TaskStatus::Replaced => "replaced".to_string(),
+                TaskStatus::Replaced => "moved".to_string(),
             };
         }
     }
@@ -143,29 +143,40 @@ pub fn replace_interaction(
 pub fn snapshot_interaction(
     mut commands: Commands,
     mut interaction_query: Query<
-        (Entity, &Interaction, &IndexOfline, &mut BackgroundColor),
+        (
+            Entity,
+            &Interaction,
+            &IndexOfline,
+            &mut BackgroundColor,
+            &SnapshotButton,
+        ),
         (Changed<Interaction>, With<SnapshotButton>),
     >,
     mut data: ResMut<PathDatas>,
     preview_query: Single<Entity, With<PreviewWindow>>,
     mut images: ResMut<Assets<Image>>,
 ) -> Result {
-    for (_entity, interaction, idx, mut bg) in interaction_query.iter_mut() {
+    for (_entity, interaction, idx, mut bg, source) in interaction_query.iter_mut() {
         let Some(path) = data.state.lines.get(idx.0).cloned() else {
             return Ok(());
         };
 
+        let total_secs = data.state.progress.get(&idx.0).map_or(0, |p| p.total);
+
+        let has_done = data.state.status.iter().any(|s| *s == TaskStatus::Done);
+
         match *interaction {
             Interaction::Hovered => {
+                if !source.0 && !has_done {
+                    return Ok(());
+                }
                 *bg = BackgroundColor(Color::srgb_u8(0, 84, 0));
             }
             Interaction::Pressed => {
-                // replace the source file only when the status is Done
-                // if matches!(status, TaskStatus::Done) {
-                //     snapshot(path);
-                // }
-
-                let buf = snapshot(path);
+                if !source.0 && !has_done {
+                    return Ok(());
+                }
+                let buf = snapshot(path, source.0, total_secs);
                 let img = image::load_from_memory(&buf).unwrap();
                 let preview_entity = *preview_query;
                 let bevy_img = bevy::image::Image::from_dynamic(
@@ -213,77 +224,6 @@ pub fn opendir_interaction(
             }
             Interaction::None => {
                 *bg = BackgroundColor(Color::srgb_u8(16, 16, 16));
-            }
-        }
-    }
-    Ok(())
-}
-
-// menu button interaction
-pub fn menu_interaction(
-    mut commands: Commands,
-    mut interaction_query: Query<
-        (
-            Entity,
-            &Interaction,
-            &mut Name,
-            &mut BackgroundColor,
-            &mut MenuButton,
-        ),
-        (Changed<Interaction>, With<MenuButton>),
-    >,
-    mut process_menu: ResMut<ProcessMenu>,
-    mut exit_events: EventWriter<bevy::app::AppExit>,
-    preview_query: Single<Entity, With<PreviewWindow>>,
-) -> Result {
-    for (_entity, interaction, name, mut bg, mut mb) in interaction_query.iter_mut() {
-        let button_type = mb.button_type.as_mut();
-
-        match *interaction {
-            Interaction::Hovered => {
-                *bg = BackgroundColor(Color::srgb_u8(0, 84, 0));
-            }
-            Interaction::Pressed => {
-                button_type.next();
-                *bg = BackgroundColor(Color::srgb_u8(84, 84, 84));
-
-                if let Some(bt) = button_type.as_any_mut().downcast_mut::<MenuImportButton>() {
-                    process_menu.import_type = bt.clone();
-                    info!("Lock import: {}", process_menu.import_type);
-                }
-                if button_type.as_any_mut().is::<MenuSaveButton>() {
-                    info!("Save button pressed");
-                }
-                if button_type.as_any_mut().is::<MenuClearButton>() {
-                    commands.entity(*preview_query).insert(Visibility::Hidden);
-                    info!("Clear preview window");
-                }
-                if button_type.as_any_mut().is::<MenuHideButton>() {
-                    process_menu.hide_done = button_type.next();
-                    info!("Hide done tasks: {}", process_menu.hide_done);
-                }
-                if button_type.as_any_mut().is::<MenuExitButton>() {
-                    exit_events.write(bevy::app::AppExit::Success);
-                    continue;
-                }
-            }
-            Interaction::None => {
-                // if button_type.as_any_mut().is::<MenuImportButton>() {
-                //     *bg = BackgroundColor(Color::srgb_u8(64, 64, 64));
-                // }
-                // if button_type.as_any_mut().is::<MenuSaveButton>() {
-                //     *bg = BackgroundColor(Color::srgb_u8(64, 64, 64));
-                // }
-                // if button_type.as_any_mut().is::<MenuClearButton>() {
-                //     *bg = BackgroundColor(Color::srgb_u8(64, 64, 64));
-                // }
-                // if button_type.as_any_mut().is::<MenuHideButton>() {
-                //     *bg = BackgroundColor(Color::srgb_u8(64, 64, 64));
-                // }
-                // if button_type.as_any_mut().is::<MenuExitButton>() {
-                //     *bg = BackgroundColor(Color::srgb_u8(64, 64, 64));
-                // }
-                *bg = BackgroundColor(Color::srgb_u8(64, 64, 64));
             }
         }
     }

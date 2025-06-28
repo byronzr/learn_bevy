@@ -63,6 +63,16 @@ impl std::fmt::Display for MenuSaveButton {
 }
 impl MenuButtonNext for MenuSaveButton {}
 
+// load button
+#[derive(Debug, Default)]
+pub struct MenuLoadButton;
+impl std::fmt::Display for MenuLoadButton {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Load")
+    }
+}
+impl MenuButtonNext for MenuLoadButton {}
+
 // clear button
 #[derive(Debug, Default)]
 pub struct MenuClearButton;

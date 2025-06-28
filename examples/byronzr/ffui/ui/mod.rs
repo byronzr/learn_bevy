@@ -1,10 +1,13 @@
 use crate::define::*;
 use bevy::prelude::*;
-pub mod interaction;
+
+pub mod line_interaction;
+pub mod menu_interaction;
 pub mod refresh;
 pub mod setup;
 
-pub use interaction::*;
+pub use line_interaction::*;
+pub use menu_interaction::*;
 pub use refresh::*;
 
 use accesskit::{Node as Accessible, Role};
@@ -98,7 +101,7 @@ pub fn ui_replace_button(index: usize, font: Handle<Font>) -> impl Bundle {
         BorderColor(Color::WHITE.with_alpha(0.2)),
         BackgroundColor(Color::srgb_u8(0, 0, 0)),
         children![(
-            Text::new("replace"),
+            Text::new("move"),
             TextFont {
                 font,
                 font_size: 12.0,
@@ -110,13 +113,13 @@ pub fn ui_replace_button(index: usize, font: Handle<Font>) -> impl Bundle {
     )
 }
 
-pub fn ui_snap_button(index: usize, font: Handle<Font>) -> impl Bundle {
+pub fn ui_snap_button(index: usize, font: Handle<Font>, source: bool) -> impl Bundle {
     (
         Button,
         IndexOfline(index),
-        SnapshotButton,
+        SnapshotButton(source),
         Node {
-            width: Val::Px(60.),
+            width: Val::Px(70.),
             height: Val::Px(30.0),
             border: UiRect::all(Val::Px(1.0)),
             // horizontally center child text
@@ -129,7 +132,7 @@ pub fn ui_snap_button(index: usize, font: Handle<Font>) -> impl Bundle {
         BorderColor(Color::WHITE.with_alpha(0.2)),
         BackgroundColor(Color::srgb_u8(0, 0, 0)),
         children![(
-            Text::new("snap"),
+            Text::new(format!("snap {}", if source { "A" } else { "B" })),
             TextFont {
                 font,
                 font_size: 12.0,

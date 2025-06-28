@@ -1,10 +1,12 @@
 use bevy::prelude::*;
 //use std::io::{BufRead, BufReader};
+use rand;
 use std::path::Path;
 use std::process::Stdio;
 use tokio::process::Command;
 
 // -hwaccel
+// videotoolbox(MacOs)
 pub fn create_ffmpeg_command(path: String) -> Command {
     let Some(filename) = Path::new(&path)
         .file_stem()
@@ -38,6 +40,8 @@ pub fn create_ffmpeg_command(path: String) -> Command {
     cmd
 }
 
+// software encoding
+// libx265
 pub fn create_ffmpeg_command_libx265(path: String) -> Command {
     let Some(filename) = Path::new(&path)
         .file_stem()
@@ -69,25 +73,42 @@ pub fn create_ffmpeg_command_libx265(path: String) -> Command {
     cmd
 }
 
-pub fn snapshot_ffmpeg_command(path: String) -> Command {
-    let Some(filename) = Path::new(&path)
-        .file_stem()
-        .and_then(|name| name.to_str())
-        .map(|name_str| format!("{}.mp4", name_str))
-    else {
-        panic!("Invalid file path: {}", path);
+// snapshot
+pub fn snapshot_ffmpeg_command(path: String, source: bool, total_secs: u64) -> Command {
+    let filename = if !source {
+        let Some(filename) = Path::new(&path)
+            .file_stem()
+            .and_then(|name| name.to_str())
+            .map(|name_str| format!("{}.mp4", name_str))
+        else {
+            panic!("Invalid file path: {}", path);
+        };
+        filename
+    } else {
+        path
     };
+    // rand a second of total duration
+    let second = rand::random_range(1..total_secs);
+    // format second to hh:mm:ss
+    let second_str = format!(
+        "{:02}:{:02}:{:02}.000",
+        second / 3600,
+        (second % 3600) / 60,
+        second % 60
+    );
 
     let mut cmd = Command::new("ffmpeg");
     cmd.args([
         "-ss",
-        "00:00:01.000", // 截图时间点
+        &second_str, // 截图时间点
         "-i",
         &filename, // 输入文件路径
         "-frames:v",
         "1", // 只截取一帧
         "-vcodec",
         "png",
+        "-vf",
+        "scale=320:180", // 缩放到320x180
         "-q:v",
         "2", // 设置输出质量
         //"output.png", // 输出文件名
@@ -97,5 +118,20 @@ pub fn snapshot_ffmpeg_command(path: String) -> Command {
     ])
     .stdout(Stdio::piped())
     .stderr(Stdio::piped());
+    cmd
+}
+
+// analyze
+pub fn analyze_ffprobe_command(path: String) -> Command {
+    let mut cmd = Command::new("ffprobe");
+    cmd.arg("-v")
+        .arg("error")
+        .arg("-show_entries")
+        .arg("format=duration")
+        .arg("-of")
+        .arg("default=noprint_wrappers=1:nokey=1")
+        .arg(path)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
     cmd
 }

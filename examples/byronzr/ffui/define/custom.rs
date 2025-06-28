@@ -1,3 +1,6 @@
+use bevy::platform::collections::HashMap;
+use bevy::prelude::*;
+
 #[derive(Debug, Clone)]
 pub enum ProgressType {
     Total,
@@ -41,7 +44,7 @@ impl ProgressInfo {
     }
 }
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub enum TaskStatus {
     #[default]
     Waiting,
@@ -54,4 +57,5 @@ pub enum TaskStatus {
 pub struct FilesState {
     pub lines: Vec<String>,
     pub status: Vec<TaskStatus>,
+    pub progress: HashMap<usize, ProgressStatistics>,
 }

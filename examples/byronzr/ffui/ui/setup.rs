@@ -1,5 +1,5 @@
 use crate::define::*;
-use bevy::platform::collections::HashMap;
+
 use bevy::prelude::*;
 use bevy::{
     input::mouse::{MouseScrollUnit, MouseWheel},
@@ -7,7 +7,7 @@ use bevy::{
 };
 use tokio::sync::{broadcast, mpsc};
 
-use crate::{FONT_BYTES, define::*, ui::ui_menu_button};
+use crate::{FONT_BYTES, ui::ui_menu_button};
 const LINE_HEIGHT: f32 = 30.0;
 
 // initialize
@@ -53,6 +53,7 @@ pub fn setup(mut commands: Commands, mut fonts: ResMut<Assets<Font>>) {
             children![
                 ui_menu_button(MenuImportButton::default(), font_handle.clone()),
                 ui_menu_button(MenuSaveButton::default(), font_handle.clone()),
+                ui_menu_button(MenuLoadButton::default(), font_handle.clone()),
                 ui_menu_button(MenuClearButton::default(), font_handle.clone()),
                 ui_menu_button(MenuHideButton::default(), font_handle.clone()),
                 ui_menu_button(MenuExitButton::default(), font_handle.clone()),
@@ -104,13 +105,13 @@ pub fn setup(mut commands: Commands, mut fonts: ResMut<Assets<Font>>) {
 
     let (progress_tx, progress_rx) = mpsc::channel::<ProgressInfo>(100);
     let (main_tx, _) = broadcast::channel::<ProcessSignal>(100);
-    let progress = HashMap::<usize, ProgressStatistics>::new();
+    //let progress = HashMap::<usize, ProgressStatistics>::new();
 
     commands.insert_resource(ProcessState {
         progress_tx,
         progress_rx,
         main_tx,
-        progress,
+        //  progress,
     });
 
     commands.insert_resource(ProcessMenu {

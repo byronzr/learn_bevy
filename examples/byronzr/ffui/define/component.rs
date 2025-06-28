@@ -33,7 +33,7 @@ pub struct FileLineBar;
 pub struct ReplaceButton;
 
 #[derive(Debug, Component)]
-pub struct SnapshotButton;
+pub struct SnapshotButton(pub bool);
 
 #[derive(Debug, Component)]
 pub struct OpenButton;
