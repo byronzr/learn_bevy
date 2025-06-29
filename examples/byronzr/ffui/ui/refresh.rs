@@ -75,7 +75,7 @@ pub fn refresh_lines(
     let container_entity = *container_query;
     for entity in data.entities.iter() {
         if let Some(e) = entity {
-            commands.entity(*e).despawn();
+            commands.entity(*e).try_despawn();
         }
     }
     data.entities.clear();
@@ -83,6 +83,25 @@ pub fn refresh_lines(
     let mut entities = vec![];
     for (index, path) in data.state.lines.iter().enumerate() {
         let total_secs = data.state.progress.get(&index).map_or(0, |s| s.total);
+        let progress = data
+            .state
+            .progress
+            .get(&index)
+            .and_then(|s| Some(s.percent))
+            .unwrap_or(0.0);
+        let n = 80;
+        let short_path = if path.chars().count() > n {
+            let start = path
+                .char_indices()
+                .rev()
+                .nth(n - 1)
+                .map(|(i, _)| i)
+                .unwrap();
+            &format!("... {}", &path[start..])
+        } else {
+            path
+        };
+
         // create row
         let id = commands
             .spawn((
@@ -114,18 +133,19 @@ pub fn refresh_lines(
                             ..default()
                         },
                         Node {
-                            width: Val::Px(35.),
+                            width: Val::Px(55.),
                             height: Val::Px(30.0),
                             border: UiRect::all(Val::Px(1.0)),
                             // horizontally center child text
-                            justify_content: JustifyContent::Start,
+                            justify_content: JustifyContent::Center,
                             // vertically center child text
                             align_items: AlignItems::Center,
-                            padding: UiRect::all(Val::Px(5.0)),
+                            //padding: UiRect::all(Val::Px(5.0)),
                             ..default()
                         },
                         BorderRadius::all(Val::Px(5.0)),
-                        BorderColor(Color::WHITE.with_alpha(0.2)),
+                        //BorderColor(Color::WHITE.with_alpha(0.2)),
+                        BackgroundColor(Color::WHITE.with_alpha(0.02)),
                         children![(
                             AccessibilityNode(Accessible::new(Role::ListItem)),
                             Pickable {
@@ -150,18 +170,19 @@ pub fn refresh_lines(
                             ..default()
                         },
                         Node {
-                            width: Val::Px(55.),
+                            width: Val::Px(85.),
                             height: Val::Px(30.0),
                             border: UiRect::all(Val::Px(1.0)),
                             // horizontally center child text
-                            justify_content: JustifyContent::Start,
+                            justify_content: JustifyContent::Center,
                             // vertically center child text
                             align_items: AlignItems::Center,
-                            padding: UiRect::all(Val::Px(5.0)),
+                            //padding: UiRect::all(Val::Px(5.0)),
                             ..default()
                         },
                         BorderRadius::all(Val::Px(5.0)),
-                        BorderColor(Color::WHITE.with_alpha(0.2)),
+                        //BorderColor(Color::WHITE.with_alpha(0.2)),
+                        BackgroundColor(Color::WHITE.with_alpha(0.1)),
                         children![(
                             AccessibilityNode(Accessible::new(Role::ListItem)),
                             Pickable {
@@ -235,7 +256,7 @@ pub fn refresh_lines(
                                         should_block_lower: false,
                                         ..default()
                                     },
-                                    Text::new(path.clone()),
+                                    Text::new(short_path),
                                     TextFont {
                                         font: font.0.clone(),
                                         font_size: 12.0,
@@ -255,7 +276,7 @@ pub fn refresh_lines(
                                 ProgressBar,
                                 IndexOfline(index),
                                 Node {
-                                    width: Val::Percent(0.), // initially 0%
+                                    width: Val::Percent(progress as f32), // initially 0%
                                     height: Val::Px(3.0),
                                     ..default()
                                 },
@@ -298,20 +319,15 @@ pub fn progress_bar_update(
         info!("Received none (index): {:?}", message);
         return;
     };
+
     // target progress statistics
-    let default_statistics = ProgressStatistics {
+    // Use entry API to avoid temporary value issues
+    let statistics = progress.entry(idx).or_insert(ProgressStatistics {
         total: 0,
         current: 0,
         percent: 0.0,
-    };
-    if progress.get(&idx).is_none() {
-        progress.insert(idx, default_statistics);
-    }
-    let Some(statistics) = progress.get_mut(&idx) else {
-        return;
-    };
+    });
 
-    //.get_or_insert(&mut default_statistics);
     match message.progress_type {
         ProgressType::Total => {
             statistics.total = message.progress_value;

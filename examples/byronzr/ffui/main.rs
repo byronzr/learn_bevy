@@ -21,15 +21,17 @@ fn main() {
             }),
             ..default()
         }))
-        //.add_plugins(DefaultPlugins)
+        .init_state::<AppState>()
+        .enable_state_scoped_entities::<AppState>()
         .init_resource::<PathDatas>()
         .add_systems(Startup, ui::setup::setup)
+        .add_systems(OnEnter(AppState::Monitor), ui::toggle_setting)
         .add_systems(
             Update,
             (
+                ui::refresh_lines,
                 ui::menu_interaction,
                 shortcuts::shortcuts,
-                ui::refresh_lines,
                 ui::task_interaction,
                 ui::replace_interaction,
                 ui::snapshot_interaction,

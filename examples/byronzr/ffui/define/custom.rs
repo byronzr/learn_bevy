@@ -1,5 +1,6 @@
 use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]
 pub enum ProgressType {
@@ -13,6 +14,15 @@ pub enum ProcessSignal {
     TaskInterrupt(usize),
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProgressStatistics {
+    pub total: u64,
+    pub current: u64,
+    pub percent: f64,
+}
+
+// Progress statistics for each file
+// service Sender & Receiver
 #[derive(Debug, Clone)]
 pub struct ProgressInfo {
     pub progress_type: ProgressType,
@@ -20,14 +30,8 @@ pub struct ProgressInfo {
     pub progress_index: Option<usize>,
 }
 
-#[derive(Debug)]
-pub struct ProgressStatistics {
-    pub total: u64,
-    pub current: u64,
-    pub percent: f64,
-}
-
 impl ProgressInfo {
+    // Create a new ProgressInfo instance with the Total type
     pub fn total(value: u64, idx: usize) -> Self {
         Self {
             progress_type: ProgressType::Total,
@@ -35,6 +39,7 @@ impl ProgressInfo {
             progress_index: Some(idx),
         }
     }
+    // Create a new ProgressInfo instance with the Current type
     pub fn current(value: u64, idx: usize) -> Self {
         Self {
             progress_type: ProgressType::Current,
@@ -44,7 +49,8 @@ impl ProgressInfo {
     }
 }
 
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
+// Task status for each file
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TaskStatus {
     #[default]
     Waiting,
@@ -53,9 +59,10 @@ pub enum TaskStatus {
     Replaced,
 }
 
-#[derive(Debug, Default)]
+// whole files information
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub struct FilesState {
-    pub lines: Vec<String>,
-    pub status: Vec<TaskStatus>,
-    pub progress: HashMap<usize, ProgressStatistics>,
+    pub lines: Vec<String>,                           // each line is a file path
+    pub status: Vec<TaskStatus>,                      // status of each file
+    pub progress: HashMap<usize, ProgressStatistics>, // progress of each file
 }

@@ -18,7 +18,7 @@ pub fn update_task_button_text(
         };
         // update the text content according to the status
         if let Ok(mut text) = text_query.get_mut(*childen_entity) {
-            text.0 = match data.state.status[idx.0] {
+            text.0 = match data.state.status.get(idx.0).unwrap_or(&TaskStatus::Waiting) {
                 TaskStatus::Waiting => {
                     if btty.0 {
                         "sf".into()
@@ -50,6 +50,7 @@ pub fn task_interaction(
     >,
     mut data: ResMut<PathDatas>,
     process_state: Res<ProcessState>,
+    ffmpeg_args: Res<FfmpegArg>,
 ) -> Result {
     for (_entity, interaction, idx, mut bg, btty) in interaction_query.iter_mut() {
         let Some(path) = data.state.lines.get(idx.0).cloned() else {
@@ -69,7 +70,12 @@ pub fn task_interaction(
                     TaskStatus::Waiting => {
                         data.state.status[idx.0] = TaskStatus::Running;
                         *bg = BackgroundColor(Color::srgb_u8(64, 84, 64));
-                        task(idx.0, &process_state, path, btty.0);
+                        let args = if btty.0 {
+                            ffmpeg_args.sf_convert.clone()
+                        } else {
+                            ffmpeg_args.hw_convert.clone()
+                        };
+                        task(idx.0, &process_state, path, btty.0, args);
                         continue;
                     }
                     // if the status is Running, stop the task
@@ -155,6 +161,7 @@ pub fn snapshot_interaction(
     mut data: ResMut<PathDatas>,
     preview_query: Single<Entity, With<PreviewWindow>>,
     mut images: ResMut<Assets<Image>>,
+    ffmpeg_arg: Res<FfmpegArg>,
 ) -> Result {
     for (_entity, interaction, idx, mut bg, source) in interaction_query.iter_mut() {
         let Some(path) = data.state.lines.get(idx.0).cloned() else {
@@ -162,21 +169,22 @@ pub fn snapshot_interaction(
         };
 
         let total_secs = data.state.progress.get(&idx.0).map_or(0, |p| p.total);
-
-        let has_done = data.state.status.iter().any(|s| *s == TaskStatus::Done);
+        let has_done =
+            data.state.status.get(idx.0).unwrap_or(&TaskStatus::Waiting) == &TaskStatus::Done;
 
         match *interaction {
             Interaction::Hovered => {
                 if !source.0 && !has_done {
-                    return Ok(());
+                    continue;
                 }
                 *bg = BackgroundColor(Color::srgb_u8(0, 84, 0));
             }
             Interaction::Pressed => {
                 if !source.0 && !has_done {
-                    return Ok(());
+                    continue;
                 }
-                let buf = snapshot(path, source.0, total_secs);
+                let args = ffmpeg_arg.snapshot.clone();
+                let buf = snapshot(path, source.0, total_secs, args);
                 let img = image::load_from_memory(&buf).unwrap();
                 let preview_entity = *preview_query;
                 let bevy_img = bevy::image::Image::from_dynamic(

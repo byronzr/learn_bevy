@@ -9,6 +9,7 @@ pub struct ProcessState {
     pub progress_tx: mpsc::Sender<ProgressInfo>,
     pub progress_rx: mpsc::Receiver<ProgressInfo>,
     pub main_tx: broadcast::Sender<ProcessSignal>,
+    pub layout: Option<Entity>,
 }
 
 #[derive(Debug, Resource, Default)]
@@ -22,6 +23,7 @@ pub struct PathDatas {
 pub struct ProcessMenu {
     pub import_type: MenuImportButton,
     pub hide_done: bool,
+    pub toggle_setting: bool,
 }
 
 #[derive(Debug, Resource)]

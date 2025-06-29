@@ -1,5 +1,7 @@
 use std::any::Any;
 
+use bevy::log::info;
+
 pub trait MenuButtonNext: std::fmt::Display {
     fn next(&mut self) -> bool {
         false
@@ -94,6 +96,24 @@ impl std::fmt::Display for MenuHideButton {
     }
 }
 impl MenuButtonNext for MenuHideButton {
+    fn next(&mut self) -> bool {
+        self.checked = !self.checked;
+        self.checked
+    }
+}
+
+// setting button
+#[derive(Debug, Default)]
+pub struct MenuToggleSetting {
+    pub checked: bool,
+}
+
+impl std::fmt::Display for MenuToggleSetting {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Settings")
+    }
+}
+impl MenuButtonNext for MenuToggleSetting {
     fn next(&mut self) -> bool {
         self.checked = !self.checked;
         self.checked

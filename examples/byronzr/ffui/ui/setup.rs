@@ -11,7 +11,11 @@ use crate::{FONT_BYTES, ui::ui_menu_button};
 const LINE_HEIGHT: f32 = 30.0;
 
 // initialize
-pub fn setup(mut commands: Commands, mut fonts: ResMut<Assets<Font>>) {
+pub fn setup(
+    mut commands: Commands,
+    mut fonts: ResMut<Assets<Font>>,
+    mut app_state: ResMut<NextState<AppState>>,
+) {
     commands.spawn(Camera2d);
 
     let font = Font::try_from_bytes(FONT_BYTES.to_vec()).unwrap();
@@ -56,33 +60,12 @@ pub fn setup(mut commands: Commands, mut fonts: ResMut<Assets<Font>>) {
                 ui_menu_button(MenuLoadButton::default(), font_handle.clone()),
                 ui_menu_button(MenuClearButton::default(), font_handle.clone()),
                 ui_menu_button(MenuHideButton::default(), font_handle.clone()),
+                ui_menu_button(MenuToggleSetting::default(), font_handle.clone()),
                 ui_menu_button(MenuExitButton::default(), font_handle.clone()),
             ],
         ))
         .id();
     commands.entity(layout_id).add_child(menu_id);
-
-    // ui container
-    let container_id = commands
-        .spawn((
-            Container,
-            Node {
-                //size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                //height: Val::Px(300.0), // or Val::Percent(50.0)
-                position_type: PositionType::Relative,
-                //margin: UiRect::all(Val::Px(10.0)),
-                padding: UiRect::all(Val::Px(10.0)),
-                flex_direction: FlexDirection::Column,
-                row_gap: Val::Px(5.0),
-                overflow: Overflow::scroll_y(),
-                align_self: AlignSelf::Stretch,
-                ..default()
-            },
-        ))
-        .id();
-    commands.entity(layout_id).add_child(container_id);
 
     // preivew window
     let preview_id = commands
@@ -95,13 +78,15 @@ pub fn setup(mut commands: Commands, mut fonts: ResMut<Assets<Font>>) {
                 bottom: Val::Px(10.0),
                 right: Val::Px(10.0),
                 display: Display::Block,
+
                 ..default()
             },
+            ZIndex(99),
             Visibility::Hidden,
             BackgroundColor(Color::srgb_u8(40, 40, 40)),
         ))
         .id();
-    commands.entity(container_id).add_child(preview_id);
+    commands.entity(layout_id).add_child(preview_id);
 
     let (progress_tx, progress_rx) = mpsc::channel::<ProgressInfo>(100);
     let (main_tx, _) = broadcast::channel::<ProcessSignal>(100);
@@ -111,13 +96,18 @@ pub fn setup(mut commands: Commands, mut fonts: ResMut<Assets<Font>>) {
         progress_tx,
         progress_rx,
         main_tx,
-        //  progress,
+        layout: Some(layout_id),
     });
 
     commands.insert_resource(ProcessMenu {
         import_type: MenuImportButton::Sequence,
         hide_done: false,
+        toggle_setting: false,
     });
+
+    commands.init_resource::<FfmpegArg>();
+
+    app_state.set(AppState::Monitor);
 }
 
 pub fn on_window_close(

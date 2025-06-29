@@ -5,3 +5,4 @@ Cargo.lock
 .gitignore
 *.mp4
 output.png
+files_state.json

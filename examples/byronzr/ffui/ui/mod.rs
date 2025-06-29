@@ -1,11 +1,13 @@
 use crate::define::*;
 use bevy::prelude::*;
 
+pub mod app_state;
 pub mod line_interaction;
 pub mod menu_interaction;
 pub mod refresh;
 pub mod setup;
 
+pub use app_state::*;
 pub use line_interaction::*;
 pub use menu_interaction::*;
 pub use refresh::*;
@@ -35,7 +37,7 @@ pub fn ui_task_button(index: usize, font: Handle<Font>) -> impl Bundle {
             ..default()
         },
         BorderRadius::all(Val::Px(5.0)),
-        BorderColor(Color::WHITE.with_alpha(0.2)),
+        //BorderColor(Color::WHITE.with_alpha(0.2)),
         BackgroundColor(Color::srgb_u8(0, 0, 0)),
         children![(
             Text::new("hw"),
@@ -67,7 +69,7 @@ pub fn ui_task_ex_button(index: usize, font: Handle<Font>) -> impl Bundle {
             ..default()
         },
         BorderRadius::all(Val::Px(5.0)),
-        BorderColor(Color::WHITE.with_alpha(0.2)),
+        //BorderColor(Color::WHITE.with_alpha(0.2)),
         BackgroundColor(Color::srgb_u8(0, 0, 0)),
         children![(
             Text::new("sf"),
@@ -98,7 +100,7 @@ pub fn ui_replace_button(index: usize, font: Handle<Font>) -> impl Bundle {
             ..default()
         },
         BorderRadius::all(Val::Px(5.0)),
-        BorderColor(Color::WHITE.with_alpha(0.2)),
+        //BorderColor(Color::WHITE.with_alpha(0.2)),
         BackgroundColor(Color::srgb_u8(0, 0, 0)),
         children![(
             Text::new("move"),
@@ -129,7 +131,7 @@ pub fn ui_snap_button(index: usize, font: Handle<Font>, source: bool) -> impl Bu
             ..default()
         },
         BorderRadius::all(Val::Px(5.0)),
-        BorderColor(Color::WHITE.with_alpha(0.2)),
+        //BorderColor(Color::WHITE.with_alpha(0.2)),
         BackgroundColor(Color::srgb_u8(0, 0, 0)),
         children![(
             Text::new(format!("snap {}", if source { "A" } else { "B" })),
@@ -160,7 +162,7 @@ pub fn ui_open_button(index: usize, font: Handle<Font>) -> impl Bundle {
             ..default()
         },
         BorderRadius::all(Val::Px(5.0)),
-        BorderColor(Color::WHITE.with_alpha(0.2)),
+        //BorderColor(Color::WHITE.with_alpha(0.2)),
         BackgroundColor(Color::srgb_u8(0, 0, 0)),
         children![(
             Text::new("open"),

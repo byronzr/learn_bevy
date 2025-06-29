@@ -7,18 +7,18 @@ use tokio::io::{AsyncBufReadExt, AsyncReadExt};
 use log::info;
 use crate::TOKIO_RT;
 
-pub fn task(index:usize,process_state: &ProcessState, path: String,soft:bool) {
+pub fn task(index:usize,process_state: &ProcessState, path: String,soft:bool, args: Vec<ArgKeyValue>) {
     // preparse variations and move them into the background thread
     let tx = process_state.progress_tx.clone();
     let mut main_rx = process_state.main_tx.subscribe();
 
     // start a background thread to run ffmpeg
     std::thread::spawn(move || {
-        info!("start ffmpeg process");
+        info!("start ffmpeg process: soft: {}", soft);
         let mut cmd = if soft {
-            create_ffmpeg_command_libx265(path)
+            create_ffmpeg_command_libx265(path,&args)
         }else{
-            create_ffmpeg_command(path)
+            create_ffmpeg_command(path,&args)
         };
 
         let mut process = ManagedProcess::new(&mut cmd).unwrap();
@@ -54,7 +54,7 @@ pub fn task(index:usize,process_state: &ProcessState, path: String,soft:bool) {
                                     let Some(duration) = parse_duration(
                                     lin.trim().trim_start_matches("out_time=").trim(),
                                     ) else {
-                                        info!("parse failed: {}", lin);
+                                        //info!("stdout: parse failed: {}", lin);
                                         return;
                                     };
                                     tx.send(ProgressInfo::current(duration.as_secs(), index)).await.unwrap();
@@ -65,31 +65,31 @@ pub fn task(index:usize,process_state: &ProcessState, path: String,soft:bool) {
                                 stdoff |= 0b01;
                                 return;
                             }
-                            
                         }
                     }
                     line = stderr_lines.next_line()=>{
-                        match line.unwrap_or_else(|_| None) {
-                            Some(lin)=>{
-                                if lin.contains("Duration") {
-                                    let vec_content: Vec<&str> = lin.split(',').collect();
-                                    let (str_duration, _str_start, _str_bitrate) =
-                                        (vec_content[0], vec_content[1], vec_content[2]);
-                                    let Some(duration) = parse_duration(
-                                        str_duration.trim().trim_start_matches("Duration: ").trim(),
-                                    ) else {
-                                        info!("parse failed: {}", str_duration);
-                                        return;
-                                    };
-                                    tx.send(ProgressInfo::total(duration.as_secs(), index)).await.unwrap();
-                                }
-                            }
-                            None=>{
-                                // complete(EOF)
-                                stdoff |= 0b10;
-                                return;
-                            }
-                        }
+                        // do nothing because total analyze from ffprobe complete
+                        // match line.unwrap_or_else(|_| None) {
+                        //     Some(lin)=>{
+                        //         if lin.contains("Duration") {
+                        //             let vec_content: Vec<&str> = lin.split(',').collect();
+                        //             let (str_duration, _str_start, _str_bitrate) =
+                        //                 (vec_content[0], vec_content[1], vec_content[2]);
+                        //             let Some(duration) = parse_duration(
+                        //                 str_duration.trim().trim_start_matches("Duration: ").trim(),
+                        //             ) else {
+                        //                 //info!("stderr: parse failed: {}", str_duration);
+                        //                 return;
+                        //             };
+                        //             tx.send(ProgressInfo::total(duration.as_secs(), index)).await.unwrap();
+                        //         }
+                        //     }
+                        //     None=>{
+                        //         // complete(EOF)
+                        //         stdoff |= 0b10;
+                        //         return;
+                        //     }
+                        // }
                     }
                 }
             });
@@ -142,10 +142,10 @@ pub fn replace(index:usize,path:String,data: &mut PathDatas) {
     data.state.status[index] = TaskStatus::Replaced;
 }
 
-pub fn snapshot(path:String,source:bool,total_secs:u64)->Vec<u8>{
+pub fn snapshot(path:String,source:bool,total_secs:u64,args:Vec<ArgKeyValue>)->Vec<u8>{
 
         info!("snapshot ffmpeg process");
-        let mut cmd = snapshot_ffmpeg_command(path,source,total_secs);
+        let mut cmd = snapshot_ffmpeg_command(path,source,total_secs,&args);
 
         let mut process = ManagedProcess::new(&mut cmd).unwrap();
         let buf = TOKIO_RT.block_on(async move {
