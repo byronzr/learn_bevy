@@ -62,7 +62,7 @@ pub fn show_import_type(
 // refresh lines when import files changed
 pub fn refresh_lines(
     mut commands: Commands,
-    container_query: Single<Entity, With<Container>>,
+    container_query: Single<Entity, With<LinesContainer>>,
     mut data: ResMut<PathDatas>,
     font: Res<FontHandle>,
 ) -> Result {

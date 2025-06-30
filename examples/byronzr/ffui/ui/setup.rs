@@ -44,8 +44,6 @@ pub fn setup(
             Node {
                 width: Val::Percent(100.0),
                 height: Val::Px(36.0),
-                // PositionType::Absolute make width uncontrolled,but position always relative to parent
-                // PositionType::Relative make width controlled by parent,margin and padding will affect width
                 position_type: PositionType::Relative,
                 flex_direction: FlexDirection::Row,
                 column_gap: Val::Px(5.0),

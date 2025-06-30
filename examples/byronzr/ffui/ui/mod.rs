@@ -6,11 +6,13 @@ pub mod line_interaction;
 pub mod menu_interaction;
 pub mod refresh;
 pub mod setup;
+pub mod ui_text_input;
 
 pub use app_state::*;
 pub use line_interaction::*;
 pub use menu_interaction::*;
 pub use refresh::*;
+pub use ui_text_input::*;
 
 use accesskit::{Node as Accessible, Role};
 use bevy::a11y::AccessibilityNode;

@@ -2,7 +2,10 @@ use crate::define::*;
 use bevy::prelude::*;
 
 #[derive(Debug, Component)]
-pub struct Container;
+pub struct LinesContainer;
+
+#[derive(Debug, Component)]
+pub struct SettingContainer;
 
 #[derive(Debug, Component)]
 pub struct ProgressBar;

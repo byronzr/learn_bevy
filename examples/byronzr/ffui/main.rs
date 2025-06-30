@@ -1,4 +1,7 @@
-use bevy::prelude::*;
+use bevy::{
+    input_focus::{InputDispatchPlugin, tab_navigation::TabNavigationPlugin},
+    prelude::*,
+};
 use once_cell::sync::Lazy;
 use tokio::runtime::Runtime;
 
@@ -21,11 +24,14 @@ fn main() {
             }),
             ..default()
         }))
+        .add_plugins((InputDispatchPlugin, TabNavigationPlugin))
         .init_state::<AppState>()
         .enable_state_scoped_entities::<AppState>()
         .init_resource::<PathDatas>()
         .add_systems(Startup, ui::setup::setup)
-        .add_systems(OnEnter(AppState::Monitor), ui::toggle_setting)
+        .add_systems(OnEnter(AppState::Monitor), ui::enter_monitor)
+        .add_systems(OnEnter(AppState::Setting), ui::enter_setting)
+        .add_systems(Update, ui::focus_system.run_if(in_state(AppState::Setting)))
         .add_systems(
             Update,
             (
