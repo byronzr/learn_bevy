@@ -1,13 +1,5 @@
 use crate::{define::*, ui::*};
-use bevy::{
-    input_focus::{
-        InputFocus,
-        tab_navigation::{TabGroup, TabIndex},
-    },
-    prelude::*,
-};
-use bevy_ecs::spawn::SpawnWith;
-use tokio::process::Child;
+use bevy::{input_focus::InputFocus, prelude::*};
 
 pub fn enter_monitor(
     mut commands: Commands,
@@ -80,7 +72,6 @@ pub fn enter_setting(
         ))
         .id();
 
-    //BackgroundColor(Color::WHITE.with_alpha(0.5)),
     let ffmpeg_hw_id = commands
         .spawn(
             // ffmpeg hw arguments
@@ -101,75 +92,9 @@ pub fn enter_setting(
                     ..default()
                 },
                 BorderColor(Color::BLACK.with_alpha(0.5)),
-                //BackgroundColor(Color::srgb_u8(128, 0, 0)),
+                arguments_panel(&ffmpeg_arg.hw_convert, font.0.clone(), 0),
             ),
         )
-        .with_children(|parent| {
-            show_arguments(parent, &ffmpeg_arg.hw_convert, font.0.clone());
-            // add input aera
-            // first. parent layout `justify_content: JustifyContent::Between` will make the input area stretch to fill the remaining space
-            // second. current node layout `height: Val::Percent(100.0)` will make the input area fill the parent node height (remaining space)
-            // stretch input area to fill the remaining space
-            parent
-                .spawn((Node {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    position_type: PositionType::Relative,
-                    padding: UiRect::all(Val::Px(5.0)),
-                    flex_direction: FlexDirection::Column,
-                    column_gap: Val::Px(5.0),
-                    justify_content: JustifyContent::FlexEnd,
-                    ..default()
-                },))
-                .with_children(|parent| {
-                    // interactive row on the bottom
-                    parent
-                        .spawn((
-                            // the row on the bottom and inner layout is row
-                            Node {
-                                width: Val::Percent(100.0),
-                                height: Val::Px(50.0),
-                                position_type: PositionType::Relative,
-                                padding: UiRect::all(Val::Px(5.0)),
-                                flex_direction: FlexDirection::Row,
-                                column_gap: Val::Px(5.0),
-                                justify_content: JustifyContent::SpaceBetween,
-                                ..default()
-                            },
-                            TabGroup::new(0),
-                        ))
-                        .with_children(|parent| {
-                            text_input(parent);
-                            text_input(parent);
-                            // button submit
-                            parent.spawn((
-                                Button,
-                                Node {
-                                    width: Val::Px(50.0),
-                                    height: Val::Percent(100.0),
-                                    position_type: PositionType::Relative,
-                                    padding: UiRect::all(Val::Px(5.0)),
-                                    flex_direction: FlexDirection::Column,
-                                    column_gap: Val::Px(5.0),
-                                    justify_content: JustifyContent::Center,
-                                    align_items: AlignItems::Center,
-                                    ..default()
-                                },
-                                BorderRadius::all(Val::Px(5.0)),
-                                BackgroundColor(Color::WHITE.with_alpha(0.1)),
-                                children![(
-                                    Text::new("Submit"),
-                                    TextFont {
-                                        font: font.0.clone(),
-                                        font_size: 12.0,
-                                        ..default()
-                                    },
-                                    TextColor(Color::srgb(0.9, 0.9, 0.9)),
-                                )],
-                            ));
-                        });
-                });
-        })
         .id();
     commands.entity(setting_id).add_child(ffmpeg_hw_id);
 
@@ -191,11 +116,9 @@ pub fn enter_setting(
                 ..default()
             },
             BorderColor(Color::BLACK.with_alpha(0.5)),
+            arguments_panel(&ffmpeg_arg.sf_convert, font.0.clone(), 1),
             //BackgroundColor(Color::srgb_u8(0, 128, 0)),
         ))
-        .with_children(|parent| {
-            show_arguments(parent, &ffmpeg_arg.sf_convert, font.0.clone());
-        })
         .id();
     commands.entity(setting_id).add_child(ffmpeg_sf_id);
     // preview arguments
@@ -216,11 +139,9 @@ pub fn enter_setting(
                 ..default()
             },
             BorderColor(Color::BLACK.with_alpha(0.5)),
+            arguments_panel(&ffmpeg_arg.snapshot, font.0.clone(), 2),
             //BackgroundColor(Color::srgb_u8(0, 0, 128)),
         ))
-        .with_children(|parent| {
-            show_arguments(parent, &ffmpeg_arg.snapshot, font.0.clone());
-        })
         .id();
     commands.entity(setting_id).add_child(preivew_id);
     // analyze arguments
@@ -241,10 +162,8 @@ pub fn enter_setting(
                 ..default()
             },
             BorderColor(Color::BLACK.with_alpha(0.5)),
+            arguments_panel(&ffmpeg_arg.analyze, font.0.clone(), 3),
         ))
-        .with_children(|parent| {
-            show_arguments(parent, &ffmpeg_arg.analyze, font.0.clone());
-        })
         .id();
     commands.entity(setting_id).add_child(analyze_id);
 
