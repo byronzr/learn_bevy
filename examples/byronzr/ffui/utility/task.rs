@@ -4,17 +4,19 @@ use crate::utility::{create_ffmpeg_command_libx265, snapshot_ffmpeg_command};
 use super::ffmpeg::{create_ffmpeg_command};
 use super::time::parse_duration;
 use tokio::io::{AsyncBufReadExt, AsyncReadExt};
-use log::info;
+use bevy::log::info;
 use crate::TOKIO_RT;
 
 pub fn task(index:usize,process_state: &ProcessState, path: String,soft:bool, args: Vec<ArgKeyValue>) {
     // preparse variations and move them into the background thread
     let tx = process_state.progress_tx.clone();
     let mut main_rx = process_state.main_tx.subscribe();
+    let toast_tx = process_state.toast_tx.clone();
 
     // start a background thread to run ffmpeg
     std::thread::spawn(move || {
-        info!("start ffmpeg process: soft: {}", soft);
+        //info!("start ffmpeg process: soft: {}", soft);
+        let _ = toast_tx.try_send(format!("start ffmpeg process: soft: {}", soft));
         let mut cmd = if soft {
             create_ffmpeg_command_libx265(path,&args)
         }else{
@@ -40,7 +42,8 @@ pub fn task(index:usize,process_state: &ProcessState, path: String,soft:bool, ar
             
             // return if stderr and stdout are both EOF
             if stdoff == 0b11 {
-                info!("task completed");
+                //info!("task completed");
+                let _ = toast_tx.try_send("task completed".to_string());
                 return;
             }
 
@@ -67,29 +70,8 @@ pub fn task(index:usize,process_state: &ProcessState, path: String,soft:bool, ar
                             }
                         }
                     }
-                    line = stderr_lines.next_line()=>{
-                        // do nothing because total analyze from ffprobe complete
-                        // match line.unwrap_or_else(|_| None) {
-                        //     Some(lin)=>{
-                        //         if lin.contains("Duration") {
-                        //             let vec_content: Vec<&str> = lin.split(',').collect();
-                        //             let (str_duration, _str_start, _str_bitrate) =
-                        //                 (vec_content[0], vec_content[1], vec_content[2]);
-                        //             let Some(duration) = parse_duration(
-                        //                 str_duration.trim().trim_start_matches("Duration: ").trim(),
-                        //             ) else {
-                        //                 //info!("stderr: parse failed: {}", str_duration);
-                        //                 return;
-                        //             };
-                        //             tx.send(ProgressInfo::total(duration.as_secs(), index)).await.unwrap();
-                        //         }
-                        //     }
-                        //     None=>{
-                        //         // complete(EOF)
-                        //         stdoff |= 0b10;
-                        //         return;
-                        //     }
-                        // }
+                    _line = stderr_lines.next_line()=>{
+                        // do nothing
                     }
                 }
             });
@@ -114,9 +96,9 @@ pub fn replace(index:usize,path:String,data: &mut PathDatas) {
         .unwrap_or("unknown");
 
     let  target = format!("{}/{}", dir, filename);
-    info!("local: {}", filename);
-    info!("remote: {}", path);
-    info!("target: {}", target);
+    // info!("local: {}", filename);
+    // info!("remote: {}", path);
+    // info!("target: {}", target);
 
     // To avoid "Cross-device link" error, use copy and remove instead of rename
     // remove remote file
@@ -131,11 +113,11 @@ pub fn replace(index:usize,path:String,data: &mut PathDatas) {
 
     // replace metadata.json file 
     let metadata_path = format!("{}/metadata.json", dir);
-    info!("metadata path: {}", metadata_path);
+    //info!("metadata path: {}", metadata_path);
     let content = std::fs::read_to_string(&metadata_path).unwrap();
     let from_str = format!("\"ext\":\"{}\"",ext);
     let to_str = format!("\"ext\":\"mp4\"");
-    info!("replace {} with {}", from_str, to_str);
+    //info!("replace {} with {}", from_str, to_str);
     let new_content = content.replace(&from_str, &to_str);
     std::fs::write(metadata_path, new_content).unwrap();
 
@@ -144,7 +126,7 @@ pub fn replace(index:usize,path:String,data: &mut PathDatas) {
 
 pub fn snapshot(path:String,source:bool,total_secs:u64,args:Vec<ArgKeyValue>)->Vec<u8>{
 
-        info!("snapshot ffmpeg process");
+        // info!("snapshot ffmpeg process");
         let mut cmd = snapshot_ffmpeg_command(path,source,total_secs,&args);
 
         let mut process = ManagedProcess::new(&mut cmd).unwrap();
@@ -158,7 +140,7 @@ pub fn snapshot(path:String,source:bool,total_secs:u64,args:Vec<ArgKeyValue>)->V
             process.child.wait().await.unwrap();
             png_bytes
         });
-        info!("snapshot completed");
+        //info!("snapshot completed");
         buf
 }
 

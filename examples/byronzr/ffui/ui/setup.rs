@@ -87,6 +87,7 @@ pub fn setup(
     commands.entity(layout_id).add_child(preview_id);
 
     let (progress_tx, progress_rx) = mpsc::channel::<ProgressInfo>(100);
+    let (toast_tx, toast_rx) = mpsc::channel::<String>(100);
     let (main_tx, _) = broadcast::channel::<ProcessSignal>(100);
     //let progress = HashMap::<usize, ProgressStatistics>::new();
 
@@ -95,6 +96,9 @@ pub fn setup(
         progress_rx,
         main_tx,
         layout: Some(layout_id),
+        toast_message: Vec::new(),
+        toast_rx,
+        toast_tx,
     });
 
     commands.insert_resource(ProcessMenu {

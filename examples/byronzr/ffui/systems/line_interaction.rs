@@ -1,7 +1,6 @@
 use crate::define::*;
 use crate::utility::task::{open_dir, replace, snapshot, task};
 use bevy::prelude::*;
-use log::info;
 
 // set task_button text content according to the status
 pub fn update_task_button_text(
@@ -13,7 +12,7 @@ pub fn update_task_button_text(
     for (children, idx, btty) in button_query.iter() {
         // get the first child entity, which is the text entity
         let Some(childen_entity) = children.get(0) else {
-            info!("No children entity found for index {}", idx.0);
+            //info!("No children entity found for index {}", idx.0);
             continue;
         };
         // update the text content according to the status
@@ -120,6 +119,8 @@ pub fn replace_interaction(
     mut data: ResMut<PathDatas>,
 ) -> Result {
     for (_entity, interaction, idx, mut bg) in interaction_query.iter_mut() {
+        let has_done =
+            data.state.status.get(idx.0).unwrap_or(&TaskStatus::Waiting) == &TaskStatus::Done;
         let Some(path) = data.state.lines.get(idx.0).cloned() else {
             return Ok(());
         };
@@ -129,9 +130,15 @@ pub fn replace_interaction(
         }
         match *interaction {
             Interaction::Hovered => {
+                if !has_done {
+                    continue;
+                }
                 *bg = BackgroundColor(Color::srgb_u8(0, 84, 0));
             }
             Interaction::Pressed => {
+                if !has_done {
+                    continue;
+                }
                 // replace the source file only when the status is Done
                 if matches!(status, TaskStatus::Done) {
                     replace(idx.0, path, &mut data);
@@ -158,7 +165,7 @@ pub fn snapshot_interaction(
         ),
         (Changed<Interaction>, With<SnapshotButton>),
     >,
-    mut data: ResMut<PathDatas>,
+    data: Res<PathDatas>,
     preview_query: Single<Entity, With<PreviewWindow>>,
     mut images: ResMut<Assets<Image>>,
     ffmpeg_arg: Res<FfmpegArg>,

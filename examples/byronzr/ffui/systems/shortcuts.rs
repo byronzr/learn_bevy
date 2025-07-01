@@ -1,8 +1,7 @@
-use crate::utility::{analyze_ffprobe_command, ffmpeg};
+use crate::utility::analyze_ffprobe_command;
 use crate::{TOKIO_RT, define::*};
 use arboard::Clipboard;
 use bevy::prelude::*;
-use log::info;
 use tokio::sync::mpsc;
 
 // observer shortcuts
@@ -10,7 +9,7 @@ pub fn shortcuts(
     keyboard: Res<ButtonInput<KeyCode>>,
     mut data: ResMut<PathDatas>,
     process_menu: Res<ProcessMenu>,
-    process_state: Res<ProcessState>,
+    mut process_state: ResMut<ProcessState>,
     ffmpeg_args: Res<FfmpegArg>,
 ) -> Result {
     let mut clipboard = Clipboard::new()?;
@@ -18,7 +17,10 @@ pub fn shortcuts(
     if keyboard.pressed(KeyCode::SuperLeft) && keyboard.just_pressed(KeyCode::KeyV) {
         // the contents must be a string
         let Ok(contents) = clipboard.get_text() else {
-            info!("Failed to get clipboard text");
+            //info!("Failed to get clipboard text");
+            process_state
+                .toast_message
+                .push("Failed to get clipboard text".to_string());
             return Ok(());
         };
 
@@ -50,15 +52,24 @@ pub fn shortcuts(
                 data.state.lines.clone(),
                 process_state.progress_tx.clone(),
                 args,
+                process_state.toast_tx.clone(),
             );
             data.changed = true;
-            info!("storage in PathDatas");
+            //info!("storage in PathDatas");
+            process_state
+                .toast_message
+                .push("Failed to get clipboard text".to_string());
         }
     }
     Ok(())
 }
 
-fn analyze_duration(lines: Vec<String>, tx: mpsc::Sender<ProgressInfo>, args: Vec<ArgKeyValue>) {
+fn analyze_duration(
+    lines: Vec<String>,
+    tx: mpsc::Sender<ProgressInfo>,
+    args: Vec<ArgKeyValue>,
+    toast_tx: mpsc::Sender<String>,
+) {
     std::thread::spawn(move || {
         for (index, line) in lines.iter().enumerate() {
             TOKIO_RT.block_on(async {
@@ -70,26 +81,31 @@ fn analyze_duration(lines: Vec<String>, tx: mpsc::Sender<ProgressInfo>, args: Ve
                             if let Some(duration) = stdout.lines().next() {
                                 // parse f64 from str
                                 duration.parse::<f64>().unwrap_or_else(|_| {
-                                    info!("Failed to parse duration from output: {}", duration);
+                                    //info!("Failed to parse duration from output: {}", duration);
+
                                     0.0 // default to 0.0 if parsing fails
                                 })
                             } else {
                                 0.0 // default to 0 if no duration found
                             }
                         } else {
-                            info!(
-                                "ffprobe command failed: {}",
-                                String::from_utf8_lossy(&output.stderr)
-                            );
+                            // info!(
+                            //     "ffprobe command failed: {}",
+                            //     String::from_utf8_lossy(&output.stderr)
+                            // );
+
                             0.0 // default to 0 on failure
                         }
                     }
                     Err(e) => {
-                        info!("ffprobe command error: {}", e);
+                        //info!("ffprobe command error: {}", e);
+                        let msg = format!("ffprobe command error: {}", e);
+                        let _ = toast_tx.send(msg).await;
                         0.0 // default to 0 on error
                     }
                 };
-                info!("analyze duration: {} secs", total_secs);
+                let msg = format!("analyze duration: {} secs", total_secs);
+                let _ = toast_tx.send(msg).await;
                 let _ = tx.send(ProgressInfo::total(total_secs as u64, index)).await;
             });
         }

@@ -1,7 +1,5 @@
 use std::any::Any;
 
-use bevy::log::info;
-
 pub trait MenuButtonNext: std::fmt::Display {
     fn next(&mut self) -> bool {
         false

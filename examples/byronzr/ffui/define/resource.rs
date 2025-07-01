@@ -10,6 +10,9 @@ pub struct ProcessState {
     pub progress_rx: mpsc::Receiver<ProgressInfo>,
     pub main_tx: broadcast::Sender<ProcessSignal>,
     pub layout: Option<Entity>,
+    pub toast_message: Vec<String>,
+    pub toast_tx: mpsc::Sender<String>,
+    pub toast_rx: mpsc::Receiver<String>,
 }
 
 #[derive(Debug, Resource, Default)]

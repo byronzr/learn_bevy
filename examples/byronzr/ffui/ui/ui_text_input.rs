@@ -88,30 +88,7 @@ pub fn text_input_panel(font: Handle<Font>) -> impl Bundle {
     )
 }
 
-pub fn show_arguments_panel(args: &Vec<ArgKeyValue>, font: Handle<Font>) -> impl Bundle {
-    Children::spawn(Spawn((
-        Node {
-            width: Val::Percent(100.0),
-            height: Val::Px(30.0),
-            position_type: PositionType::Relative,
-            padding: UiRect::all(Val::Px(5.0)),
-            flex_direction: FlexDirection::Row,
-            justify_content: JustifyContent::Start,
-            ..default()
-        },
-        children![(
-            Text::new("Arguments"),
-            TextFont {
-                font: font.clone(),
-                font_size: 12.0,
-                ..default()
-            },
-            TextColor(Color::srgb(0.9, 0.9, 0.9)),
-        )],
-    )))
-}
-
-pub fn arguments_panel(args: &Vec<ArgKeyValue>, font: Handle<Font>, group: i32) -> impl Bundle {
+pub fn arguments_panel(args: &Vec<ArgKeyValue>, font: Handle<Font>, _group: i32) -> impl Bundle {
     let font2 = font.clone();
     Children::spawn((
         // show arguments
@@ -119,7 +96,7 @@ pub fn arguments_panel(args: &Vec<ArgKeyValue>, font: Handle<Font>, group: i32) 
             args.clone()
                 .into_iter()
                 .enumerate()
-                .map(move |(index, arg)| {
+                .map(move |(_index, arg)| {
                     //Text::new(arg.key.clone())
                     (
                         Node {

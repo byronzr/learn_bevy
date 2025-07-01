@@ -40,5 +40,12 @@ pub struct SnapshotButton(pub bool);
 
 #[derive(Debug, Component)]
 pub struct OpenButton;
+
 #[derive(Debug, Component)]
 pub struct PreviewWindow;
+
+#[derive(Debug, Component)]
+pub struct ToastMaker(pub Timer);
+
+#[derive(Debug, Component)]
+pub struct ToastDisappear(pub Timer);

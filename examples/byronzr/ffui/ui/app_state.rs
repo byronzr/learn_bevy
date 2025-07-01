@@ -1,11 +1,7 @@
-use crate::{define::*, ui::*};
-use bevy::{input_focus::InputFocus, prelude::*};
+use crate::ui::*;
+use bevy::input_focus::InputFocus;
 
-pub fn enter_monitor(
-    mut commands: Commands,
-    process_state: Res<ProcessState>,
-    mut data: ResMut<PathDatas>,
-) {
+pub fn enter_monitor(mut commands: Commands, process_state: Res<ProcessState>) {
     // ui container
     let Some(layout_id) = process_state.layout else {
         error!("ProcessState layout is not set");
@@ -38,7 +34,7 @@ pub fn enter_monitor(
 pub fn enter_setting(
     mut commands: Commands,
     process_state: Res<ProcessState>,
-    mut ffmpeg_arg: ResMut<FfmpegArg>,
+    ffmpeg_arg: Res<FfmpegArg>,
     font: Res<FontHandle>,
     mut focus: ResMut<InputFocus>,
 ) {

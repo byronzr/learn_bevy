@@ -5,7 +5,6 @@ use crate::ui::{
 use accesskit::{Node as Accessible, Role};
 use bevy::a11y::AccessibilityNode;
 use bevy::prelude::*;
-use log::info;
 
 // switch show and hide row
 pub fn show_hide_row(
@@ -316,7 +315,7 @@ pub fn progress_bar_update(
     let progress = &mut paths_data.state.progress;
 
     let Some(idx) = message.progress_index else {
-        info!("Received none (index): {:?}", message);
+        //info!("Received none (index): {:?}", message);
         return;
     };
 
