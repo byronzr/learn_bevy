@@ -23,7 +23,7 @@ pub fn create_ffmpeg_command(path: String, args: &Vec<ArgKeyValue>) -> Command {
     //     .arg("videotoolbox")
     //     .arg("-nostdin")
     //     .arg("-i")
-    //     .arg(path) // 替换为你的命令
+    //     .arg(path)
     //     .args(["-vf", "scale=-2:720,fps=30"])
     //     .arg("-c:v")
     //     .arg("hevc_videotoolbox")
@@ -36,7 +36,7 @@ pub fn create_ffmpeg_command(path: String, args: &Vec<ArgKeyValue>) -> Command {
     //     .args(["-loglevel", "info"])
     //     .args(["-progress", "pipe:1"])
     //     .arg("-y")
-    //     .arg(filename) // 覆盖输出文件
+    //     .arg(filename)
     //     .stdout(Stdio::piped())
     //     .stderr(Stdio::piped());
     cmd.args(["-i", &path, "-y", &filename]);

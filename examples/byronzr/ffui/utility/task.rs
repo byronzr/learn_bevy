@@ -134,9 +134,6 @@ pub fn snapshot(path:String,source:bool,total_secs:u64,args:Vec<ArgKeyValue>)->V
             let mut png_bytes = Vec::new();
             process.child.stdout.as_mut().unwrap().read_to_end(&mut png_bytes).await.unwrap();
             println!("snapshot bytes: {}", png_bytes.len());
-            //let mut file = std::fs::File::create("output.png").unwrap();
-            // file.write_all(&png_bytes).unwrap();
-            // info!("snapshot saved to output.png");
             process.child.wait().await.unwrap();
             png_bytes
         });
