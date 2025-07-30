@@ -5,6 +5,9 @@
 # 官方用例 
 请查看官方用例 [bevy](https://bevyengine.org/),中文注释的代码 [高级伴读](https://github.com/byronzr/learn_bevy/tree/main/examples),(从 0.15 开始的注释,如果没有出现 panic 将不会主动优化代码,仅作来理解使用)
 
+# Shader(WGSL)
+配合的 [learn-wgpu-zh](https://jinleili.github.io/learn-wgpu-zh/) 教程的流程梳理分享 [keynote](https://github.com/byronzr/learn_bevy/tree/main/keynote/wgsl)
+
 # 实践型案例
 * **[camera_renderlayer](https://github.com/byronzr/learn_bevy/tree/main/examples/byronzr/camera_renderlayer/main.rs):** 关于 camera 中的 RenderLayers / TaregetCamera 的相关实践
     * [0.16] 变更了部分函数名称
