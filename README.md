@@ -15,8 +15,9 @@
     * [05] uniform 统一缓存
     * [06] instance 实例渐进Bevy / [shader_material_2d](https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_material_2d.rs) / [animate_shader](https://github.com/bevyengine/bevy/blob/main/examples/shader/animate_shader.rs)
 * 扩展篇
-    * [07] storage 存储缓冲区 [storage_buffer](https://github.com/bevyengine/bevy/blob/main/examples/shader/storage_buffer.rs)
-    * [08] shader_defs 宏定义 [shader_defs](https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_defs.rs)
+    * [07] custom_vertex bevy中增加vertex [custom_vertex_attribute](https://github.com/bevyengine/bevy/blob/main/examples/shader/custom_vertex_attribute.rs)
+    * [08] storage 存储缓冲区 [storage_buffer](https://github.com/bevyengine/bevy/blob/main/examples/shader/storage_buffer.rs)
+    * [09] shader_defs 宏定义 [shader_defs](https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_defs.rs)
 
 # 实践型案例
 * **[camera_renderlayer](https://github.com/byronzr/learn_bevy/tree/main/examples/byronzr/camera_renderlayer/main.rs):** 关于 camera 中的 RenderLayers / TaregetCamera 的相关实践
