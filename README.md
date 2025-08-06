@@ -7,6 +7,16 @@
 
 # Shader(WGSL)
 配合的 [learn-wgpu-zh](https://jinleili.github.io/learn-wgpu-zh/) 教程的流程梳理分享 [keynote](https://github.com/byronzr/learn_bevy/tree/main/keynote/wgsl)
+* 基础篇
+    * [01] WebGPU 接管绘制
+    * [02] pipeline 渲染管线
+    * [03] vertex 顶点缓冲与索引
+    * [04] image 图像与绑定组
+    * [05] uniform 统一缓存
+    * [06] instance 实例渐进Bevy / [shader_material_2d](https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_material_2d.rs) / [animate_shader](https://github.com/bevyengine/bevy/blob/main/examples/shader/animate_shader.rs)
+* 扩展篇
+    * [07] storage 存储缓冲区 [storage_buffer](https://github.com/bevyengine/bevy/blob/main/examples/shader/storage_buffer.rs)
+    * [08] shader_defs 宏定义 [shader_defs](https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_defs.rs)
 
 # 实践型案例
 * **[camera_renderlayer](https://github.com/byronzr/learn_bevy/tree/main/examples/byronzr/camera_renderlayer/main.rs):** 关于 camera 中的 RenderLayers / TaregetCamera 的相关实践
