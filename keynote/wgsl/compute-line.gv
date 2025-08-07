@@ -1,0 +1,15 @@
+digraph G {
+	label = "Compute-Pipeline"
+}
+
+// 
+// global_invocation_id：当前(线程)在计算着色器网格中的全局三维坐标;
+// local_invocation_id：当前(线程)在所处的工作组中的局部三维坐标;
+// local_invocation_index：当前(线程)在所处的工作组中的线性化索引;
+// workgroup_id：当前(工作组)在工作组网格中的三维坐标;
+// num_workgroups：当前调度（dispatch）的工作组维度量;
+
+
+// 像素 被 划分为网格颗粒
+// 网格 被 归纳为 全局工作组
+// 工作组颗粒 被 划分为 本地工作组

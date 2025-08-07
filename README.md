@@ -7,17 +7,21 @@
 
 # Shader(WGSL)
 配合的 [learn-wgpu-zh](https://jinleili.github.io/learn-wgpu-zh/) 教程的流程梳理分享 [keynote](https://github.com/byronzr/learn_bevy/tree/main/keynote/wgsl)
-* 基础篇
-    * [01] WebGPU 接管绘制
-    * [02] pipeline 渲染管线
-    * [03] vertex 顶点缓冲与索引
-    * [04] image 图像与绑定组
-    * [05] uniform 统一缓存
-    * [06] instance 实例渐进Bevy / [shader_material_2d](https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_material_2d.rs) / [animate_shader](https://github.com/bevyengine/bevy/blob/main/examples/shader/animate_shader.rs)
-* 扩展篇
-    * [07] custom_vertex bevy中增加vertex [custom_vertex_attribute](https://github.com/bevyengine/bevy/blob/main/examples/shader/custom_vertex_attribute.rs)
-    * [08] storage 存储缓冲区 [storage_buffer](https://github.com/bevyengine/bevy/blob/main/examples/shader/storage_buffer.rs)
-    * [09] shader_defs 宏定义 [shader_defs](https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_defs.rs)
+* 基础
+    * [01] `wgsl` WebGPU 接管绘制
+    * [02] `wgsl` pipeline 渲染管线
+    * [03] `wgsl` vertex 顶点缓冲与索引
+    * [04] `wgsl` image 图像与绑定组
+    * [05] `wgsl` uniform 统一缓存
+    * [06] `wgsl` instance 实例渐进 `Bevy` / [shader_material_2d](https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_material_2d.rs) / [animate_shader](https://github.com/bevyengine/bevy/blob/main/examples/shader/animate_shader.rs)
+* 扩展
+    * [07] `Bevy` custom_vertex bevy中增加vertex [custom_vertex_attribute](https://github.com/bevyengine/bevy/blob/main/examples/shader/custom_vertex_attribute.rs)
+    * [08] `Bevy` storage 存储缓冲区 [storage_buffer](https://github.com/bevyengine/bevy/blob/main/examples/shader/storage_buffer.rs)
+    * [09] `Bevy` shader_defs 宏定义 [shader_defs](https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_defs.rs)
+* 实践
+    * [10] `wgsl` 像素模糊 计算管线(compute pipeline)
+    * [11] `Bevy` TODO 生命游戏 (bevy/game_of_line)
+    * [12] `Bevy` TODO 像素抖动 (dither)
 
 # 实践型案例
 * **[camera_renderlayer](https://github.com/byronzr/learn_bevy/tree/main/examples/byronzr/camera_renderlayer/main.rs):** 关于 camera 中的 RenderLayers / TaregetCamera 的相关实践
