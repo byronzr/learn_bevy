@@ -19,8 +19,8 @@
     * [08] `Bevy` storage 存储缓冲区 [storage_buffer](https://github.com/bevyengine/bevy/blob/main/examples/shader/storage_buffer.rs)
     * [09] `Bevy` shader_defs 宏定义 [shader_defs](https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_defs.rs)
 * 实践
-    * [10] `wgsl` 像素模糊 计算管线(compute pipeline)
-    * [11] `Bevy` TODO 生命游戏 (bevy/game_of_line)
+    * [10] `wgsl` 高斯模糊 计算管线(compute pipeline)
+    * [11] `Bevy` TODO 生命游戏 (bevy/game_of_life)
     * [12] `Bevy` TODO 像素抖动 (dither)
 
 # 实践型案例
