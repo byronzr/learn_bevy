@@ -20,7 +20,7 @@
     * [09] `Bevy` shader_defs 宏定义 [shader_defs](https://github.com/bevyengine/bevy/blob/main/examples/shader/shader_defs.rs)
 * 实践
     * [10] `wgsl` 高斯模糊 计算管线(compute pipeline)
-    * [11] `Bevy` TODO 生命游戏 (bevy/game_of_life)
+    * [11] `Bevy` 生命游戏 (bevy/[game_of_life](https://github.com/bevyengine/bevy/blob/main/examples/shader/compute_shader_game_of_life.rs))
     * [12] `Bevy` TODO 像素抖动 (dither)
 
 # 实践型案例
