@@ -10,7 +10,7 @@ env = { "RUST_BACKTRACE" = "1" }
 [dependencies]
 accesskit = "0.18.0"
 arboard = "3.5.0"
-bevy = { version = "0.16.0", features = ["track_location", "jpeg"] }
+bevy = { version = "0.16.1", features = ["track_location", "jpeg"] }
 bevy_ecs = "0.16.0"
 bevy_image = "0.16.0"
 # bevy_rapier2d = { version = "0.29.0", features = [
