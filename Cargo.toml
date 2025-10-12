@@ -10,14 +10,10 @@ env = { "RUST_BACKTRACE" = "1" }
 [dependencies]
 accesskit = "0.18.0"
 arboard = "3.5.0"
-bevy = { version = "0.16.1", features = ["track_location", "jpeg"] }
-bevy_ecs = "0.16.0"
-bevy_image = "0.16.0"
-# bevy_rapier2d = { version = "0.29.0", features = [
-#     "simd-stable",
-#     "debug-render-2d",
-#     #"serde-serialize",
-# ] }
+bevy = { git = "https://github.com/bevyengine/bevy.git", branch = "main", features = [
+    "experimental_bevy_feathers",
+    "hotpatching",
+] }
 bevy_rapier2d = { git = "https://github.com/dimforge/bevy_rapier", branch = "master", features = [
     "simd-stable",
     "debug-render-2d",
@@ -49,21 +45,19 @@ lto = true
 # Integrated Experiments #
 [[example]]
 name = "camera_renderlayer"
-path = "examples/byronzr/camera_renderlayer/main.rs"
-
+path = "examples/custom/experiment/camera_renderlayer/main.rs"
 
 [[example]]
 name = "inventory"
-path = "examples/byronzr/inventory/main.rs"
-
+path = "examples/custom/experiment/inventory/main.rs"
 
 [[example]]
 name = "hexagon_tile"
-path = "examples/byronzr/hexagon_tile/main.rs"
+path = "examples/custom/experiment/hexagon_tile/main.rs"
 
 [[example]]
 name = "space_battle"
-path = "examples/byronzr/space_battle/main.rs"
+path = "examples/custom/experiment/space_battle/main.rs"
 
 
 # Rapier2d Experiments
@@ -115,7 +109,7 @@ path = "examples/rapier2d/scene_queries_intersections.rs"
 name = "rapier_advanced_detection"
 path = "examples/rapier2d/advanced_detection.rs"
 
-
+# custom example for desktop app
 [[example]]
 name = "ffui"
-path = "examples/byronzr/ffui/main.rs"
+path = "examples/custom/desktop/ffui/main.rs"
