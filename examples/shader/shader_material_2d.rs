@@ -1,14 +1,13 @@
 //! A shader and a material that uses it.
-
 use bevy::{
+    image::ImageSampler,
     input::mouse::MouseWheel,
     prelude::*,
     reflect::TypePath,
     render::render_resource::AsBindGroup,
     shader::ShaderRef,
-    sprite::{Material2d, Material2dPlugin},
+    sprite_render::{Material2d, Material2dPlugin},
 };
-use bevy_image::ImageSampler;
 
 /// This example uses a shader source file from the assets subdirectory
 const SHADER_ASSET_PATH: &str = "shaders/custom_material_2d.wgsl";
@@ -37,7 +36,7 @@ fn switch(
     mouse_input: Res<ButtonInput<MouseButton>>,
     mut materials: ResMut<Assets<CustomMaterial>>,
     // 新增参数：读取鼠标滚轮事件
-    mut scroll_evr: EventReader<MouseWheel>,
+    mut scroll_evr: MessageReader<MouseWheel>,
 ) {
     if mouse_input.just_pressed(MouseButton::Left) {
         *idx += 1;
@@ -77,7 +76,7 @@ struct ImageResource {
 
 // Assset load image not synchronous, so we need to set the sampler after the image is loaded
 fn set_texture_sampler_on_load(
-    mut asset_events: EventReader<AssetEvent<Image>>,
+    mut asset_events: MessageReader<AssetEvent<Image>>,
     mut images: ResMut<Assets<Image>>,
     mut images_resource: ResMut<ImageResource>,
 ) {
@@ -115,7 +114,7 @@ fn setup(
     // camera
     commands.spawn(Camera2d);
 
-    let texture_handle = asset_server.load("cat01.png");
+    let texture_handle = asset_server.load("dither/cat01.png");
     let dither_handle = asset_server.load("dither/HDR_L_0.png");
 
     commands.insert_resource(ImageResource {

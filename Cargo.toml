@@ -3,10 +3,6 @@ name = "learn_bevy"
 version = "0.1.0"
 edition = "2024"
 
-[package.metadata.cargo-run]
-env = { "RUST_BACKTRACE" = "1" }
-
-
 [dependencies]
 accesskit = "0.18.0"
 arboard = "3.5.0"
@@ -35,8 +31,8 @@ thiserror = "2.0.17"
 tokio = { version = "1.45.1", features = ["full"] }
 
 
-[profile.dev.package.bevy_rapier2d]
-opt-level = 3
+# [profile.dev.package.bevy_rapier2d]
+# opt-level = 3
 
 [profile.release]
 opt-level = 3
@@ -53,6 +49,12 @@ path = "examples/ecs/change_detection.rs"
 [[example]]
 name = "ui_material"
 path = "examples/ui/ui_material.rs"
+
+
+### shader
+[[example]]
+name = "shader_material_2d"
+path = "examples/shader/shader_material_2d.rs"
 
 
 # preview version 0.16.0
