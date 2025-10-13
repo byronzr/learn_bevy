@@ -38,6 +38,12 @@ tokio = { version = "1.45.1", features = ["full"] }
 opt-level = 3
 lto = true
 
+### custom examples
+[[example]]
+name = "dither"
+path = "examples/custom/shader/dither.rs"
+
+
 # official examples
 ### ecs 
 [[example]]
