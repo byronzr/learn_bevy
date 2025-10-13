@@ -1,5 +1,4 @@
-use bevy::{platform::collections::HashSet, prelude::*};
-use bevy_ecs::system::SystemParam;
+use bevy::{ecs::system::SystemParam, platform::collections::HashSet, prelude::*};
 use bevy_rapier2d::prelude::*;
 
 #[derive(Resource, Default)]

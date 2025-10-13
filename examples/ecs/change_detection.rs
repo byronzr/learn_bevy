@@ -1,12 +1,30 @@
 //! This example illustrates how to react to component and resource changes.
 //! 如何被动的检测到 component 与 resource 的变更
-//! 运行这个例子需要 --features="track_change_detection"
+// migration: 0.16.x -> 0.17.x
+// --features="track_change_detection" 更名为 "track_location"
+//
+// 2025-10-13T13:25:24.417022Z  WARN change_detection: Change detected!
+//         -> value: Ref(MyComponent(0.0))
+//         -> added: true
+//         -> changed: true
+//         -> changed by: examples/ecs/change_detection.rs:36:14      << change_component
+// 2025-10-13T13:25:24.417063Z  WARN change_detection: Change detected!
+//         -> value: Res(MyResource(0.0))
+//         -> added: true
+//         -> changed: true
+//         -> changed by: examples/ecs/change_detection.rs:37:14
+// 2025-10-13T13:25:24.515772Z  INFO change_detection: New value: MyComponent(0.0) 11v0
+// 2025-10-13T13:25:26.548059Z  INFO change_detection: New value: MyComponent(1.0) 11v0
+// 2025-10-13T13:25:26.548089Z  WARN change_detection: Change detected!
+//         -> value: Ref(MyComponent(1.0))
+//         -> added: false
+//         -> changed: true
+//         -> changed by: examples/ecs/change_detection.rs:50:23    << change_component_2
 
 use bevy::prelude::*;
 use rand::Rng;
 
 fn main() {
-    std::env::set_var("NO_COLOR", "1");
     App::new()
         .add_plugins(DefaultPlugins)
         .add_systems(Startup, setup)
@@ -14,7 +32,7 @@ fn main() {
             Update,
             (
                 change_component,   // 更新 component
-                change_component_2, // 与同上功能一模一样,它存在的意义在于 changed_by() 可以检测到具体的是哪个文件哪个函数
+                change_component_2, // 功能同上，但检测时能区别出变更（函数/行号）等不同
                 change_resource,    // 更新 resource
                 change_detection,   // 检测报告
             ),
@@ -38,7 +56,7 @@ fn setup(mut commands: Commands) {
 
 fn change_component(time: Res<Time>, mut query: Query<(Entity, &mut MyComponent)>) {
     for (entity, mut component) in &mut query {
-        if rand::thread_rng().gen_bool(0.1) {
+        if rand::rng().random_bool(0.1) {
             let new_component = MyComponent(time.elapsed_secs().round());
             info!("New value: {new_component:?} {entity:?}");
             // Change detection occurs on mutable dereference, and does not consider whether or not
@@ -56,7 +74,7 @@ fn change_component(time: Res<Time>, mut query: Query<(Entity, &mut MyComponent)
 /// locations.
 fn change_component_2(time: Res<Time>, mut query: Query<(Entity, &mut MyComponent)>) {
     for (entity, mut component) in &mut query {
-        if rand::thread_rng().gen_bool(0.1) {
+        if rand::rng().random_bool(0.1) {
             let new_component = MyComponent(time.elapsed_secs().round());
             info!("New value: {new_component:?} {entity:?}");
             component.set_if_neq(new_component);
@@ -66,7 +84,7 @@ fn change_component_2(time: Res<Time>, mut query: Query<(Entity, &mut MyComponen
 
 /// Change detection concepts for components apply similarly to resources.
 fn change_resource(time: Res<Time>, mut my_resource: ResMut<MyResource>) {
-    if rand::thread_rng().gen_bool(0.1) {
+    if rand::rng().random_bool(0.1) {
         let new_resource = MyResource(time.elapsed_secs().round());
         info!("New value: {new_resource:?}");
         my_resource.set_if_neq(new_resource);
@@ -94,7 +112,7 @@ fn change_detection(
             "Change detected!\n\t-> value: {:?}\n\t-> added: {}\n\t-> changed: {}\n\t-> changed by: {}",
             component,
             component.is_added(), // 只在 setup 触发一次为 ture
-            component.is_changed(),  
+            component.is_changed(),
             // If you enable the `track_change_detection` feature, you can unlock the `changed_by()`
             // method. It returns the file and line number that the component or resource was
             // changed in. It's not recommended for released games, but great for debugging!

@@ -1,5 +1,4 @@
-//! Demonstrates the use of [`UiMaterials`](UiMaterial) and how to change material values
-
+///! Demonstrates the use of [`UiMaterials`](UiMaterial) and how to change material values
 use bevy::{
     color::palettes::css::DARK_BLUE, prelude::*, reflect::TypePath, render::render_resource::*,
     shader::ShaderRef,
@@ -97,7 +96,7 @@ fn animate(
     q: Query<&MaterialNode<CustomUiMaterial>>,
     time: Res<Time>,
 ) {
-    let duration = 2.0;
+    let _duration = 2.0;
     for handle in &q {
         if let Some(material) = materials.get_mut(handle) {
             // rainbow color effect
