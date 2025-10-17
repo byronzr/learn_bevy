@@ -43,6 +43,9 @@ lto = true
 name = "dither"
 path = "examples/custom/shader/dither.rs"
 
+[[example]]
+name = "annulus"
+path = "examples/custom/shader/annulus.rs"
 
 # official examples
 ### ecs 
