@@ -173,6 +173,10 @@ path = "examples/ecs/system_param.rs"
 name = "system_piping"
 path = "examples/ecs/system_piping.rs"
 
+[[example]]
+name = "system_stepping"
+path = "examples/ecs/system_stepping.rs"
+
 ### ui
 [[example]]
 name = "ui_material"
