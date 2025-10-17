@@ -97,6 +97,14 @@ path = "examples/ecs/hierarchy.rs"
 name = "iter_combinations"
 path = "examples/ecs/iter_combinations.rs"
 
+[[example]]
+name = "nondeterministic_systems_order"
+path = "examples/ecs/nondeterministic_systems_order.rs"
+
+[[example]]
+name = "observer_propagation"
+path = "examples/ecs/observer_propagation.rs"
+
 ### ui
 [[example]]
 name = "ui_material"
