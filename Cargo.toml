@@ -65,6 +65,10 @@ path = "examples/ecs/custom_query_param.rs"
 name = "custom_schedule"
 path = "examples/ecs/custom_schedule.rs"
 
+[[example]]
+name = "dynamic"
+path = "examples/ecs/dynamic.rs"
+
 
 ### ui
 [[example]]

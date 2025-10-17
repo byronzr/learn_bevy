@@ -32,17 +32,19 @@
 //
 // >
 
-use std::{alloc::Layout, io::Write, ptr::NonNull};
+use std::{alloc::Layout, collections::HashMap, io::Write, ptr::NonNull};
 
 use bevy::{
     ecs::{
-        component::{ComponentDescriptor, ComponentId, ComponentInfo, StorageType},
+        component::{
+            ComponentCloneBehavior, ComponentDescriptor, ComponentId, ComponentInfo, StorageType,
+        },
         query::QueryData,
         world::FilteredEntityMut,
     },
     prelude::*,
     ptr::{Aligned, OwningPtr},
-    utils::HashMap,
+    //utils::HashMap,
 };
 
 const PROMPT: &str = "
@@ -132,6 +134,8 @@ fn main() {
                             StorageType::Table,
                             Layout::array::<u64>(size).unwrap(),
                             None,
+                            true,                            // since 0.17.0
+                            ComponentCloneBehavior::Default, // since 0.17.0
                         )
                     });
                     let Some(info) = world.components().get_info(id) else {
@@ -216,13 +220,21 @@ fn main() {
                     let terms = filtered_entity
                         .access()
                         // 获得 entity 的 component id 集合迭代器
-                        .component_reads_and_writes()
+                        // .component_reads_and_writes()
+                        .try_iter_component_access()
                         // 无视 tuple 的第二个值,只用 iter
-                        .0
-                        .map(|id| {
-                            // 获得一个 component 指针
+                        // .0
+                        .unwrap() // since 0.17.0
+                        // .map(|id| {
+                        //     // 获得一个 component 指针
+                        //     let ptr = filtered_entity.get_by_id(id).unwrap();
+                        //     // 从 comonent_info(全局) 中获得 info 信息
+                        //     let info = component_info.get(&id).unwrap();
+                        //     let len = info.layout().size() / size_of::<u64>();
+                        // since 0.17.0
+                        .map(|component_access| {
+                            let id = *component_access.index();
                             let ptr = filtered_entity.get_by_id(id).unwrap();
-                            // 从 comonent_info(全局) 中获得 info 信息
                             let info = component_info.get(&id).unwrap();
                             let len = info.layout().size() / size_of::<u64>();
 
@@ -260,7 +272,7 @@ fn main() {
 
 // Constructs `OwningPtr` for each item in `components`
 // By sharing the lifetime of `components` with the resulting ptrs we ensure we don't drop the data before use
-fn to_owning_ptrs(components: &mut [Vec<u64>]) -> Vec<OwningPtr<Aligned>> {
+fn to_owning_ptrs(components: &mut [Vec<u64>]) -> Vec<OwningPtr<'_, Aligned>> {
     components
         .iter_mut()
         .map(|data| {
