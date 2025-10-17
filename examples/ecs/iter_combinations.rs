@@ -56,18 +56,18 @@ fn generate_bodies(
     let mut rng = ChaCha8Rng::seed_from_u64(19878367467713);
     for _ in 0..NUM_BODIES {
         // 随机球体半径
-        let radius: f32 = rng.gen_range(0.1..0.7);
+        let radius: f32 = rng.random_range(0.1..0.7);
         // 半径的 3 次方 * 10
         let mass_value = FloatPow::cubed(radius) * 10.;
 
         // 随机坐标
         let position = Vec3::new(
-            rng.gen_range(-1.0..1.0),
-            rng.gen_range(-1.0..1.0),
-            rng.gen_range(-1.0..1.0),
+            rng.random_range(-1.0..1.0),
+            rng.random_range(-1.0..1.0),
+            rng.random_range(-1.0..1.0),
         )
         .normalize()
-            * ops::cbrt(rng.gen_range(0.2f32..1.0))
+            * ops::cbrt(rng.random_range(0.2f32..1.0))
             * 15.;
 
         // 创建 entity (很多小球)
@@ -75,18 +75,18 @@ fn generate_bodies(
             BodyBundle {
                 mesh: Mesh3d(mesh.clone()),
                 material: MeshMaterial3d(materials.add(Color::srgb(
-                    rng.gen_range(color_range.clone()),
-                    rng.gen_range(color_range.clone()),
-                    rng.gen_range(color_range.clone()),
+                    rng.random_range(color_range.clone()),
+                    rng.random_range(color_range.clone()),
+                    rng.random_range(color_range.clone()),
                 ))),
                 mass: Mass(mass_value),
                 acceleration: Acceleration(Vec3::ZERO),
                 last_pos: LastPos(
                     position
                         - Vec3::new(
-                            rng.gen_range(vel_range.clone()),
-                            rng.gen_range(vel_range.clone()),
-                            rng.gen_range(vel_range.clone()),
+                            rng.random_range(vel_range.clone()),
+                            rng.random_range(vel_range.clone()),
+                            rng.random_range(vel_range.clone()),
                         ) * time.timestep().as_secs_f32(),
                 ),
             },
@@ -140,8 +140,12 @@ fn generate_bodies(
 // 然后成对的,进行重力影响,该 system 不作任得渲染
 fn interact_bodies(mut query: Query<(&Mass, &GlobalTransform, &mut Acceleration)>) {
     let mut iter = query.iter_combinations_mut();
-    while let Some([(Mass(m1), transform1, mut acc1), (Mass(m2), transform2, mut acc2)]) =
-        iter.fetch_next()
+    while let Some(
+        [
+            (Mass(m1), transform1, mut acc1),
+            (Mass(m2), transform2, mut acc2),
+        ],
+    ) = iter.fetch_next()
     {
         let delta = transform2.translation() - transform1.translation();
         let distance_sq: f32 = delta.length_squared();

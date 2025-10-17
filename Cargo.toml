@@ -93,6 +93,10 @@ path = "examples/ecs/generic_system.rs"
 name = "hierarchy"
 path = "examples/ecs/hierarchy.rs"
 
+[[example]]
+name = "iter_combinations"
+path = "examples/ecs/iter_combinations.rs"
+
 ### ui
 [[example]]
 name = "ui_material"
