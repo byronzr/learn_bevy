@@ -57,6 +57,10 @@ path = "examples/ecs/change_detection.rs"
 name = "component_hooks"
 path = "examples/ecs/component_hooks.rs"
 
+[[example]]
+name = "custom_query_param"
+path = "examples/ecs/custom_query_param.rs"
+
 
 ### ui
 [[example]]
