@@ -109,6 +109,10 @@ path = "examples/ecs/observer_propagation.rs"
 name = "observers"
 path = "examples/ecs/observers.rs"
 
+[[example]]
+name = "one_shot_systems"
+path = "examples/ecs/one_shot_systems.rs"
+
 ### ui
 [[example]]
 name = "ui_material"
