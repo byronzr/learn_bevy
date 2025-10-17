@@ -1,6 +1,6 @@
 //! From time to time, you may find that you want to both send and receive an event of the same type in a single system.
 //!
-//! Of course, this results in an error: the borrows of [`EventWriter`] and [`EventReader`] overlap,
+//! Of course, this results in an error: the borrows of [`MessageWriter`] and [`MessageReader`] overlap,
 //! if and only if the [`Event`] type is the same.
 //! One system parameter borrows the [`Events`] resource mutably, and another system parameter borrows the [`Events`] resource immutably.
 //! If Bevy allowed this, this would violate Rust's rules against aliased mutability.
@@ -8,25 +8,31 @@
 //!
 //! There are two ways to solve this problem:
 //!
-//! 1. Use [`ParamSet`] to check out the [`EventWriter`] and [`EventReader`] one at a time.
-//! 2. Use a [`Local`] [`EventCursor`] instead of an [`EventReader`], and use [`ResMut`] to access [`Events`].
+//! 1. Use [`ParamSet`] to check out the [`MessageWriter`] and [`MessageReader`] one at a time.
+//! 2. Use a [`Local`] [`EventCursor`] instead of an [`MessageReader`], and use [`ResMut`] to access [`Events`].
 //!
-//! In the first case, you're being careful to only check out only one of the [`EventWriter`] or [`EventReader`] at a time.
+//! In the first case, you're being careful to only check out only one of the [`MessageWriter`] or [`MessageReader`] at a time.
 //! By "temporally" separating them, you avoid the overlap.
 //!
 //! In the second case, you only ever have one access to the underlying  [`Events`] resource at a time.
 //! But in exchange, you have to manually keep track of which events you've already read.
 //!
 //! Let's look at an example of each.
+//!
+//! renamed from send_and_receive_event.rs to send_and_receive_messages.rs
 
-use bevy::{core::FrameCount, ecs::event::EventCursor, prelude::*};
+// use bevy::{core::FrameCount, ecs::event::EventCursor, prelude::*};
+use bevy::{diagnostic::FrameCount, ecs::message::MessageCursor, prelude::*}; // since 0.17.0
 
 fn main() {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins)
-        .add_event::<DebugEvent>()
-        .add_event::<A>()
-        .add_event::<B>()
+        // .add_event::<DebugMessage>()
+        // .add_event::<A>()
+        // .add_event::<B>()
+        .add_message::<DebugMessage>()
+        .add_message::<A>()
+        .add_message::<B>()
         .add_systems(Update, read_and_write_different_event_types)
         .add_systems(
             Update,
@@ -46,27 +52,33 @@ fn main() {
     app.update();
 }
 
-#[derive(Event)]
+// #[derive(Event)]
+// struct A;
+
+// #[derive(Event)]
+// struct B;
+
+#[derive(Message)]
 struct A;
 
-#[derive(Event)]
+#[derive(Message)]
 struct B;
 
 // This works fine, because the types are different,
-// so the borrows of the `EventWriter` and `EventReader` don't overlap.
+// so the borrows of the `MessageWriter` and `MessageReader` don't overlap.
 // Note that these borrowing rules are checked at system initialization time,
 // not at compile time, as Bevy uses internal unsafe code to split the `World` into disjoint pieces.
 // 合理
-// 同一时间只有一个 EventWriter 或 EventReader 被借用,
-// 因为 EventWriter/EventReader 是不同的泛型 A/B
-fn read_and_write_different_event_types(mut a: EventWriter<A>, mut b: EventReader<B>) {
+// 同一时间只有一个 MessageWriter 或 MessageReader 被借用,
+// 因为 MessageWriter/MessageReader 是不同的泛型 A/B
+fn read_and_write_different_event_types(mut a: MessageWriter<A>, mut b: MessageReader<B>) {
     for _ in b.read() {}
-    a.send(A);
+    a.write(A);
 }
 
 /// A dummy event type.
-#[derive(Debug, Clone, Event)]
-struct DebugEvent {
+#[derive(Debug, Clone, Message)]
+struct DebugMessage {
     resend_from_param_set: bool,
     resend_from_local_event_reader: bool,
     times_sent: u8,
@@ -74,26 +86,26 @@ struct DebugEvent {
 
 /// A system that sends all combinations of events.
 /// Res<FrameCount> 桢数累加器(运行期)
-/// 发送 DebugEvent 事件的所有组合
-fn send_events(mut events: EventWriter<DebugEvent>, frame_count: Res<FrameCount>) {
+/// 发送 DebugMessage 事件的所有组合
+fn send_events(mut events: MessageWriter<DebugMessage>, frame_count: Res<FrameCount>) {
     println!("Sending events for frame {:?}", frame_count.0);
 
-    events.send(DebugEvent {
+    events.write(DebugMessage {
         resend_from_param_set: false,
         resend_from_local_event_reader: false,
         times_sent: 1,
     });
-    events.send(DebugEvent {
+    events.write(DebugMessage {
         resend_from_param_set: true,
         resend_from_local_event_reader: false,
         times_sent: 1,
     });
-    events.send(DebugEvent {
+    events.write(DebugMessage {
         resend_from_param_set: false,
         resend_from_local_event_reader: true,
         times_sent: 1,
     });
-    events.send(DebugEvent {
+    events.write(DebugMessage {
         resend_from_param_set: true,
         resend_from_local_event_reader: true,
         times_sent: 1,
@@ -104,7 +116,7 @@ fn send_events(mut events: EventWriter<DebugEvent>, frame_count: Res<FrameCount>
 ///
 /// Note that some events will be printed twice, because they were sent twice.
 /// 打印 event 信息
-fn debug_events(mut events: EventReader<DebugEvent>) {
+fn debug_events(mut events: MessageReader<DebugMessage>) {
     for event in events.read() {
         println!("{event:?}");
     }
@@ -112,9 +124,9 @@ fn debug_events(mut events: EventReader<DebugEvent>) {
 
 /// A system that both sends and receives events using [`ParamSet`].
 ///使用 ParamSet 实现同时发送和接收事件在同一系统中
-// 使用 Paramset 将同一类型的 Eventwriter 和 Eventreader 进行分离
+// 使用 Paramset 将同一类型的 MessageWriter 和 MessageReader 进行分离
 fn send_and_receive_param_set(
-    mut param_set: ParamSet<(EventReader<DebugEvent>, EventWriter<DebugEvent>)>,
+    mut param_set: ParamSet<(MessageReader<DebugMessage>, MessageWriter<DebugMessage>)>,
     frame_count: Res<FrameCount>,
 ) {
     println!(
@@ -140,7 +152,7 @@ fn send_and_receive_param_set(
     // 然后 通过 param_set.p1() 发送事件
     for mut event in events_to_resend {
         event.times_sent += 1;
-        param_set.p1().send(event);
+        param_set.p1().write(event);
     }
 }
 
@@ -148,13 +160,13 @@ fn send_and_receive_param_set(
 /// 使用 [`Local`] [`EventCursor`] 完成同时发送与接收事件的系统
 fn send_and_receive_manual_event_reader(
     // The `Local` `SystemParam` stores state inside the system itself, rather than in the world.
-    // `EventCursor<T>` is the internal state of `EventReader<T>`, which tracks which events have been seen.
-    // EventCursor , 可以理解为 是 EventReader 的读取 "游标/指针"
-    mut local_event_reader: Local<EventCursor<DebugEvent>>,
+    // `EventCursor<T>` is the internal state of `MessageReader<T>`, which tracks which events have been seen.
+    // EventCursor , 可以理解为 是 MessageReader 的读取 "游标/指针"
+    mut local_event_reader: Local<MessageCursor<DebugMessage>>,
     // We can access the `Events` resource mutably, allowing us to both read and write its contents.
     // 一个可以被修改的 Events 资源
-    // 注意: 这是一个资源,不是一个迭代器(EventReader),它的最主要作用是完成 send
-    mut events: ResMut<Events<DebugEvent>>,
+    // 注意: 这是一个资源,不是一个迭代器(MessageReader),它的最主要作用是完成 send
+    mut events: ResMut<Messages<DebugMessage>>,
     frame_count: Res<FrameCount>,
 ) {
     println!(
@@ -177,6 +189,6 @@ fn send_and_receive_manual_event_reader(
 
     for mut event in events_to_resend {
         event.times_sent += 1;
-        events.send(event);
+        events.write(event);
     }
 }

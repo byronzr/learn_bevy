@@ -141,6 +141,15 @@ path = "examples/ecs/query.rs"
 name = "removal_detection"
 path = "examples/ecs/removal_detection.rs"
 
+[[example]]
+name = "run_conditions"
+path = "examples/ecs/run_conditions.rs"
+
+[[example]]
+name = "send_and_receive_messages"
+path = "examples/ecs/send_and_receive_messages.rs"
+
+
 ### ui
 [[example]]
 name = "ui_material"
