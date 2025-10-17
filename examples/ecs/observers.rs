@@ -1,8 +1,9 @@
 //! Demonstrates how to observe life-cycle triggers as well as define custom ones.
 
 use bevy::{
+    // utils::{HashMap, HashSet},
+    platform::collections::{HashMap, HashSet},
     prelude::*,
-    utils::{HashMap, HashSet},
 };
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
@@ -18,23 +19,28 @@ fn main() {
         // 连环爆炸事件
         // add_observer 是(全局事件),对应的是通过 commands.trigger(ExplodeMines) 触发的事件
         .add_observer(
-            |trigger: Trigger<ExplodeMines>,
+            // |trigger: Trigger<ExplodeMines>,
+            |explode_mines: On<ExplodeMines>,
              mines: Query<&Mine>,
              index: Res<SpatialIndex>,
              mut commands: Commands| {
                 // You can access the trigger data via the `Observer`
-                let event = trigger.event();
+                // let event = trigger.event(); --- IGNORE --- since 0.17.0
                 // Access resources
                 // 读取所有临近的地雷 Entity
-                for e in index.get_nearby(event.pos) {
+                for e in index.get_nearby(
+                    // event.pos
+                    explode_mines.pos, // since 0.17.0
+                ) {
                     // Run queries
                     let mine = mines.get(e).unwrap();
-                    if mine.pos.distance(event.pos) < mine.size + event.radius {
+                    if mine.pos.distance(explode_mines.pos) < mine.size + explode_mines.radius {
                         // And queue commands, including triggering additional events
                         // Here we trigger the `Explode` event for entity `e`
                         // 触发 `Explode` 事件, 指定该事件目的实体为 e
                         // 会被 explode_mine 接收到,它在 setup 中被注册
-                        commands.trigger_targets(Explode, e);
+                        // commands.trigger_targets(Explode, e);
+                        commands.trigger(Explode { entity: e });
                     }
                 }
             },
@@ -58,10 +64,10 @@ impl Mine {
     fn random(rand: &mut ChaCha8Rng) -> Self {
         Mine {
             pos: Vec2::new(
-                (rand.gen::<f32>() - 0.5) * 1200.0,
-                (rand.gen::<f32>() - 0.5) * 600.0,
+                (rand.random::<f32>() - 0.5) * 1200.0,
+                (rand.random::<f32>() - 0.5) * 600.0,
             ),
-            size: 4.0 + rand.gen::<f32>() * 16.0,
+            size: 4.0 + rand.random::<f32>() * 16.0,
         }
     }
 }
@@ -75,8 +81,10 @@ struct ExplodeMines {
 }
 
 /// 爆炸触发事件
-#[derive(Event)]
-struct Explode;
+#[derive(EntityEvent)]
+struct Explode {
+    entity: Entity,
+}
 
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
@@ -133,48 +141,56 @@ fn setup(mut commands: Commands) {
 // 任何实现了 Component Trait 的类型,都可以使用 Trigger<..,..> 进行监听
 // 这个触发器,完成了将每个 Mine 的坐标系统一添加到 SpatialIndex 中
 fn on_add_mine(
-    trigger: Trigger<OnAdd, Mine>,
+    // trigger: Trigger<OnAdd, Mine>,
+    add: On<Add, Mine>, // since 0.17.0
     query: Query<&Mine>,
     mut index: ResMut<SpatialIndex>,
 ) {
-    let mine = query.get(trigger.entity()).unwrap();
+    let mine = query.get(add.entity).unwrap();
     let tile = (
         (mine.pos.x / CELL_SIZE).floor() as i32,
         (mine.pos.y / CELL_SIZE).floor() as i32,
     );
-    index.map.entry(tile).or_default().insert(trigger.entity());
+    index.map.entry(tile).or_default().insert(add.entity);
 }
 
 // Remove despawned mines from our index
 // 同样,被个被 despawn 的 component 都会触发 OnRemove
 // 将 mine 的坐标从 SpatialIndex 中清除
 fn on_remove_mine(
-    trigger: Trigger<OnRemove, Mine>,
+    // trigger: Trigger<OnRemove, Mine>,
+    remove: On<Remove, Mine>, // since 0.17.0
     query: Query<&Mine>,
     mut index: ResMut<SpatialIndex>,
 ) {
-    let mine = query.get(trigger.entity()).unwrap();
+    let mine = query.get(remove.entity).unwrap();
     let tile = (
         (mine.pos.x / CELL_SIZE).floor() as i32,
         (mine.pos.y / CELL_SIZE).floor() as i32,
     );
     index.map.entry(tile).and_modify(|set| {
-        set.remove(&trigger.entity());
+        set.remove(&remove.entity);
     });
 }
 
 /// 接收到 Explode 触发事件,在 setup 中被注册
-fn explode_mine(trigger: Trigger<Explode>, query: Query<&Mine>, mut commands: Commands) {
+fn explode_mine(
+    //trigger: Trigger<Explode>,
+    explode: On<Explode>, // since 0.17.0
+    query: Query<&Mine>,
+    mut commands: Commands,
+) {
     // If a triggered event is targeting a specific entity you can access it with `.entity()`
     // commands.trigger_targets 指定的 entity 在这里,将会被读取
-    let id = trigger.entity();
-    let Some(mut entity) = commands.get_entity(id) else {
+    // let id = trigger.entity(); --- IGNORE --- since 0.17.0
+    // let Some(mut entity) = commands.get_entity(id) else {
+    let Ok(mut entity) = commands.get_entity(explode.entity) else {
         return;
     };
-    info!("Boom! {:?} exploded.", id.index());
+    info!("Boom! {:?} exploded.", explode.entity);
     // 消灭地雷
     entity.despawn();
-    let mine = query.get(id).unwrap();
+    let mine = query.get(explode.entity).unwrap();
 
     // Trigger another explosion cascade.
     // 触发下一次连环爆炸

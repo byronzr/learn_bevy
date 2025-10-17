@@ -105,6 +105,10 @@ path = "examples/ecs/nondeterministic_systems_order.rs"
 name = "observer_propagation"
 path = "examples/ecs/observer_propagation.rs"
 
+[[example]]
+name = "observers"
+path = "examples/ecs/observers.rs"
+
 ### ui
 [[example]]
 name = "ui_material"
