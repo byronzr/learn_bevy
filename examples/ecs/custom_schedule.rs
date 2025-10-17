@@ -94,7 +94,13 @@ fn single_threaded_update_system() {
     println!("Single Threaded Update");
 }
 
-fn last_system(mut w: EventWriter<AppExit>) {
+// fn last_system(mut w: EventWriter<AppExit>) {
+//     println!("Last");
+//     w.send(AppExit::Success);
+// }
+
+// since 0.17.0
+fn last_system(mut w: MessageWriter<AppExit>) {
     println!("Last");
-    w.send(AppExit::Success);
+    w.write(AppExit::Success);
 }

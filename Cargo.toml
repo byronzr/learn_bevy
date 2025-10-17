@@ -61,6 +61,10 @@ path = "examples/ecs/component_hooks.rs"
 name = "custom_query_param"
 path = "examples/ecs/custom_query_param.rs"
 
+[[example]]
+name = "custom_schedule"
+path = "examples/ecs/custom_schedule.rs"
+
 
 ### ui
 [[example]]
