@@ -145,10 +145,33 @@ path = "examples/ecs/removal_detection.rs"
 name = "run_conditions"
 path = "examples/ecs/run_conditions.rs"
 
+# review
 [[example]]
 name = "send_and_receive_messages"
 path = "examples/ecs/send_and_receive_messages.rs"
 
+# ! skip
+# [[example]]
+# name = "startup_system"
+# path = "examples/ecs/startup_system.rs"
+
+# todo
+# [[example]]
+# name = "state_scoped"
+# path = "examples/ecs/state_scoped.rs"
+
+[[example]]
+name = "system_closure"
+path = "examples/ecs/system_closure.rs"
+
+# review
+[[example]]
+name = "system_param"
+path = "examples/ecs/system_param.rs"
+
+[[example]]
+name = "system_piping"
+path = "examples/ecs/system_piping.rs"
 
 ### ui
 [[example]]

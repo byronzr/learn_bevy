@@ -4,9 +4,11 @@
 use bevy::prelude::*;
 use std::num::ParseIntError;
 
+// since bevy 0.17.0
+use bevy::log::{Level, debug, error, info};
 use bevy::{
     log::LogPlugin,
-    utils::{dbg, error, info, tracing::Level, warn},
+    //utils::{dbg, error, info, tracing::Level, warn},
 };
 
 fn main() {
@@ -18,18 +20,38 @@ fn main() {
             filter: "".to_string(),
             ..default()
         })
+        // .add_systems(
+        //     Update,
+        //     (
+        //         // 将 output 作为 input 传递(串联)
+        //         parse_message_system
+        //             .pipe(handler_system)
+        //             // 再串一次
+        //             .map(info),
+        //         data_pipe_system.map(info),
+        //         parse_message_system.map(dbg),
+        //         warning_pipe_system.map(warn),
+        //         parse_error_message_system.map(error),
+        //         parse_message_system.map(drop),
+        //     ),
+        // )
+        // since 0.17.0
         .add_systems(
             Update,
             (
-                // 将 output 作为 input 传递(串联)
-                parse_message_system
-                    .pipe(handler_system)
-                    // 再串一次
-                    .map(info),
-                data_pipe_system.map(info),
-                parse_message_system.map(dbg),
-                warning_pipe_system.map(warn),
-                parse_error_message_system.map(error),
+                parse_message_system.pipe(handler_system),
+                data_pipe_system.map(|out| info!("{out}")),
+                parse_message_system.map(|out| debug!("{out:?}")),
+                warning_pipe_system.map(|out| {
+                    if let Err(err) = out {
+                        error!("{err}");
+                    }
+                }),
+                parse_error_message_system.map(|out| {
+                    if let Err(err) = out {
+                        error!("{err}");
+                    }
+                }),
                 parse_message_system.map(drop),
             ),
         )
@@ -56,12 +78,20 @@ fn parse_error_message_system(message: Res<Message>) -> Result<(), ParseIntError
 // This system takes a Result<usize> input and either prints the parsed value or the error message
 // Try changing the Message resource to something that isn't an integer. You should see the error
 // message printed.
-fn handler_system(In(result): In<Result<usize, ParseIntError>>) -> String {
+// fn handler_system(In(result): In<Result<usize, ParseIntError>>) -> String {
+//     match result {
+//         Ok(value) => println!("parsed message: {value}"),
+//         Err(err) => println!("encountered an error: {err:?}"),
+//     }
+//     "output from handler_system.".to_string()
+// }
+
+// since bevy 0.17.0
+fn handler_system(In(result): In<Result<usize, ParseIntError>>) {
     match result {
         Ok(value) => println!("parsed message: {value}"),
         Err(err) => println!("encountered an error: {err:?}"),
     }
-    "output from handler_system.".to_string()
 }
 
 // This system produces a String output by trying to clone the String from the Message resource.
