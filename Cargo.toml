@@ -89,6 +89,10 @@ path = "examples/ecs/fixed_timestep.rs"
 name = "generic_system"
 path = "examples/ecs/generic_system.rs"
 
+[[example]]
+name = "hierarchy"
+path = "examples/ecs/hierarchy.rs"
+
 ### ui
 [[example]]
 name = "ui_material"

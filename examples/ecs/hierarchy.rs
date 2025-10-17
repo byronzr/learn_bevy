@@ -94,14 +94,14 @@ fn rotate(
         // 2 秒后,删除一个 children entity
         if time.elapsed_secs() >= 2.0 && children.len() == 2 {
             let child = children.last().unwrap();
-            commands.entity(*child).despawn_recursive();
+            commands.entity(*child).despawn();
         }
 
         // 4 秒后,删除 parent 与基联动的 所有 children
         if time.elapsed_secs() >= 4.0 {
             // This will remove the entity from its parent's list of children, as well as despawn
             // any children the entity has.
-            commands.entity(parent).despawn_recursive();
+            commands.entity(parent).despawn();
         }
     }
 }
