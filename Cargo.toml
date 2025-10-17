@@ -85,6 +85,10 @@ path = "examples/ecs/fallible_params.rs"
 name = "fixed_timestep"
 path = "examples/ecs/fixed_timestep.rs"
 
+[[example]]
+name = "generic_system"
+path = "examples/ecs/generic_system.rs"
+
 ### ui
 [[example]]
 name = "ui_material"

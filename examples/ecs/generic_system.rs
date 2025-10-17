@@ -87,6 +87,7 @@ fn transition_to_in_game_system(
 // 接收泛型的方式
 fn cleanup_system<T: Component>(mut commands: Commands, query: Query<Entity, With<T>>) {
     for e in &query {
-        commands.entity(e).despawn_recursive();
+        //commands.entity(e).despawn_recursive();
+        commands.entity(e).despawn();
     }
 }
