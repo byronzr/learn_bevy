@@ -73,6 +73,10 @@ path = "examples/ecs/dynamic.rs"
 name = "ecs_guide"
 path = "examples/ecs/ecs_guide.rs"
 
+[[example]]
+name = "message"
+path = "examples/ecs/message.rs"
+
 
 ### ui
 [[example]]
