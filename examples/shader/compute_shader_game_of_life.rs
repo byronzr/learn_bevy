@@ -7,6 +7,7 @@ use bevy::{
     asset::RenderAssetUsages,
     prelude::*,
     render::{
+        Render, RenderApp, RenderStartup, RenderSystems,
         extract_resource::{ExtractResource, ExtractResourcePlugin},
         render_asset::RenderAssets,
         render_graph::{self, RenderGraph, RenderLabel},
@@ -16,7 +17,6 @@ use bevy::{
         },
         renderer::{RenderContext, RenderDevice, RenderQueue},
         texture::GpuImage,
-        Render, RenderApp, RenderStartup, RenderSystems,
     },
     shader::PipelineCacheError,
 };
@@ -25,14 +25,18 @@ use std::borrow::Cow;
 /// This example uses a shader source file from the assets subdirectory
 const SHADER_ASSET_PATH: &str = "shaders/game_of_life.wgsl";
 
-const DISPLAY_FACTOR_FOR_WINDOW: u32 = 4;
-const DISPLAY_FACTOR_FOR_SPRITE: u32 = 4;
+// const DISPLAY_FACTOR_FOR_WINDOW: u32 = 4;
+// const DISPLAY_FACTOR_FOR_SPRITE: u32 = 4;
+// // sprite image size
+// const SIZE: (u32, u32) = (
+//     1280 / DISPLAY_FACTOR_FOR_WINDOW,
+//     720 / DISPLAY_FACTOR_FOR_WINDOW,
+// );
+// const WORKGROUP_SIZE: u32 = 8;
 
-// sprite image size
-const SIZE: (u32, u32) = (
-    1280 / DISPLAY_FACTOR_FOR_WINDOW,
-    720 / DISPLAY_FACTOR_FOR_WINDOW,
-);
+// since 0.17.0
+const DISPLAY_FACTOR: u32 = 4;
+const SIZE: UVec2 = UVec2::new(1280 / DISPLAY_FACTOR, 720 / DISPLAY_FACTOR);
 const WORKGROUP_SIZE: u32 = 8;
 
 fn main() {
@@ -42,11 +46,13 @@ fn main() {
             DefaultPlugins
                 .set(WindowPlugin {
                     primary_window: Some(Window {
-                        resolution: (
-                            (SIZE.0 * DISPLAY_FACTOR_FOR_WINDOW) as f32,
-                            (SIZE.1 * DISPLAY_FACTOR_FOR_WINDOW) as f32,
-                        )
-                            .into(),
+                        // resolution: (
+                        //     (SIZE.0 * DISPLAY_FACTOR_FOR_WINDOW) as f32,
+                        //     (SIZE.1 * DISPLAY_FACTOR_FOR_WINDOW) as f32,
+                        // )
+                        //     .into(),
+                        // since 0.17.0
+                        resolution: (SIZE * DISPLAY_FACTOR).into(),
                         // uncomment for unthrottled FPS
                         // present_mode: bevy::window::PresentMode::AutoNoVsync,
                         ..default()
@@ -64,7 +70,9 @@ fn main() {
 fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     // ! different v0.16.1
     // ! R32Float => Rgba32Float
-    let mut image = Image::new_target_texture(SIZE.0, SIZE.1, TextureFormat::Rgba32Float);
+    // let mut image = Image::new_target_texture(SIZE.0, SIZE.1, TextureFormat::Rgba32Float);
+    // since 0.17.0
+    let mut image = Image::new_target_texture(SIZE.x, SIZE.y, TextureFormat::Rgba32Float);
     // ! render world need read and write access to the texture
     image.asset_usage = RenderAssetUsages::RENDER_WORLD;
 
@@ -82,10 +90,12 @@ fn setup(mut commands: Commands, mut images: ResMut<Assets<Image>>) {
     commands.spawn((
         Sprite {
             image: image0.clone(),
-            custom_size: Some(Vec2::new(SIZE.0 as f32, SIZE.1 as f32)),
+            //custom_size: Some(Vec2::new(SIZE.0 as f32, SIZE.1 as f32)),
+            custom_size: Some(SIZE.as_vec2()), // since 0.17.0
             ..default()
         },
-        Transform::from_scale(Vec3::splat(DISPLAY_FACTOR_FOR_SPRITE as f32)),
+        // Transform::from_scale(Vec3::splat(DISPLAY_FACTOR_FOR_SPRITE as f32)),
+        Transform::from_scale(Vec3::splat(DISPLAY_FACTOR as f32)), // since 0.17.0
     ));
     commands.spawn(Camera2d);
 
@@ -347,7 +357,8 @@ impl render_graph::Node for GameOfLifeNode {
                     .unwrap();
                 pass.set_bind_group(0, &bind_groups[0], &[]);
                 pass.set_pipeline(init_pipeline);
-                pass.dispatch_workgroups(SIZE.0 / WORKGROUP_SIZE, SIZE.1 / WORKGROUP_SIZE, 1);
+                // pass.dispatch_workgroups(SIZE.0 / WORKGROUP_SIZE, SIZE.1 / WORKGROUP_SIZE, 1);
+                pass.dispatch_workgroups(SIZE.x / WORKGROUP_SIZE, SIZE.y / WORKGROUP_SIZE, 1); // since 0.17.0
             }
             GameOfLifeState::Update(index) => {
                 let update_pipeline = pipeline_cache
@@ -355,7 +366,8 @@ impl render_graph::Node for GameOfLifeNode {
                     .unwrap();
                 pass.set_bind_group(0, &bind_groups[index], &[]);
                 pass.set_pipeline(update_pipeline);
-                pass.dispatch_workgroups(SIZE.0 / WORKGROUP_SIZE, SIZE.1 / WORKGROUP_SIZE, 1);
+                // pass.dispatch_workgroups(SIZE.0 / WORKGROUP_SIZE, SIZE.1 / WORKGROUP_SIZE, 1);
+                pass.dispatch_workgroups(SIZE.x / WORKGROUP_SIZE, SIZE.y / WORKGROUP_SIZE, 1); // since 0.17.0
             }
         }
 

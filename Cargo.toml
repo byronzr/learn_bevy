@@ -65,6 +65,10 @@ path = "examples/ui/ui_material.rs"
 name = "shader_material_2d"
 path = "examples/shader/shader_material_2d.rs"
 
+[[example]]
+name = "compute_shader_game_of_life"
+path = "examples/shader/compute_shader_game_of_life.rs"
+
 
 # preview version 0.16.0
 
