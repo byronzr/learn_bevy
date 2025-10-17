@@ -3,7 +3,6 @@
 use bevy::prelude::*;
 
 fn main() {
-    std::env::set_var("NO_COLOR", "1");
     App::new()
         .add_plugins(DefaultPlugins)
         // this system will run once every update (it should match your screen's refresh rate)
