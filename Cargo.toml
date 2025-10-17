@@ -113,6 +113,10 @@ path = "examples/ecs/observers.rs"
 name = "one_shot_systems"
 path = "examples/ecs/one_shot_systems.rs"
 
+[[example]]
+name = "parallel_query"
+path = "examples/ecs/parallel_query.rs"
+
 ### ui
 [[example]]
 name = "ui_material"

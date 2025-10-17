@@ -20,9 +20,9 @@ fn spawn_system(mut commands: Commands, asset_server: Res<AssetServer>) {
     // 创建 128 个 entity,
     // transform 位置默认为 (0, 0, 0),随机加速度
     for _ in 0..128 {
-        // rng.gen::<f32>() 生成的随机浮点为 0.0 ~ 1.0
+        // rng.random::<f32>() 生成的随机浮点为 0.0 ~ 1.0
         // 为了保证随机散射出去的向量多样性,所以 -0.5,这样就可以在四个象限内随机生成向量,阈值区间就变成了 -0.5 ~ 0.5
-        let v = 20.0 * Vec2::new(rng.gen::<f32>() - 0.5, rng.gen::<f32>() - 0.5);
+        let v = 20.0 * Vec2::new(rng.random::<f32>() - 0.5, rng.random::<f32>() - 0.5);
         commands.spawn((
             Sprite::from_image(texture.clone()),
             Transform::from_scale(Vec3::splat(1.)),
