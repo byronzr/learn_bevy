@@ -3,11 +3,9 @@
 use std::time::Duration;
 
 use bevy::{log::LogPlugin, prelude::*, time::common_conditions::on_timer};
-use rand::{seq::IteratorRandom, thread_rng, Rng};
+use rand::{Rng, rng, seq::IteratorRandom};
 
 fn main() {
-    // emacs minibuffer 会有多余控制符,所以屏蔽掉
-    std::env::set_var("NO_COLOR", "1");
     App::new()
         .add_plugins((MinimalPlugins, LogPlugin::default()))
         // 生成实体(哥布林) 嵌套定义了肢体间的联系
@@ -55,25 +53,32 @@ fn setup(mut commands: Commands) {
 }
 
 // This event represents an attack we want to "bubble" up from the armor to the goblin.
-#[derive(Clone, Component)]
-struct Attack {
-    damage: u16,
-}
-
+//#[derive(Clone, Component)]
+// struct Attack {
+//     damage: u16,
+// }
 // We enable propagation by implementing `Event` manually (rather than using a derive) and specifying
 // two important pieces of information:
 // 手动实现一个可传递的事件 (Event),手动实现
-impl Event for Attack {
-    // 1. Which component we want to propagate along. In this case, we want to "bubble" (meaning propagate
-    //    from child to parent) so we use the `Parent` component for propagation. The component supplied
-    //    must implement the `Traversal` trait.
-    // 这个理论上唯一的关联类型,用于指定传播的路径,目前只有从 子到父
-    type Traversal = &'static Parent;
+// impl Event for Attack {
+//     // 1. Which component we want to propagate along. In this case, we want to "bubble" (meaning propagate
+//     //    from child to parent) so we use the `Parent` component for propagation. The component supplied
+//     //    must implement the `Traversal` trait.
+//     // 这个理论上唯一的关联类型,用于指定传播的路径,目前只有从 子到父
+//     type Traversal = &'static Parent;
 
-    // 2. We can also choose whether or not this event will propagate by default when triggered. If this is
-    //    false, it will only propagate following a call to `Trigger::propagate(true)`.
-    // 默认开启 true 后,会就向上传播,直到手动(Trigger::propagate(false))或顶部.
-    const AUTO_PROPAGATE: bool = true;
+//     // 2. We can also choose whether or not this event will propagate by default when triggered. If this is
+//     //    false, it will only propagate following a call to `Trigger::propagate(true)`.
+//     // 默认开启 true 后,会就向上传播,直到手动(Trigger::propagate(false))或顶部.
+//     const AUTO_PROPAGATE: bool = true;
+// }
+
+// since 0.17.0
+#[derive(Clone, Component, EntityEvent)]
+#[entity_event(propagate, auto_propagate)]
+struct Attack {
+    entity: Entity,
+    damage: u16,
 }
 
 /// An entity that can take damage.
@@ -92,23 +97,28 @@ struct Armor(u16);
 /// 模拟对实体(随机)生成伤害(随机)
 fn attack_armor(entities: Query<Entity, With<Armor>>, mut commands: Commands) {
     // 从包含 Armor Component 的实体集中随机获得一个实体,模拟一次攻击伤害
-    let mut rng = thread_rng();
+    let mut rng = rng();
 
     // 从头部/胸部/腿部 随机抽取一个目标
-    if let Some(target) = entities.iter().choose(&mut rng) {
+    if let Some(entity) = entities.iter().choose(&mut rng) {
         // 随机一个伤害值
-        let damage = rng.gen_range(1..20);
+        let damage = rng.random_range(1..20);
         // 发送事件(这个事件被广播,但目标却只有一个)
         // 因此在所有的 observe 中是否进行事件处理,就有了依据
-        commands.trigger_targets(Attack { damage }, target);
+        // commands.trigger_targets(Attack { damage }, target);
+        commands.trigger(Attack { damage, entity });
         info!("⚔️  Attack for {} damage", damage);
     }
 }
 
 /// 仅显示攻击日志
 /// 同样,所有的 身体部份也都会接收 Attack Event
-fn attack_hits(trigger: Trigger<Attack>, name: Query<&Name>) {
-    if let Ok(name) = name.get(trigger.entity()) {
+// fn attack_hits(trigger: Trigger<Attack>, name: Query<&Name>) {
+// since 0.17.0
+fn attack_hits(attack: On<Attack>, name: Query<&Name>) {
+    // if let Ok(name) = name.get(trigger.entity()) {
+    // since 0.17.0
+    if let Ok(name) = name.get(attack.entity) {
         info!("Attack hit {}", name);
     } else {
         // 几乎不会在此案例中被打印出来
@@ -118,11 +128,11 @@ fn attack_hits(trigger: Trigger<Attack>, name: Query<&Name>) {
 
 /// A callback placed on [`Armor`], checking if it absorbed all the [`Attack`] damage.
 /// 更新被装甲吸收后的伤害值,并控制是否继续传播
-fn block_attack(mut trigger: Trigger<Attack>, armor: Query<(&Armor, &Name)>) {
+fn block_attack(mut attack: On<Attack>, armor: Query<(&Armor, &Name)>) {
     // 从事件中的 entity 中获取 Armor Component
     // 在此如果不成功,则会 panic
-    let (armor, name) = armor.get(trigger.entity()).unwrap();
-    let attack = trigger.event_mut();
+    let (armor, name) = armor.get(attack.entity).unwrap();
+    // let attack = attack.event_mut(); --- IGNORE ---
     // 下溢减法,如果伤害值小于等于装甲值,则会返回0(完全抵消)
     let damage = attack.damage.saturating_sub(**armor);
 
@@ -140,7 +150,7 @@ fn block_attack(mut trigger: Trigger<Attack>, armor: Query<(&Armor, &Name)>) {
         // Armor stopped the attack, the event stops here.
         // 完全抵消伤害后,并不需要再传播至 take_damage 处理,
         // 所以在这里中止了本次传播
-        trigger.propagate(false);
+        attack.propagate(false);
         info!("(propagation halted early)\n");
     }
 }
@@ -149,13 +159,12 @@ fn block_attack(mut trigger: Trigger<Attack>, armor: Query<(&Armor, &Name)>) {
 /// or the wearer is attacked directly.
 /// 子实体对伤害进行了阻挡,对剩余伤害进行结算
 fn take_damage(
-    trigger: Trigger<Attack>,
+    attack: On<Attack>,
     mut hp: Query<(&mut HitPoints, &Name)>,
     mut commands: Commands,
-    mut app_exit: EventWriter<AppExit>,
+    mut app_exit: MessageWriter<AppExit>,
 ) {
-    let attack = trigger.event();
-    let (mut hp, name) = hp.get_mut(trigger.entity()).unwrap();
+    let (mut hp, name) = hp.get_mut(attack.entity).unwrap();
     // wrapping_sub  环绕运算 u32::Max +1 -n
     // saturating_sub 防止下溢的减法
     **hp = hp.saturating_sub(attack.damage);
@@ -164,8 +173,8 @@ fn take_damage(
         info!("{} has {:.1} HP", name, hp.0);
     } else {
         warn!("💀 {} has died a gruesome death", name);
-        commands.entity(trigger.entity()).despawn_recursive();
-        app_exit.send(AppExit::Success);
+        commands.entity(attack.entity).despawn();
+        app_exit.write(AppExit::Success);
     }
 
     info!("(propagation reached root)\n");
