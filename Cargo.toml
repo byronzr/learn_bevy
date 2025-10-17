@@ -77,6 +77,9 @@ path = "examples/ecs/ecs_guide.rs"
 name = "message"
 path = "examples/ecs/message.rs"
 
+[[example]]
+name = "fallible_params"
+path = "examples/ecs/fallible_params.rs"
 
 ### ui
 [[example]]

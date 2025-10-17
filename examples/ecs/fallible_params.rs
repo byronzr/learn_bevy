@@ -7,7 +7,7 @@
 //! - [`Option<Single<D, F>>`] - There must be zero or one matching entity.
 //! - [`Populated<D, F>`] - There must be at least one matching entity.
 
-use bevy::prelude::*;
+use bevy::{ecs::error::warn, prelude::*};
 use rand::Rng;
 
 fn main() {
@@ -17,23 +17,45 @@ fn main() {
     println!("but will stop tracking if there are more than one.");
     println!();
 
+    // App::new()
+    //     .add_plugins(DefaultPlugins)
+    //     .add_systems(Startup, setup)
+    //     // Default system policy is to panic if parameters fail to be fetched.
+    //     // We overwrite that configuration, to either warn us once or never.
+    //     // This is good for catching unexpected behavior without crashing the app,
+    //     // but can lead to spam.
+    //     .add_systems(
+    //         Update,
+    //         (
+    //             user_input.param_warn_once(),
+    //             move_targets.never_param_warn(),
+    //             move_pointer.never_param_warn(),
+    //         )
+    //             .chain(),
+    //     )
+    //     .add_systems(Update, do_nothing_fail_validation.param_warn_once())
+    //     .run();
+
+    // since 0.17.0
     App::new()
+        // By default, if a parameter fail to be fetched,
+        // `World::get_default_error_handler` will be used to handle the error,
+        // which by default is set to panic.
+        .set_error_handler(warn)
         .add_plugins(DefaultPlugins)
         .add_systems(Startup, setup)
-        // Default system policy is to panic if parameters fail to be fetched.
-        // We overwrite that configuration, to either warn us once or never.
-        // This is good for catching unexpected behavior without crashing the app,
-        // but can lead to spam.
         .add_systems(
             Update,
             (
-                user_input.param_warn_once(),
-                move_targets.never_param_warn(),
-                move_pointer.never_param_warn(),
+                user_input,
+                move_targets,
+                // since 0.17.0
+                track_targets,
             )
                 .chain(),
         )
-        .add_systems(Update, do_nothing_fail_validation.param_warn_once())
+        // This system will always fail validation, because we never create an entity with both `Player` and `Enemy` components.
+        .add_systems(Update, do_nothing_fail_validation)
         .run();
 }
 
@@ -87,15 +109,18 @@ fn user_input(
     keyboard_input: Res<ButtonInput<KeyCode>>,
     asset_server: Res<AssetServer>,
 ) {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     if keyboard_input.just_pressed(KeyCode::KeyA) {
         let texture = asset_server.load("textures/simplespace/enemy_A.png");
         commands.spawn((
             Enemy {
-                origin: Vec2::new(rng.gen_range(-200.0..200.0), rng.gen_range(-200.0..200.0)), // 旋转圆点
-                radius: rng.gen_range(50.0..150.0), // 半径
-                rotation: rng.gen_range(0.0..std::f32::consts::TAU), // 角度
-                rotation_speed: rng.gen_range(0.5..1.5), // 速度
+                origin: Vec2::new(
+                    rng.random_range(-200.0..200.0),
+                    rng.random_range(-200.0..200.0),
+                ), // 旋转圆点
+                radius: rng.random_range(50.0..150.0), // 半径
+                rotation: rng.random_range(0.0..std::f32::consts::TAU), // 角度
+                rotation_speed: rng.random_range(0.5..1.5), // 速度
             },
             Sprite {
                 image: texture,
@@ -142,20 +167,52 @@ fn move_targets(mut enemies: Populated<(&mut Transform, &mut Enemy)>, time: Res<
 // 如果存在一个 enemy 追踪目标
 // 如果太多 enemy 停止所有动作, Single 决定 system 是否运行
 // never_param_warn 如果没有 会产生 panic 中止程序
-fn move_pointer(
+// fn move_pointer(
+//     // `Single` ensures the system runs ONLY when exactly one matching entity exists.
+//     // 永远不会出错,因为 setup spawn 了一个 Player,但从未移除
+//     // Single 确保结果只有一个 entity
+//     mut player: Single<(&mut Transform, &Player)>,
+//     // `Option<Single>` ensures that the system runs ONLY when zero or one matching entity exists.
+//     // 有可能会出错,启动时可能不存在 enemy , 但程序依然需要合理运行,所以 Option<_>
+//     enemy: Option<Single<&Transform, (With<Enemy>, Without<Player>)>>,
+//     time: Res<Time>,
+// ) {
+//     let (player_transform, player) = &mut *player;
+//     if let Some(enemy_transform) = enemy {
+//         // Enemy found, rotate and move towards it.
+//         // 索敌成功,开始偏移(涉及到向量计算,就不细讲了)
+//         let delta = enemy_transform.translation - player_transform.translation;
+//         let distance = delta.length();
+//         let front = delta / distance;
+//         let up = Vec3::Z;
+//         let side = front.cross(up);
+//         player_transform.rotation = Quat::from_mat3(&Mat3::from_cols(side, front, up));
+//         let max_step = distance - player.min_follow_radius;
+//         if 0.0 < max_step {
+//             let velocity = (player.speed * time.delta_secs()).min(max_step);
+//             player_transform.translation += front * velocity;
+//         }
+//     } else {
+//         // No enemy found, keep searching.
+//         // 索敌失败,原地自旋转
+//         player_transform.rotate_axis(Dir3::Z, player.rotation_speed * time.delta_secs());
+//     }
+// }
+
+/// System that moves the player, causing them to track a single enemy.
+/// If there is exactly one, player will track it.
+/// Otherwise, the player will search for enemies.
+/// since 0.17.0 renamed from move_pointer
+fn track_targets(
     // `Single` ensures the system runs ONLY when exactly one matching entity exists.
-    // 永远不会出错,因为 setup spawn 了一个 Player,但从未移除
-    // Single 确保结果只有一个 entity
     mut player: Single<(&mut Transform, &Player)>,
-    // `Option<Single>` ensures that the system runs ONLY when zero or one matching entity exists.
-    // 有可能会出错,启动时可能不存在 enemy , 但程序依然需要合理运行,所以 Option<_>
+    // `Option<Single>` never prevents the system from running, but will be `None` if there is not exactly one matching entity.
     enemy: Option<Single<&Transform, (With<Enemy>, Without<Player>)>>,
     time: Res<Time>,
 ) {
     let (player_transform, player) = &mut *player;
     if let Some(enemy_transform) = enemy {
         // Enemy found, rotate and move towards it.
-        // 索敌成功,开始偏移(涉及到向量计算,就不细讲了)
         let delta = enemy_transform.translation - player_transform.translation;
         let distance = delta.length();
         let front = delta / distance;
@@ -168,8 +225,7 @@ fn move_pointer(
             player_transform.translation += front * velocity;
         }
     } else {
-        // No enemy found, keep searching.
-        // 索敌失败,原地自旋转
+        // 0 or multiple enemies found, keep searching.
         player_transform.rotate_axis(Dir3::Z, player.rotation_speed * time.delta_secs());
     }
 }
