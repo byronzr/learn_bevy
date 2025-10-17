@@ -52,10 +52,12 @@ fn remove_component(
 
 // 触发 `OnRemove` 事件后,将实体的 Sprite 颜色改为蓝色
 // 触发者是 MyComponent,触发者的 Entity 也会被传递
-fn react_on_removal(trigger: Trigger<OnRemove, MyComponent>, mut query: Query<&mut Sprite>) {
+// fn react_on_removal(trigger: Trigger<OnRemove, MyComponent>, mut query: Query<&mut Sprite>) {
+// since 0.17.0
+fn react_on_removal(remove: On<Remove, MyComponent>, mut query: Query<&mut Sprite>) {
     // The `OnRemove` trigger was automatically called on the `Entity` that had its `MyComponent` removed.
-    let entity = trigger.entity();
-    if let Ok(mut sprite) = query.get_mut(entity) {
+    // let entity = trigger.entity(); --- IGNORE --- since 0.17.0
+    if let Ok(mut sprite) = query.get_mut(remove.entity) {
         sprite.color = Color::srgb(0.5, 1., 1.);
     }
 }

@@ -73,9 +73,16 @@ path = "examples/ecs/dynamic.rs"
 name = "ecs_guide"
 path = "examples/ecs/ecs_guide.rs"
 
-[[example]]
-name = "message"
-path = "examples/ecs/message.rs"
+# ! skip
+# [[example]]
+# name = "entity_disabling"
+# path = "examples/ecs/entity_disabling.rs"
+
+# ! skip
+# [[example]]
+# name = "error_handling"
+# path = "examples/ecs/error_handling.rs"
+
 
 [[example]]
 name = "fallible_params"
@@ -98,6 +105,10 @@ name = "iter_combinations"
 path = "examples/ecs/iter_combinations.rs"
 
 [[example]]
+name = "message"
+path = "examples/ecs/message.rs"
+
+[[example]]
 name = "nondeterministic_systems_order"
 path = "examples/ecs/nondeterministic_systems_order.rs"
 
@@ -116,6 +127,19 @@ path = "examples/ecs/one_shot_systems.rs"
 [[example]]
 name = "parallel_query"
 path = "examples/ecs/parallel_query.rs"
+
+[[example]]
+name = "query"
+path = "examples/ecs/query.rs"
+
+# todo
+# [[example]]
+# name = "relationships"
+# path = "examples/ecs/relationships.rs"
+
+[[example]]
+name = "removal_detection"
+path = "examples/ecs/removal_detection.rs"
 
 ### ui
 [[example]]
