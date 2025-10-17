@@ -18,8 +18,14 @@
 // 在本例中 trigger_hooks 只负责对 MyComponent 的添加与删除,
 // 而 hook 负责 MyComponentIndex 索引的维护与 Entity 的移除
 
+// use bevy::{
+//     ecs::component::{ComponentHooks, StorageType},
+//     prelude::*,
+// };
+// since 0.17.0
 use bevy::{
-    ecs::component::{ComponentHooks, StorageType},
+    ecs::component::{Mutable, StorageType},
+    ecs::lifecycle::{ComponentHook, HookContext},
     prelude::*,
 };
 use std::collections::HashMap;
@@ -37,23 +43,37 @@ impl Component for MyComponent {
     // Table ,迭代更快
     // SparseSet, 增删更快,特定查询快
     const STORAGE_TYPE: StorageType = StorageType::Table;
+    type Mutability = Mutable; // since 0.17.0
 
+    // prior to 0.17.0
     /// Hooks can also be registered during component initialization by
     /// implementing `register_component_hooks`
-    fn register_component_hooks(_hooks: &mut ComponentHooks) {
-        // Register hooks...
-        println!("// Register hooks...// Register hooks...");
+    // fn register_component_hooks(_hooks: &mut ComponentHooks) {
+    //     // Register hooks...
+    //     println!("// Register hooks...// Register hooks...");
+    // }
+
+    // since 0.17.0
+    /// Hooks can also be registered during component initialization by
+    /// implementing the associated method
+    fn on_add() -> Option<ComponentHook> {
+        // We don't have an `on_add` hook so we'll just return None.
+        // Note that this is the default behavior when not implementing a hook.
+        None
     }
 }
 
 #[derive(Resource, Default, Debug, Deref, DerefMut)]
 struct MyComponentIndex(HashMap<KeyCode, Entity>);
 
-#[derive(Event)]
-struct MyEvent;
+// #[derive(Event)]
+// struct MyEvent;
+
+// since 0.17.0
+#[derive(Message)]
+struct MyMessage;
 
 fn main() {
-    std::env::set_var("NO_COLOR", "1");
     App::new()
         .add_plugins(DefaultPlugins)
         // 注册 hook closure
@@ -63,7 +83,8 @@ fn main() {
         // 在 on_add 中触发 hook 需要更新的索引
         .init_resource::<MyComponentIndex>()
         // 模拟在 hook 中发送事件(但并没有实际意义)
-        .add_event::<MyEvent>()
+        // .add_event::<MyEvent>()
+        .add_message::<MyMessage>() // since 0.17.0
         .run();
 }
 
@@ -84,25 +105,43 @@ fn setup(world: &mut World) {
         // 当发现有新的 Component 添加到某个实体中时触发
         // 从实体中获得 component 再从 component 中获得 keycode
         // 将 keycode 与 entity 添加到资源索引(HashMap)
-        .on_add(|mut world, entity, component_id| {
-            // You can access component data from within the hook
-            // 受到影响(慢)
-            let value = world.get::<MyComponent>(entity).unwrap().0;
-            println!(
-                "(on_add) Component: {component_id:?} added to: {entity:?} with value {value:?}"
-            );
-            // Or access resources
-            world
-                .resource_mut::<MyComponentIndex>()
-                .insert(value, entity);
-            // Or send events
-            world.send_event(MyEvent);
-        })
+        //.on_add(|mut world, entity, component_id| {
+        .on_add(
+            |mut world,
+             // since 0.17.0
+             HookContext {
+                 entity,
+                 component_id,
+                 caller,
+                 ..
+             }| {
+                // You can access component data from within the hook
+                // 受到影响(慢)
+                let value = world.get::<MyComponent>(entity).unwrap().0;
+                println!(
+                    "(on_add) Component: {component_id:?} added to: {entity:?} with value {value:?} caller: {caller:?}", // since 0.17.0 caller added
+                );
+                // -- output --
+                // (on_add) Component: ComponentId(341) added to: 12v6 with value KeyA caller:
+                // MaybeLocation { marker: PhantomData<&core::panic::location::Location>,
+                // value: Location { file: "examples/ecs/component_hooks.rs", line: 220, column: 18 } }
+                // -- output --
+                // Or access resources
+                world
+                    .resource_mut::<MyComponentIndex>()
+                    .insert(value, entity);
+                // Or send events
+                // world.send_event(MyEvent);
+                world.write_message(MyMessage); // since 0.17.0
+            },
+        )
         // `on_insert` will trigger when a component is inserted onto an entity,
         // regardless of whether or not it already had it and after `on_add` if it ran
         // 当发现一个新的 component 添加到实体时触发
         // 不管该实体是否已拥有 component 都会在 on_add 后执行
-        .on_insert(|world, _, _| {
+        //.on_insert(|world, _, _| {
+        .on_insert(|world, _| {
+            // since 0.17.0
             println!(
                 "(on_insert) Current Index: {:?}",
                 world.resource::<MyComponentIndex>()
@@ -114,24 +153,45 @@ fn setup(world: &mut World) {
         // 当替换 component 时会触发
         // 同样也会在 on_remove 前触发
         // 获得 keycode 后,按其从资源索引中移除
-        .on_replace(|mut world, entity, _| {
-            // 受到影响(慢)
-            let value = world.get::<MyComponent>(entity).unwrap().0;
-            world.resource_mut::<MyComponentIndex>().remove(&value);
-            println!("(on_replace): {:?}", world.resource::<MyComponentIndex>());
-        })
+        //.on_replace(|mut world, entity, _| {
+        .on_replace(
+            |mut world,
+             // since 0.17.0
+             contex: HookContext| {
+                // 受到影响(慢)
+                let value = world.get::<MyComponent>(contex.entity).unwrap().0;
+                world.resource_mut::<MyComponentIndex>().remove(&value);
+                println!("(on_replace): {:?}", world.resource::<MyComponentIndex>());
+            },
+        )
         // `on_remove` will trigger when a component is removed from an entity,
         // since it runs before the component is removed you can still access the component data
         // 从 world 中移除 entity
         // 因为 component hook 触发了,所以 entity 会被移除
-        .on_remove(|mut world, entity, component_id| {
-            // 受到影响(慢)
-            let value = world.get::<MyComponent>(entity).unwrap().0;
-            println!("(on_remove) Component: {component_id:?} removed from: {entity:?} with value {value:?}");
-            // You can also issue commands through `.commands()`
-            // 从 world 中移除 entity
-            world.commands().entity(entity).despawn();
-        });
+        // .on_remove(|mut world, entity, component_id| {
+        .on_remove(
+            |mut world,
+             // since 0.17.0
+             HookContext {
+                 entity,
+                 component_id,
+                 caller,
+                 ..
+             }| {
+                // 受到影响(慢)
+                let value = world.get::<MyComponent>(entity).unwrap().0;
+                // println!("(on_remove) Component: {component_id:?} removed from: {entity:?} with value {value:?}");
+                println!(
+                    "{component_id:?} removed from {entity} with value {value:?}{}",
+                    caller
+                        .map(|location| format!("due to {location}"))
+                        .unwrap_or_default()
+                );
+                // You can also issue commands through `.commands()`
+                // 从 world 中移除 entity
+                world.commands().entity(entity).despawn();
+            },
+        );
 }
 
 /// 一个等待用户输入的来 spawn entity 的 system
@@ -147,13 +207,8 @@ fn trigger_hooks(
         if !keys.pressed(*key) {
             println!(">>> up ");
             // 从实体上删除组件 (hook触发点)
-
             commands.entity(*entity).remove::<MyComponent>();
         }
-        // 其实与!keys.pressed(*key)一样的结果
-        // if keys.just_released(*key) {
-        //     println!("keys.just_released(*key)");
-        // }
     }
 
     // 2, 获得一个当前刚好按下的 keycode ,

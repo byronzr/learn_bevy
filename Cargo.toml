@@ -53,6 +53,10 @@ path = "examples/custom/shader/annulus.rs"
 name = "change_detection"
 path = "examples/ecs/change_detection.rs"
 
+[[example]]
+name = "component_hooks"
+path = "examples/ecs/component_hooks.rs"
+
 
 ### ui
 [[example]]
