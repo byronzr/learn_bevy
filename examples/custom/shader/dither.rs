@@ -42,10 +42,11 @@ fn switch(
 ) {
     if mouse_input.just_pressed(MouseButton::Left) {
         *idx += 1;
-        if *idx > 2 {
+        if *idx > 3 {
             *idx = 0;
         }
         let path = format!("dither/HDR_L_{}.png", *idx);
+        info!("switch dither pattern to {}", path);
         let dither_handle = asset_server.load(path);
         images_resource.dither_pattern = dither_handle.clone();
         images_resource.dither_size = Vec2::ZERO;
@@ -64,6 +65,7 @@ fn switch(
         let scroll_amount = event.y.abs().ceil() * y;
         images_resource.threshold += scroll_amount;
         images_resource.threshold = images_resource.threshold.clamp(1., 100.0);
+        info!("dither ratio threshold: {}", images_resource.threshold);
     }
 }
 

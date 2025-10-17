@@ -25,26 +25,34 @@
 
 @fragment
 fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
+    // uv 的原始区间为 0.->1.
+    // fract(uv * ratio) 取小数部分，相当于放大(分段) ratio 取当前分段区间
+    // 这是一种常用的分段手法
     let dither_uv = fract(mesh.uv * ratio);
     let dither_color = textureSample(dither_texture, dither_sampler, dither_uv);
     let base_color = textureSample(base_color_texture, base_color_sampler, mesh.uv);
 
-    // 来自于 ITU-R BT.601标准,人类眼部神经对于亮度的感知权重
-    let weight = vec3<f32>(0.299, 0.587, 0.114);
-    let luminance_image = dot(base_color.rgb, weight);
-    let luminance_dither = dot(dither_color.rgb, weight);
+    // * 提取亮度信息
+    // * 来自于 ITU-R BT.601标准,人类眼部神经对于亮度的感知权重
+    // let weight = vec3<f32>(0.299, 0.587, 0.114);
+    // let luminance_image = dot(base_color.rgb, weight);
+    // let luminance_dither = dot(dither_color.rgb, weight);
 
-    let pen_color = vec4f(1.0,0.0,0.0,1.0);
+    // * 提取亮度信息
+    // * 线性空间的 luma（BT.709 / sRGB）
+    let weight = vec3<f32>(0.2126, 0.7152, 0.0722);
+    let luminance_image = dot(base_color.rgb, weight); // image 亮度
+    let luminance_dither = dot(dither_color.rgb, weight); // dither 亮度
+
+    // 背景色(黄)
     let background = vec4f(1.0,1.0,0.0,1.0);
 
-    // 视觉上的细腻感是从两个维度来体现的：
-    // 1. dither 本身的纹理体现(但更多的时候是用来体现笔触)
-    // 2. dither 本身的亮度可以作为阈值来使用(大多数情况下)
-    let dither_threshold = textureSample(dither_texture, dither_sampler, dither_uv).r; 
     // 使用时间来体现阈值动画
-    if (luminance_image * abs(sin(globals.time)) > luminance_dither) {
+    // 我们并没有实现视觉上的扩散效果，只是每个 dither 影响的分段区间的明度
+    // GPU运行足够快
+    if (luminance_image * abs(sin(globals.time)) < luminance_dither) {
         return background;
     } else {
-        return pen_color;
+        return material_color;
     }
 }
