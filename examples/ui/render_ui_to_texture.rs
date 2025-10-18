@@ -3,11 +3,13 @@
 use std::f32::consts::PI;
 
 use bevy::{
+    asset::RenderAssetUsages,
+    camera::RenderTarget,
     color::palettes::css::GOLD,
     prelude::*,
     render::{
-        camera::RenderTarget,
-        render_asset::RenderAssetUsages,
+        // camera::RenderTarget,
+        // render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension, TextureFormat, TextureUsages},
     },
 };
@@ -65,7 +67,8 @@ fn setup(
             // ! 渲染目标是一个图像,意味着该图像可以使用到其它地方,真正的 Camera 是一个 Camera3d
             // ! 因为是一个纹理,并没有要求被 camera 显示,所以可以得到一个离屏渲染的机制
             Camera {
-                target: RenderTarget::Image(image_handle.clone()),
+                //target: RenderTarget::Image(image_handle.clone()),
+                target: RenderTarget::Image(image_handle.clone().into()), // since 0.17.0
                 ..default()
             },
         ))
@@ -87,7 +90,8 @@ fn setup(
             },
             BackgroundColor(GOLD.into()),
             // ! 指定这个 node 使用 camera
-            TargetCamera(texture_camera),
+            // TargetCamera(texture_camera),
+            UiTargetCamera(texture_camera), // since 0.17.0
         ))
         .with_children(|parent| {
             // ! 纹理中使用图片

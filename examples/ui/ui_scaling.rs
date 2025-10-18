@@ -1,7 +1,12 @@
 //! This example illustrates the [`UiScale`] resource from `bevy_ui`.
 
-use bevy::{color::palettes::css::*, prelude::*, utils::Duration};
+use bevy::{
+    color::palettes::css::*,
+    prelude::*,
+    //utils::Duration
+};
 
+use core::time::Duration;
 const SCALE_TIME: u64 = 400;
 
 fn main() {
@@ -114,7 +119,7 @@ impl TargetScale {
     }
 
     fn already_completed(&self) -> bool {
-        self.target_time.finished() && !self.target_time.just_finished()
+        self.target_time.is_finished() && !self.target_time.just_finished()
     }
 }
 

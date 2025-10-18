@@ -74,7 +74,8 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                                     overflow,
                                     ..default()
                                 },
-                                BorderColor(Color::BLACK),
+                                // BorderColor(Color::BLACK),
+                                BorderColor::all(Color::BLACK), // since 0.17.0
                                 BackgroundColor(GRAY.into()),
                             ))
                             .with_children(|parent| {

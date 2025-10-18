@@ -5,7 +5,8 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                resolution: [800., 600.].into(),
+                // resolution: [800., 600.].into(),
+                resolution: (800, 600).into(),
                 title: "Bevy CSS Grid Layout Example".to_string(),
                 ..default()
             }),
@@ -197,7 +198,11 @@ fn spawn_layout(mut commands: Commands, asset_server: Res<AssetServer>) {
 /// spawned as a child of a Grid container with `AlignItems::Stretch` and `JustifyItems::Stretch`
 /// which will allow it to take its size from the size of the grid area it occupies.
 /// * 创建一个 Node 矩形容器,使用 Grid 布局,允许子元素填充整个区域
-fn item_rect(builder: &mut ChildBuilder, color: Srgba) {
+fn item_rect(
+    // builder: &mut ChildBuilder,
+    builder: &mut ChildSpawnerCommands, // since 0.17.0
+    color: Srgba,
+) {
     let row_span = if color == ORANGE {
         GridPlacement::span(2)
     } else {
@@ -219,7 +224,12 @@ fn item_rect(builder: &mut ChildBuilder, color: Srgba) {
         });
 }
 
-fn spawn_nested_text_bundle(builder: &mut ChildBuilder, font: Handle<Font>, text: &str) {
+fn spawn_nested_text_bundle(
+    //builder: &mut ChildBuilder,
+    builder: &mut ChildSpawnerCommands, // since 0.17.0
+    font: Handle<Font>,
+    text: &str,
+) {
     builder.spawn((
         Text::new(text),
         TextFont { font, ..default() },

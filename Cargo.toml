@@ -183,9 +183,29 @@ name = "flex_layout"
 path = "examples/ui/flex_layout.rs"
 
 [[example]]
+name = "grid"
+path = "examples/ui/grid.rs"
+
+[[example]]
+name = "overflow"
+path = "examples/ui/overflow.rs"
+
+[[example]]
+name = "relative_cursor_position"
+path = "examples/ui/relative_cursor_position.rs"
+
+# todo: review
+[[example]]
+name = "render_ui_to_texture"
+path = "examples/ui/render_ui_to_texture.rs"
+
+[[example]]
 name = "ui_material"
 path = "examples/ui/ui_material.rs"
 
+[[example]]
+name = "ui_scaling"
+path = "examples/ui/ui_scaling.rs"
 
 ### shader
 [[example]]
