@@ -179,6 +179,10 @@ path = "examples/ecs/system_stepping.rs"
 
 ### ui
 [[example]]
+name = "flex_layout"
+path = "examples/ui/flex_layout.rs"
+
+[[example]]
 name = "ui_material"
 path = "examples/ui/ui_material.rs"
 
