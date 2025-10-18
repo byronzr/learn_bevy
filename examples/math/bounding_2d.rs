@@ -2,7 +2,7 @@
 
 use bevy::{
     color::palettes::css::*,
-    math::{bounding::*, ops, Isometry2d},
+    math::{Isometry2d, bounding::*, ops},
     prelude::*,
 };
 
@@ -256,7 +256,12 @@ fn setup(mut commands: Commands) {
 
     commands.spawn((
         Transform::from_xyz(-OFFSET_X, -OFFSET_Y, 0.),
-        Shape::Line(Segment2d::new(Dir2::from_xy(1., 0.3).unwrap(), 90.)),
+        // Shape::Line(Segment2d::new(Dir2::from_xy(1., 0.3).unwrap(), 90.)),
+        // since 0.17.2
+        Shape::Line(Segment2d::from_direction_and_length(
+            Dir2::from_xy(1., 0.3).unwrap(),
+            90.,
+        )),
         Spin,
         DesiredVolume::Circle,
         Intersects::default(),

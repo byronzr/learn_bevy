@@ -41,7 +41,9 @@ fn spawn_sprites(
             style.clone(),
             Vec2::new(100.0, 200.0),
             SpriteImageMode::Sliced(TextureSlicer {
-                border: BorderRect::square(slice_border),
+                //border: BorderRect::square(slice_border),
+                // since 0.17.0
+                border: BorderRect::all(slice_border),
                 center_scale_mode: SliceScaleMode::Stretch,
                 ..default()
             }),
@@ -56,7 +58,8 @@ fn spawn_sprites(
             Vec2::new(100.0, 200.0),
             //Vec2::new(512.0, 1024.0),
             SpriteImageMode::Sliced(TextureSlicer {
-                border: BorderRect::square(slice_border),
+                //border: BorderRect::square(slice_border),
+                border: BorderRect::all(slice_border),
                 center_scale_mode: SliceScaleMode::Tile { stretch_value: 0.5 },
                 // ** 四条边会有平铺方向,上下为横向平铺,左右为纵向平铺
                 sides_scale_mode: SliceScaleMode::Tile { stretch_value: 0.2 },
@@ -69,7 +72,8 @@ fn spawn_sprites(
             style.clone(),
             Vec2::new(300.0, 200.0),
             SpriteImageMode::Sliced(TextureSlicer {
-                border: BorderRect::square(slice_border),
+                // border: BorderRect::square(slice_border),
+                border: BorderRect::all(slice_border),
                 center_scale_mode: SliceScaleMode::Tile { stretch_value: 0.2 },
                 sides_scale_mode: SliceScaleMode::Tile { stretch_value: 0.3 },
                 ..default()
@@ -81,7 +85,8 @@ fn spawn_sprites(
             style,
             Vec2::new(300.0, 200.0),
             SpriteImageMode::Sliced(TextureSlicer {
-                border: BorderRect::square(slice_border),
+                // border: BorderRect::square(slice_border),
+                border: BorderRect::all(slice_border),
                 center_scale_mode: SliceScaleMode::Tile { stretch_value: 0.1 },
                 sides_scale_mode: SliceScaleMode::Tile { stretch_value: 0.2 },
                 // ** 四个角的缩放会影响四条边的宽度,阈值为 0.0-1.0
@@ -105,9 +110,13 @@ fn spawn_sprites(
             builder.spawn((
                 Text2d::new(label),
                 text_style,
-                TextLayout::new_with_justify(JustifyText::Center),
+                // TextLayout::new_with_justify(JustifyText::Center),
+                // since 0.17.0
+                TextLayout::new_with_justify(Justify::Center),
                 Transform::from_xyz(0., -0.5 * size.y - 10., 0.0),
-                bevy::sprite::Anchor::TopCenter,
+                // bevy::sprite::Anchor::TopCenter,
+                // since 0.17.0
+                bevy::sprite::Anchor::TOP_CENTER,
             ));
         });
         position.x += 0.5 * size.x + gap;

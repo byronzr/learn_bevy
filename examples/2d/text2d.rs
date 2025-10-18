@@ -42,7 +42,9 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         font_size: 50.0,
         ..default()
     };
-    let text_justification = JustifyText::Center;
+    // let text_justification = JustifyText::Center;
+    // since 0.17.0
+    let text_justification = Justify::Center;
     // 2d camera
     commands.spawn(Camera2d);
     // ** 中部形变的三个字体的 Entity
@@ -88,7 +90,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             builder.spawn((
                 Text2d::new("this text wraps in the box\n(Unicode linebreaks)"),
                 slightly_smaller_text_font.clone(),
-                TextLayout::new(JustifyText::Left, LineBreak::WordBoundary),
+                TextLayout::new(Justify::Left, LineBreak::WordBoundary),
                 // Wrap text in the rectangle
                 TextBounds::from(box_size),
                 // ensure the text is drawn on top of the box
@@ -109,7 +111,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             builder.spawn((
                 Text2d::new("this text wraps in the box\n(AnyCharacter linebreaks)"),
                 slightly_smaller_text_font.clone(),
-                TextLayout::new(JustifyText::Left, LineBreak::AnyCharacter),
+                TextLayout::new(Justify::Left, LineBreak::AnyCharacter),
                 // Wrap text in the rectangle
                 TextBounds::from(other_box_size),
                 // ensure the text is drawn on top of the box
@@ -128,20 +130,60 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     ));
 
     // ** 彩色字体的 Entity
-    for (text_anchor, color) in [
-        (Anchor::TopLeft, Color::Srgba(RED)),
-        (Anchor::TopRight, Color::Srgba(LIME)),
-        (Anchor::BottomRight, Color::Srgba(BLUE)),
-        (Anchor::BottomLeft, Color::Srgba(YELLOW)),
-    ] {
-        commands.spawn((
-            Text2d::new(format!(" Anchor::{text_anchor:?} ")),
+    // for (text_anchor, color) in [
+    //     (Anchor::TopLeft, Color::Srgba(RED)),
+    //     (Anchor::TopRight, Color::Srgba(LIME)),
+    //     (Anchor::BottomRight, Color::Srgba(BLUE)),
+    //     (Anchor::BottomLeft, Color::Srgba(YELLOW)),
+    // ] {
+    //     commands.spawn((
+    //         Text2d::new(format!(" Anchor::{text_anchor:?} ")),
+    //         slightly_smaller_text_font.clone(),
+    //         TextColor(color),
+    //         Transform::from_translation(250. * Vec3::Y),
+    //         text_anchor,
+    //     ));
+    // }
+
+    // since 0.17.0
+    let make_child = move |(text_anchor, color): (Anchor, Color)| {
+        (
+            Text2d::new(" Anchor".to_string()),
             slightly_smaller_text_font.clone(),
-            TextColor(color),
-            Transform::from_translation(250. * Vec3::Y),
             text_anchor,
-        ));
-    }
+            TextBackgroundColor(Color::WHITE.darker(0.8)),
+            Transform::from_translation(-1. * Vec3::Z),
+            children![
+                (
+                    TextSpan("::".to_string()),
+                    slightly_smaller_text_font.clone(),
+                    TextColor(LIGHT_GREY.into()),
+                    TextBackgroundColor(DARK_BLUE.into()),
+                ),
+                (
+                    TextSpan(format!("{text_anchor:?} ")),
+                    slightly_smaller_text_font.clone(),
+                    TextColor(color),
+                    TextBackgroundColor(color.darker(0.3)),
+                )
+            ],
+        )
+    };
+
+    commands.spawn((
+        Sprite {
+            color: Color::Srgba(LIGHT_CYAN),
+            custom_size: Some(Vec2::new(10., 10.)),
+            ..Default::default()
+        },
+        Transform::from_translation(250. * Vec3::Y),
+        children![
+            make_child((Anchor::TOP_LEFT, Color::Srgba(LIGHT_SALMON))),
+            make_child((Anchor::TOP_RIGHT, Color::Srgba(LIGHT_GREEN))),
+            make_child((Anchor::BOTTOM_RIGHT, Color::Srgba(LIGHT_BLUE))),
+            make_child((Anchor::BOTTOM_LEFT, Color::Srgba(LIGHT_YELLOW))),
+        ],
+    ));
 }
 
 fn animate_translation(

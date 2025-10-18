@@ -47,7 +47,7 @@ fn load_textures(mut commands: Commands, asset_server: Res<AssetServer>) {
 fn check_textures(
     mut next_state: ResMut<NextState<AppState>>,
     rpg_sprite_folder: Res<RpgSpriteFolder>,
-    mut events: EventReader<AssetEvent<LoadedFolder>>, // 注意这个内置的 Event类型可以用于测试是否加载完成
+    mut events: MessageReader<AssetEvent<LoadedFolder>>, // 注意这个内置的 Event类型可以用于测试是否加载完成
 ) {
     // Advance the `AppState` once all sprite handles have been loaded by the `AssetServer`
     // 测试加载完成后,推进状态
@@ -318,7 +318,7 @@ fn create_label(
     commands.spawn((
         Text2d::new(text),
         text_style,
-        TextLayout::new_with_justify(JustifyText::Center),
+        TextLayout::new_with_justify(Justify::Center),
         Transform {
             translation: Vec3::new(translation.0, translation.1, translation.2),
             ..default()

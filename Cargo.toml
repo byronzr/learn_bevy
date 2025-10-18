@@ -38,7 +38,7 @@ tokio = { version = "1.45.1", features = ["full"] }
 opt-level = 3
 lto = true
 
-### custom examples
+### custom examples ###
 [[example]]
 name = "dither"
 path = "examples/custom/shader/dither.rs"
@@ -47,73 +47,68 @@ path = "examples/custom/shader/dither.rs"
 name = "annulus"
 path = "examples/custom/shader/annulus.rs"
 
+
+### 2d ###
 [[example]]
-name = "bounding_2d"
-path = "examples/custom/2d/bounding_2d.rs"
+name = "2d_shapes.rs"
+path = "examples/2d/2d_shapes.rs"
 
 [[example]]
 name = "mesh2d_arcs"
-path = "examples/custom/2d/mesh2d_arcs.rs"
+path = "examples/2d/mesh2d_arcs.rs"
 
-[[example]]
-name = "mesh2d_manual"
-path = "examples/custom/2d/mesh2d_manual.rs"
+# [[example]]
+# name = "mesh2d_manual"
+# path = "examples/2d/mesh2d_manual.rs"
 
 [[example]]
 name = "mesh2d_vertex_color_texture"
-path = "examples/custom/2d/mesh2d_vertex_color_texture.rs"
+path = "examples/2d/mesh2d_vertex_color_texture.rs"
 
 [[example]]
 name = "mesh2d"
-path = "examples/custom/2d/mesh2d.rs"
+path = "examples/2d/mesh2d.rs"
 
 [[example]]
 name = "rotation"
-path = "examples/custom/2d/rotation.rs"
+path = "examples/2d/rotation.rs"
 
 [[example]]
 name = "sprite_animation"
-path = "examples/custom/2d/sprite_animation.rs"
+path = "examples/2d/sprite_animation.rs"
 
 [[example]]
 name = "sprite_flipping"
-path = "examples/custom/2d/sprite_flipping.rs"
+path = "examples/2d/sprite_flipping.rs"
 
 [[example]]
 name = "sprite_sheet"
-path = "examples/custom/2d/sprite_sheet.rs"
+path = "examples/2d/sprite_sheet.rs"
 
 [[example]]
 name = "sprite_slice"
-path = "examples/custom/2d/sprite_slice.rs"
+path = "examples/2d/sprite_slice.rs"
 
 [[example]]
 name = "sprite_tile"
-path = "examples/custom/2d/sprite_tile.rs"
+path = "examples/2d/sprite_tile.rs"
 
 [[example]]
 name = "text2d"
-path = "examples/custom/2d/text2d.rs"
+path = "examples/2d/text2d.rs"
 
 [[example]]
 name = "texture_atlas"
-path = "examples/custom/2d/texture_atlas.rs"
+path = "examples/2d/texture_atlas.rs"
 
 # todo
 # [[example]]
 # name = "tilemap_chunk"
-# path = "examples/custom/2d/tilemap_chunk.rs"
+# path = "examples/2d/tilemap_chunk.rs"
 
 [[example]]
 name = "transparency_2d"
-path = "examples/custom/2d/transparency_2d.rs"
-
-
-###### official examples ######
-### 2d
-[[example]]
-name = "2d_shapes.rs"
-path = "examples/2d/2d_shapes.rs"
+path = "examples/2d/transparency_2d.rs"
 
 # todo: restructure
 [[example]]
@@ -124,7 +119,13 @@ path = "examples/2d/2d_viewport_to_world.rs"
 name = "bloom_2d"
 path = "examples/2d/bloom_2d.rs"
 
-### ecs 
+### math ###
+[[example]]
+name = "bounding_2d"
+path = "examples/math/bounding_2d.rs"
+
+
+### ecs ###
 [[example]]
 name = "change_detection"
 path = "examples/ecs/change_detection.rs"
