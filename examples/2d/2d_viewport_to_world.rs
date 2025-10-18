@@ -6,7 +6,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_systems(Startup, setup)
-        .add_systems(Update, draw_cursor.param_warn_once())
+        .add_systems(Update, draw_cursor.after(TransformSystems::Propagate))
         .run();
 }
 
@@ -14,7 +14,8 @@ fn main() {
 // GlobalTransform 绝对坐标系(世界坐标系),脱离父子关系
 fn draw_cursor(
     camera_query: Single<(&Camera, &GlobalTransform, &Transform)>,
-    windows: Query<&Window>,
+    //windows: Query<&Window>,
+    window: Single<&Window>, // since 0.17.0
     mut gizmos: Gizmos,
 ) {
     let (camera, camera_transform, local_transform) = *camera_query;
@@ -22,11 +23,12 @@ fn draw_cursor(
     warn_once!("local_transform: {local_transform:?}");
 
     // 获得 App 的 window
-    let Ok(window) = windows.get_single() else {
-        println!("window not found");
-        return;
-    };
+    // let Ok(window) = windows.get_single() else {
+    //     println!("window not found");
+    //     return;
+    // };
 
+    // since 0.17.0 Single<T> 自动解包
     // 获得鼠标的位置(不包括 title bar mac中),所以鼠标位置是基于 Canvas 的
     let Some(cursor_position) = window.cursor_position() else {
         //warn!("cursor_position not found");

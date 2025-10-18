@@ -2,9 +2,11 @@
 
 use bevy::{
     core_pipeline::{
-        bloom::{Bloom, BloomCompositeMode},
+        // bloom::{Bloom, BloomCompositeMode},
         tonemapping::Tonemapping,
     },
+    // since 0.17.0
+    post_process::bloom::{Bloom, BloomCompositeMode},
     prelude::*,
 };
 
@@ -24,8 +26,13 @@ fn setup(
 ) {
     commands.spawn((
         Camera2d,
+        // Camera {
+        //     hdr: true, // 1. HDR is required for bloom
+        //     ..default()
+        // },
+        // since 0.17.0
         Camera {
-            hdr: true, // 1. HDR is required for bloom
+            clear_color: ClearColorConfig::Custom(Color::BLACK),
             ..default()
         },
         Tonemapping::TonyMcMapface, // 2. Using a tonemapper that desaturates to white is recommended
