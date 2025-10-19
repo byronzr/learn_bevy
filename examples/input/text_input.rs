@@ -108,7 +108,7 @@ fn bubbling_text(
 
 /// * 输入法事件监听
 fn listen_ime_events(
-    mut events: EventReader<Ime>, // * 输入法事件
+    mut events: MessageReader<Ime>, // * 输入法事件
     status_text: Single<Entity, (With<Node>, With<Text>)>,
     mut edit_text: Single<&mut Text2d, (Without<Node>, Without<Bubble>)>,
     mut ui_writer: TextUiWriter,
@@ -147,7 +147,7 @@ fn listen_ime_events(
 /// * Enter 上浮输入文本
 fn listen_keyboard_input_events(
     mut commands: Commands,
-    mut events: EventReader<KeyboardInput>,
+    mut events: MessageReader<KeyboardInput>,
     edit_text: Single<(&mut Text2d, &TextFont), (Without<Node>, Without<Bubble>)>,
 ) {
     let (mut text, style) = edit_text.into_inner();

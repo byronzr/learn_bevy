@@ -29,6 +29,7 @@ serde = "1.0.219"
 serde_json = "1.0.140"
 thiserror = "2.0.17"
 tokio = { version = "1.45.1", features = ["full"] }
+futures-timer = "3.0.2"
 
 
 # [profile.dev.package.bevy_rapier2d]
@@ -52,6 +53,15 @@ path = "examples/custom/shader/annulus.rs"
 [[example]]
 name = "2d_shapes.rs"
 path = "examples/2d/2d_shapes.rs"
+
+# todo: restructure
+[[example]]
+name = "2d_viewport_to_world"
+path = "examples/2d/2d_viewport_to_world.rs"
+
+[[example]]
+name = "bloom_2d"
+path = "examples/2d/bloom_2d.rs"
 
 [[example]]
 name = "mesh2d_arcs"
@@ -110,14 +120,28 @@ path = "examples/2d/texture_atlas.rs"
 name = "transparency_2d"
 path = "examples/2d/transparency_2d.rs"
 
-# todo: restructure
+
+### async_tasks ###
 [[example]]
-name = "2d_viewport_to_world"
-path = "examples/2d/2d_viewport_to_world.rs"
+name = "async_compute"
+path = "examples/async_tasks/async_compute.rs"
+
+### input ###
+[[example]]
+name = "char_input_events"
+path = "examples/input/char_input_events.rs"
 
 [[example]]
-name = "bloom_2d"
-path = "examples/2d/bloom_2d.rs"
+name = "keyboard_modifiers"
+path = "examples/input/keyboard_modifiers.rs"
+
+[[example]]
+name = "mouse_grab"
+path = "examples/input/mouse_grab.rs"
+
+[[example]]
+name = "text_input"
+path = "examples/input/text_input.rs"
 
 ### math ###
 [[example]]
@@ -284,7 +308,7 @@ path = "examples/ui/ui_material.rs"
 name = "ui_scaling"
 path = "examples/ui/ui_scaling.rs"
 
-### shader
+### shader ###
 [[example]]
 name = "shader_material_2d"
 path = "examples/shader/shader_material_2d.rs"

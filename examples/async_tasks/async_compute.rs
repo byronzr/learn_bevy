@@ -17,6 +17,7 @@ use bevy::{
     tasks::{AsyncComputeTaskPool, Task, block_on, futures_lite::future},
 };
 
+use futures_timer::Delay;
 use rand::Rng;
 use std::time::Duration;
 
@@ -78,12 +79,14 @@ fn spawn_tasks(mut commands: Commands) {
                 let task = thread_pool.spawn(
                     // ! 定义一个异步执行的闭包
                     async move {
-                        let duration =
-                            Duration::from_secs_f32(rand::thread_rng().gen_range(0.05..5.0));
+                        let duration = Duration::from_secs_f32(rand::rng().random_range(0.05..5.0));
 
                         // Pretend this is a time-intensive function. :)
                         // ! 假装这是一个耗时的函数
-                        async_std::task::sleep(duration).await;
+                        // async_std::task::sleep(duration).await;
+                        // since 0.17.0
+                        // 这个耗时操作是非阻塞的，而thread::sleep是阻塞的
+                        Delay::new(duration).await;
 
                         // Such hard work, all done!
                         let transform = Transform::from_xyz(x as f32, y as f32, z as f32);
