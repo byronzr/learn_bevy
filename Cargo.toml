@@ -10,7 +10,7 @@ arboard = "3.5.0"
 #     "experimental_bevy_feathers",
 #     "hotpatching",
 # ] }
-bevy = { version = "0.17.2", features = ["track_location"] }
+bevy = { version = "0.17.2", features = ["track_location", "dev_tools"] }
 # bevy_rapier2d = { git = "https://github.com/dimforge/bevy_rapier", branch = "master", features = [
 #     "simd-stable",
 #     "debug-render-2d",
@@ -39,7 +39,7 @@ futures-timer = "3.0.2"
 opt-level = 3
 lto = true
 
-### custom examples ###
+### custom examples #################################
 [[example]]
 name = "dither"
 path = "examples/custom/shader/dither.rs"
@@ -121,12 +121,12 @@ name = "transparency_2d"
 path = "examples/2d/transparency_2d.rs"
 
 
-### async_tasks ###
+### async_tasks #################################
 [[example]]
 name = "async_compute"
 path = "examples/async_tasks/async_compute.rs"
 
-### input ###
+### input #################################
 [[example]]
 name = "char_input_events"
 path = "examples/input/char_input_events.rs"
@@ -143,23 +143,8 @@ path = "examples/input/mouse_grab.rs"
 name = "text_input"
 path = "examples/input/text_input.rs"
 
-### math ###
-[[example]]
-name = "bounding_2d"
-path = "examples/math/bounding_2d.rs"
 
-### movement ###
-# todo: review
-[[example]]
-name = "physics_in_fixed_timestep"
-path = "examples/movement/physics_in_fixed_timestep.rs"
-
-# todo: review
-[[example]]
-name = "smooth_follow"
-path = "examples/movement/smooth_follow.rs"
-
-### ecs ###
+### ecs #################################
 [[example]]
 name = "change_detection"
 path = "examples/ecs/change_detection.rs"
@@ -288,7 +273,85 @@ path = "examples/ecs/system_piping.rs"
 name = "system_stepping"
 path = "examples/ecs/system_stepping.rs"
 
-### ui
+### math #################################
+[[example]]
+name = "bounding_2d"
+path = "examples/math/bounding_2d.rs"
+
+### movement #################################
+# todo: review
+[[example]]
+name = "physics_in_fixed_timestep"
+path = "examples/movement/physics_in_fixed_timestep.rs"
+
+# todo: review
+[[example]]
+name = "smooth_follow"
+path = "examples/movement/smooth_follow.rs"
+
+### picking #################################
+# todo: restructure
+[[example]]
+name = "debug_picking"
+path = "examples/picking/debug_picking.rs"
+
+# todo: restructure
+[[example]]
+name = "mesh_picking"
+path = "examples/picking/mesh_picking.rs"
+
+# todo: restructure
+[[example]]
+name = "simple_picking"
+path = "examples/picking/simple_picking.rs"
+
+# todo: restructure
+[[example]]
+name = "sprite_picking"
+path = "examples/picking/sprite_picking.rs"
+
+### scene #################################
+# todo: restructure
+[[example]]
+name = "scene"
+path = "examples/scene/scene.rs"
+
+### shader #################################
+[[example]]
+name = "shader_material_2d"
+path = "examples/shader/shader_material_2d.rs"
+
+[[example]]
+name = "compute_shader_game_of_life"
+path = "examples/shader/compute_shader_game_of_life.rs"
+
+### state #################################
+[[example]]
+name = "compute_states"
+path = "examples/state/compute_states.rs"
+
+[[example]]
+name = "states"
+path = "examples/state/states.rs"
+
+[[example]]
+name = "sub_states"
+path = "examples/state/sub_states.rs"
+
+### time #################################
+[[example]]
+name = "time"
+path = "examples/time/time.rs"
+
+[[example]]
+name = "timers"
+path = "examples/time/timers.rs"
+
+[[example]]
+name = "virtual_time"
+path = "examples/time/virtual_time.rs"
+
+### ui #################################
 [[example]]
 name = "flex_layout"
 path = "examples/ui/flex_layout.rs"
@@ -318,17 +381,10 @@ path = "examples/ui/ui_material.rs"
 name = "ui_scaling"
 path = "examples/ui/ui_scaling.rs"
 
-### shader ###
-[[example]]
-name = "shader_material_2d"
-path = "examples/shader/shader_material_2d.rs"
-
-[[example]]
-name = "compute_shader_game_of_life"
-path = "examples/shader/compute_shader_game_of_life.rs"
 
 
-# preview version 0.16.0
+
+# previous version 0.16.0
 
 # # Integrated Experiments #
 # [[example]]
