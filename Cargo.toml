@@ -10,7 +10,7 @@ arboard = "3.5.0"
 #     "experimental_bevy_feathers",
 #     "hotpatching",
 # ] }
-bevy = { version = "0.17.2", features = ["track_location", "dev_tools"] }
+bevy = { version = "0.17.2", features = ["track_location","bevy_dev_tools"] }
 # bevy_rapier2d = { git = "https://github.com/dimforge/bevy_rapier", branch = "master", features = [
 #     "simd-stable",
 #     "debug-render-2d",

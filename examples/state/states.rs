@@ -146,7 +146,7 @@ fn menu(
 
 /// 简单的清理掉 menu 的按钮
 fn cleanup_menu(mut commands: Commands, menu_data: Res<MenuData>) {
-    commands.entity(menu_data.button_entity).despawn_recursive();
+    commands.entity(menu_data.button_entity).despawn();
 }
 
 /// 简单添加一个 Sprite 作为控制对象

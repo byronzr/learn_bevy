@@ -47,7 +47,8 @@ fn main() {
         // ** 自动管理 entity 能配合 setup_game 中的 StateScoped(IsPaused::Paused) 使用
         // ** StateScoped(A) 中
         // ** A 可以是一个 States,SubStates,或是一个实现了 ComputedStates trait 的类型
-        .enable_state_scoped_entities::<IsPaused>()
+        // since 0.17.2
+        // .enable_state_scoped_entities::<IsPaused>()
         .add_systems(
             Update,
             (
@@ -88,7 +89,7 @@ fn menu(
 }
 
 fn cleanup_menu(mut commands: Commands, menu_data: Res<MenuData>) {
-    commands.entity(menu_data.button_entity).despawn_recursive();
+    commands.entity(menu_data.button_entity).despawn();
 }
 
 const SPEED: f32 = 100.0;
@@ -205,7 +206,9 @@ mod ui {
     pub fn setup_paused_screen(mut commands: Commands) {
         commands
             .spawn((
-                StateScoped(IsPaused::Paused),
+                //StateScoped(IsPaused::Paused),
+                // since 0.17.2 除了 Exit 还有 Enter 更灵活了
+                DespawnOnExit(IsPaused::Paused),
                 Node {
                     // center button
                     width: Val::Percent(100.),
