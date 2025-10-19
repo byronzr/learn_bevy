@@ -148,6 +148,16 @@ path = "examples/input/text_input.rs"
 name = "bounding_2d"
 path = "examples/math/bounding_2d.rs"
 
+### movement ###
+# todo: review
+[[example]]
+name = "physics_in_fixed_timestep"
+path = "examples/movement/physics_in_fixed_timestep.rs"
+
+# todo: review
+[[example]]
+name = "smooth_follow"
+path = "examples/movement/smooth_follow.rs"
 
 ### ecs ###
 [[example]]
