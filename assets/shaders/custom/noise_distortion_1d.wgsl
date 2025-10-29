@@ -38,6 +38,9 @@
 fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     let base_line = 0.5;
     let max_offset = 0.2;
+    // 这里对噪声密度进行了放大
+    // 原始 uv 的区间在 0/1 之间,这使得噪声在生成时波动被限制在一个很小的区间
+    // 因此，放大 uv 可得到更远的（小数）部分，从而使噪声变化更大
     let noise_scale = 10.0;
 
     let c = noise(mesh.uv.x * noise_scale + globals.time);

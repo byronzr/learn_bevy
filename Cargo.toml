@@ -52,6 +52,10 @@ path = "examples/custom/shader/annulus.rs"
 name = "noise_distortion_1d"
 path = "examples/custom/shader/noise_distortion_1d.rs"
 
+[[example]]
+name = "noise_distortion_2d"
+path = "examples/custom/shader/noise_distortion_2d.rs"
+
 
 ### 2d ###
 [[example]]

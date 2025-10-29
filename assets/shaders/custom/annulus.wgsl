@@ -68,7 +68,7 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     // 抗锯齿的值
     let aa = aa_width(vr);
     // 外部着色,内部透明
-    let outer_corlor = smoothstep(radius-aa,radius+aa,vr);
+    let outer_color = smoothstep(radius-aa,radius+aa,vr);
 
     // * 如果 outer_color 是有颜色的，说明在外圆范围之外
 
@@ -79,7 +79,7 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
 
 
     /// ! 抠像蒙版
-    let mask = inner_corlor-outer_corlor;
+    let mask = inner_corlor-outer_color;
     // * 如果 inner_color 有颜色，说明在内圆之外
     // 1. 当 uv 在外圆之外时，outer = 1 / inner = 1 
     //      mask = nner - outer = 0 
