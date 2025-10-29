@@ -10,7 +10,7 @@ use bevy::{
 };
 
 /// This example uses a shader source file from the assets subdirectory
-const SHADER_ASSET_PATH: &str = "shaders/custom/annulus.wgsl";
+const SHADER_ASSET_PATH: &str = "shaders/custom/noise_distortion_1d.wgsl";
 
 fn main() {
     App::new()
@@ -34,11 +34,10 @@ fn setup(
     // camera
     commands.spawn(Camera2d);
 
-    // quad
     commands.spawn((
         Mesh2d(meshes.add(Rectangle::default())),
         MeshMaterial2d(materials.add(CustomMaterial {
-            color: LinearRgba::WHITE,
+            color: LinearRgba::GREEN,
         })),
         Transform::default().with_scale(Vec3::splat(360.0 * 2.)),
     ));

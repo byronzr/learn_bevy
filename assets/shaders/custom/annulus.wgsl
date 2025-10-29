@@ -6,8 +6,29 @@
 
 // search => #define_import_path bevy_render::globals
 // path => /Users/byronzr/rProjects/bevy/crates/bevy_render/src/globals.wgsl
+// struct Globals {
+//     time: f32,
+//     delta_time: f32,
+//     frame_count: u32,
+// #ifdef SIXTEEN_BYTE_ALIGNMENT
+//     _webgl2_padding: f32
+// #endif
+// };
+
 // search => #define_import_path bevy_sprite::mesh2d_vertex_output     
 // path=> /Users/byronzr/rProjects/bevy/crates/bevy_sprite_render/src/mesh2d/mesh2d_vertex_output.wgsl
+// struct VertexOutput {
+//     @builtin(position) position: vec4<f32>,
+//     @location(0) world_position: vec4<f32>,
+//     @location(1) world_normal: vec3<f32>,
+//     @location(2) uv: vec2<f32>,
+//     #ifdef VERTEX_TANGENTS
+//     @location(3) world_tangent: vec4<f32>,
+//     #endif
+//     #ifdef VERTEX_COLORS
+//     @location(4) color: vec4<f32>,
+//     #endif
+// }
 
 @group(#{MATERIAL_BIND_GROUP}) @binding(0) var<uniform> material_color: vec4<f32>;
 
