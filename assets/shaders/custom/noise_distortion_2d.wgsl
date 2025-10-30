@@ -92,13 +92,6 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
 
 }
 
-// ! 较为通用抗锯齿函数
-fn aa_width(d: f32) -> f32 {
-    // 基于导数估算边缘宽度用于 smoothstep 抗锯齿
-    let w = abs(dpdx(d)) + abs(dpdy(d));
-    return max(w, 1e-4);
-}
-
 // fn random(x:f32)->f32 {
 //     return fract(sin(x*1000.0)*5323.1323);
 // }

@@ -40,6 +40,7 @@ fn switch(
     // 新增参数：读取鼠标滚轮事件
     mut scroll_evr: MessageReader<MouseWheel>,
 ) {
+    // -- 新增：处理 dither pattern 切换的部分 ---
     if mouse_input.just_pressed(MouseButton::Left) {
         *idx += 1;
         if *idx > 3 {
@@ -128,11 +129,11 @@ fn setup(
         ..default()
     });
 
-    // quad
+    // add mesh
     commands.spawn((
         Mesh2d(meshes.add(Rectangle::default())),
         MeshMaterial2d(materials.add(CustomMaterial {
-            color: LinearRgba::BLUE,
+            color: LinearRgba::BLACK,
             color_texture: Some(texture_handle),
             dither_pattern: Some(dither_handle),
             ratio: Vec2::ZERO,
