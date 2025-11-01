@@ -2,6 +2,7 @@
 // migration 0.16.x -> 0.17.x
 // Material2d / Material2dPlugin 迁移了路径
 use bevy::{
+    color::palettes,
     prelude::*,
     reflect::TypePath,
     render::render_resource::AsBindGroup,
@@ -16,10 +17,9 @@ fn main() {
     App::new()
         .add_plugins((
             DefaultPlugins,
-            // ! 使用独立的图像自行进行采样设置
-            //.set(ImagePlugin::default_nearest()),
             Material2dPlugin::<CustomMaterial>::default(),
         ))
+        .insert_resource(ClearColor(palettes::tailwind::BLUE_500.into()))
         .add_systems(Startup, setup)
         .run();
 }
@@ -29,17 +29,19 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<CustomMaterial>>,
-    //asset_server: Res<AssetServer>,
 ) {
     // camera
     commands.spawn(Camera2d);
 
-    // quad
+    let mesh_handle = meshes.add(Rectangle::default());
+    let material_handle = materials.add(CustomMaterial {
+        color: LinearRgba::WHITE,
+    });
+
+    // material
     commands.spawn((
-        Mesh2d(meshes.add(Rectangle::default())),
-        MeshMaterial2d(materials.add(CustomMaterial {
-            color: LinearRgba::WHITE,
-        })),
+        Mesh2d(mesh_handle.clone()),
+        MeshMaterial2d(material_handle.clone()),
         Transform::default().with_scale(Vec3::splat(360.0 * 2.)),
     ));
 }
