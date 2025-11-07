@@ -31,6 +31,9 @@
 
 @group(#{MATERIAL_BIND_GROUP}) @binding(0) var<uniform> material_color: vec4<f32>;
 
+// wgsl 没有默认的 PI 常量
+const PI = 3.141592653589793;
+
 
 // ! 较为通用抗锯齿函数
 fn aa_width(d: f32) -> f32 {
@@ -42,20 +45,17 @@ fn aa_width(d: f32) -> f32 {
 // ! 更通用的区间重映射 [a,b] -> [c,d]（不夹取）
 fn remap(x: f32, a: f32, b: f32, c: f32, d: f32) -> f32 {
     let t = (x - a) / (b - a);
-    return c + t * (d - c); // 需要夹取可对 t 使用 clamp
+    return c + t * (d - c); 
 }
 
 @fragment
 fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
 
-    
-
     // 需要切分的数量
-    let count = 10;
+    let count = 11;
     // 每次角度的步进值
     let degree_per_second = 360./f32(count);
-    // wgsl 没有默认的 PI 常量
-    const PI = 3.141592653589793;
+    
     // var 变量需要调整颜色
     var color = material_color;
     // divide
@@ -88,7 +88,13 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     // 抗锯齿的值
     let aa = aa_width(vr);
     // 外部着色,内部透明
+    // vr ≤ start 时返回 0
+    // vr ≥ end 时返回 1
+    // 在 [start, end] 内从 0 平滑过渡到 1
     let outer_color = smoothstep(radius-aa,radius+aa,vr);
+
+    // @ 1 这里返回时，就只是一个普通的圆
+    // return vec4f(material_color.rgb,abs(outer_color-1));
 
     // 如果 outer_color 是有颜色的，说明在外圆范围之外
     // outer_color 实际通过 smoothstep 只会是 0.0 / 1.0
@@ -109,6 +115,8 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     var sector_mask = inner_color - sector_color;
 
 
+    // @ 2 这里返回时，就只是一个普通的圆环
+    // return vec4f(material_color.rgb,normal_mask);
     
 
     // ! 环形渐变(动画)
@@ -116,7 +124,7 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     // (使用同一相位计算) 每秒度数
 
     // ! 旋转渐变
-    //var deg = phase * 360.;
+    // var deg = phase * 360.;
 
     // ! 静态渐变
     var deg = 0.;
@@ -128,10 +136,13 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     // let point = (px,py);
     // let px = r * cos(theta);
     // let py = r * sin(theta);
+    // --
     // 因为条件是单位向量斜边(Hypotenuse) r = 1
     // let px = cos(theta);
     // let py = sin(theta);
+    // -- 
     // let point = vec2(cos(theta),sin(theta));
+    // --
     // 因为大多数三角函数的参数是弧度值
     // let point = vec2(cos(radians(theta)),sin(theta));
 
@@ -196,6 +207,9 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     theta = remap(theta,-PI,PI,0.,1.);
 
 
+    // @ 3 这里返回的是一个渐变圆环
+    // return vec4f(material_color.rgb * theta,normal_mask);
+
     // ! 高亮扇区
     let mask = highlight_sector(phase,theta,normal_mask,sector_mask,c);
 
@@ -203,11 +217,15 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
     let k: f32 = 0.5;                       
     var w = pow(clamp(theta, 0.0, 1.0), k);
 
-    // 与视神经的权重是有区别的,视神经的明度权重目标是彩色（rgb）
+    // 与明度的权重是有区别的,视神经的明度权重目标是彩色（rgb）
     // w = vec3<f32>(0.2126, 0.7152, 0.0722);
 
     // 没有权重的效果(中性灰感觉会被压缩得很厉害)
     // w = 1.0;
+
+
+    // @ 4 这里返回的渐变圆环的灰阶更自然了
+    // return vec4f(color.rgb * theta * w,normal_mask);
 
     // ! 遮罩与渐变的叠加
     // 注意 Bevy Material2d 的实现中，alpha_mode 需要是 AlphaMode2d::Blend 才能使透明生效
@@ -245,29 +263,28 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
 }
 
 // ! 高亮扇区
+// 主要说明的是 dot 作+X的垂足时的起点是 +Y(屏幕坐标),
+// 当进行单数切割时第一个垂足，依然是 +Y,
+// 另外，也使用同相位(phase)的方法，解决潜在的时间累积后的误差
+// （虽然在bevy的 globals.time 中并不存在这个问题，因为每1小时重置）
 fn highlight_sector(phase:f32,theta:f32,normal_mask:f32,sector_mask:f32,c:f32) -> f32{
 
-    // ! 偏移中，为什么不增加 [间距](divide_width) 的偏移量？
-    // ! 因为最终会以 遮罩 的方式减去，并没有存在真正的 [绘制] 扇区，完全是在作面的加减法
-    let offset = (1./c) / 2.;
-
+    // 在这里作了 90度（四分之一，0.25）的偏移, 所以扇区索引一定会溢出，
+    let offset = 0.25;
     // 最小的小数 [1e-6] 必须连写-
     let epsilon = 1e-6;
 
+    // 无限趋近于 count 的值
+    let approach_count = c - epsilon;
+
     // 时间进度
     // 0..count-1
-    var time_index = i32(floor(phase * (c-epsilon))); 
+    var time_index = i32(floor(phase * approach_count)); 
+
     // 扇区进度
-
-    // (bug) 未偏移
-    // let sector_index = i32(floor(theta * (c-epsilon)));
-
-    // (bug) 左一半
-    let sector_index = i32(floor((theta + offset) * (c-epsilon)));
-
-    // (fixed) 纯粹给自已加难度
-    // let fixed = false;
-    let fixed = (time_index == 0 && (sector_index == 0 || theta+offset>1.));
+    // 将溢出部分取绝对值
+    var sector_index = i32(floor((theta + offset) * approach_count));
+    sector_index = select(abs(sector_index-i32(c)),sector_index,sector_index <= i32(approach_count));
     
     // -- 并不推荐使用 if 除非代码块中确实能够得到性能提升，不然（无分支的） select / mix 是最优解
     // if  time_index==sector_index  {
@@ -276,7 +293,7 @@ fn highlight_sector(phase:f32,theta:f32,normal_mask:f32,sector_mask:f32,c:f32) -
 
     // -- 1.select(B,A,Cond) 
     // select, 要求条件为 bool
-    let mask = select(normal_mask,sector_mask,time_index == sector_index || fixed);
+    let mask = select(normal_mask,sector_mask,time_index == sector_index);
 
     // -- 2.mix(B,A,Cond(0/1))
     // mix, 进行无分支时，要求 cond 限定在  0/1 之间，否则产生插值
@@ -341,9 +358,16 @@ fn segment_line(vn:vec2f, deg:f32, width:f32) -> f32 {
     // var line = 1. - step(width/2., shadow_length);
     
     // 但更简便的方式是将 step 中的参数调转
+    // 使用 step 是为了方便理解, 实际用 smoothstep 效果更好
     let line = step(shadow_length,width/2.);
 
+    // 当 count 1，获单数形式时，出现问题
+    // 当 +X 是 upvec 时，UV,在 +Y 和 -Y 都可以得到相同的 shadow_length
+    // count 为双数时，永远是对称的，所以看不出效果
     let side = signside(upvec,vn);
+
+    // let side = 1.;
+    
     return line*side;
 }
 

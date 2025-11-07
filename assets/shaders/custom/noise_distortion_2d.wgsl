@@ -36,18 +36,20 @@
 
 @fragment
 fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
+    var color:f32;
     // 直接观察噪声采样图可以看到一定的重复性,但并不平滑
-    // let color = random_vec2(mesh.uv);
+    // color = random_vec2(mesh.uv);
     // return vec4f(vec3f(color),1.0);
 
     // 平滑过后的噪声图
-    // let color = noise_vec2(mesh.uv*100 );
+    // color = noise_vec2(mesh.uv*10);
     // return vec4f(vec3f(color),1.0);
 
     // 使纹理更加丰富(更像云层)
-    // let color = noise_multiple(mesh.uv);
+    // color = noise_multiple(mesh.uv);
     // return vec4f(vec3f(color),1.0);
 
+    // -- 回顾，如何画一个圆
     // 画(正圆)圆
     // let vn = mesh.uv - vec2(0.5,0.5);
     // let vr = length(vn);
@@ -58,33 +60,35 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4<f32> {
 
 
     // 加噪声
-    let vn = mesh.uv - vec2(0.5,0.5);
+    let vn = mesh.uv - vec2(0.5);
     let vr = length(vn);
     let radius = 0.2;
+    let dir = normalize(vn);
     
-    // 变化率（柔捏力度）
-    let change_rate_factor = 0.5;
-    // 柔捏速度（频率）
-    let speed_factor = 1.0;
-    // 最后整体(大小)的控制
-    let radius_buffer = 0.1;
-
-    // wgsl 的坐标系使得我们已经使用 vr 求出了距离圆心的距离
-    // vr 代替 dis
-    // let dis = distance(mesh.uv,vec2(0.5));
-
-    let dir = normalize(mesh.uv - vec2f(0.5));
-
-    // 如果使用 multiple (类似火焰的碎片效果)
-    var noise_value = noise_multiple(mesh.uv + dir * change_rate_factor + vec2f(globals.time)*speed_factor);
-
-    // 注意这里使用的是 noise_vec2 (类似面团柔捏)
+    // -- 面团(配合 noise_vec2) -- 
+    // let change_rate_factor = 0.2; // 简单理解为（力度）
+    // let speed_factor = 0.5; // 柔捏速度（频率）
+    // let radius_scale = 0.1; // 简单理解为（大小）
     // var noise_value = noise_vec2(mesh.uv + dir * change_rate_factor + vec2f(globals.time)*speed_factor);
-    noise_value *= radius_buffer;
+
+
+    // -- dir (配合 noise_multiple)--
+    // let change_rate_factor = 3.0;
+    // let speed_factor = 1.;
+    // let radius_scale = 0.2;
+    // var noise_value = noise_multiple(mesh.uv + dir * change_rate_factor + vec2f(globals.time)*speed_factor);
     
-    // let color = step(dis,radius+noise_value);
-    // vr 带替 dis
-    let color = step(vr,radius+noise_value);
+    // -- vn (配合 noise_multiple)--
+    let change_rate_factor = 3.0;
+    let speed_factor = 1.;
+    let radius_scale = 0.2;
+    var noise_value = noise_multiple(mesh.uv + vn * change_rate_factor + vec2f(globals.time)*speed_factor);
+
+    
+    // 进行放大
+    noise_value *= radius_scale;
+    
+    color = step(vr,radius+noise_value);
     let bg = vec4f(1.0);
     
     
@@ -100,24 +104,21 @@ fn random_vec2(v:vec2f)->f32 {
     let m1 = 14.7258;
     let m2 = 36.9323;
     let m3 = 5323.1323;
+
+    // let m3 = 14.7258;
+    // let m1 = 36.9323;
+    // let m2 = 5323.1323;
+
     return fract(sin(dot(v.xy,vec2(m1,m2)))*m3);
 }
 
-// fn noise(x:f32)->f32 {
-//     let i = floor(x);
-//     let f = fract(x);
-//     let a = random(i);
-//     let b = random(i+1.0);
-//     let u = f * f * (3.0 - 2.0*f);
-//     return mix(a,b,u);
-// }
+// 二维噪声
 fn noise_vec2(v:vec2f)->f32 {
     
     // 整数部分
     let i = floor(v);
     // 小数部分
     let f = fract(v);
-
 
     // [四点]随机,
     // 因为 random_vec2 是伪随机，v 值的随机返回是确定的
@@ -128,7 +129,9 @@ fn noise_vec2(v:vec2f)->f32 {
     let tr = random_vec2(i+vec2f(1.0,1.0));
 
     // 缓动
-    let u = f * f * (3.0 - 2.0*f);
+    // smoothstep 依然支持 2 维动，但要注意扩展成2维向量
+    //let u = f * f * (3.0 - 2.0*f);
+    let u = smoothstep(vec2(0.0),vec2(1.0),f);
 
     // 以x轴进行插值
     let b = mix(bl,br,u.x);
@@ -139,12 +142,13 @@ fn noise_vec2(v:vec2f)->f32 {
     return ret;
 }
 
+// 二维噪声（多重叠加）
 fn noise_multiple(v:vec2f)->f32 {
     var m = noise_vec2(v * 8.0);
     m += noise_vec2(v * 16.0) * 0.5;
     m += noise_vec2(v * 32.0) * 0.25;
     m += noise_vec2(v * 64.0) * 0.125;
-    //m += noise_vec2(v * 128.0) * 0.0625;
+    m += noise_vec2(v * 128.0) * 0.0625;
     // 不断的叠加后 m的区间趋近于 2，所以除以 2
     m /= 2.0;
     return m;
