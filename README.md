@@ -6,7 +6,7 @@
 请查看官方用例 [bevy](https://bevyengine.org/),中文注释的代码 [高级伴读](https://github.com/byronzr/learn_bevy/tree/main/examples),(从 0.15 开始的注释,如果没有出现 panic 将不会主动优化代码,仅作来理解使用)
 
 # Shader(WGSL)
-配合的 [learn-wgpu-zh](https://jinleili.github.io/learn-wgpu-zh/) 教程的流程梳理分享 [keynote](https://github.com/byronzr/learn_bevy/tree/main/keynote/wgsl)
+配合的 [learn-wgpu-zh](https://jinleili.github.io/learn-wgpu-zh/) 教程的流程梳理分享 ~~[keynote]文件大小超限停止更新~~
 
 * ### 基础
     * [01] `wgsl` WebGPU 接管绘制
