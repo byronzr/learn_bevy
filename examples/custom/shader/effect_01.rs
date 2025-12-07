@@ -2,7 +2,6 @@
 // migration 0.16.x -> 0.17.x
 // Material2d / Material2dPlugin 迁移了路径
 use bevy::{
-    color::palettes,
     prelude::*,
     reflect::TypePath,
     render::render_resource::AsBindGroup,
@@ -19,7 +18,7 @@ fn main() {
             DefaultPlugins,
             Material2dPlugin::<CustomMaterial>::default(),
         ))
-        .insert_resource(ClearColor(palettes::tailwind::BLUE_500.into()))
+        .insert_resource(ClearColor(Color::BLACK))
         .add_systems(Startup, setup)
         .run();
 }
