@@ -59,3 +59,12 @@ path = "examples/custom/shader/noise_distortion_2d.rs"
 [[example]]
 name = "effect_01"
 path = "examples/custom/shader/effect_01.rs"
+
+
+[[example]]
+name = "effect_02"
+path = "examples/custom/shader/effect_02.rs"
+
+[[example]]
+name = "effect_03"
+path = "examples/custom/shader/effect_03.rs"

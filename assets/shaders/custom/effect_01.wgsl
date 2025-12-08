@@ -29,6 +29,8 @@
 //     #endif
 // }
 
+@group(#{MATERIAL_BIND_GROUP}) @binding(0) var<uniform> material_color: vec4f;
+
 // from XorDev 
 // source url: https://x.com/XorDev
 // vec2 p=(FC.xy-r*.5)/r.y*mat2(8,-6,6,8),v;
@@ -37,7 +39,7 @@
 // o+=(cos(sin(i)*vec4(1,2,3,1))+1.)*exp(sin(i*i+t))/length(max(v,vec2(v.x*f*.02,v.y))))v=p+cos(i*i+(t+p.x*.1)*.03+i*vec2(11,9))*5.;
 // o=tanh(pow(o/1e2,vec4(1.5)));
 
-@group(#{MATERIAL_BIND_GROUP}) @binding(0) var<uniform> material_color: vec4f;
+
 
 // @fragment
 // fn fragment(mesh: VertexOutput) -> @location(0) vec4f {
@@ -117,6 +119,7 @@ fn fragment(mesh: VertexOutput) -> @location(0) vec4f {
     }
 
     // 提升暗部细节，抑制高亮溢出，形成柔和饱和的尾焰外观
+    // hyperbolic tangent (双曲正切)
     o = tanh_vec4(pow(o / 100.0, vec4f(1.5)));
 
     // 最终颜色（alpha 固定为 1）
