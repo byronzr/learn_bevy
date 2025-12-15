@@ -68,3 +68,15 @@ path = "examples/custom/shader/effect_02.rs"
 [[example]]
 name = "effect_03"
 path = "examples/custom/shader/effect_03.rs"
+
+[[example]]
+name = "effect_04"
+path = "examples/custom/shader/effect_04.rs"
+
+[[example]]
+name = "effect_05"
+path = "examples/custom/shader/effect_05.rs"
+
+[[example]]
+name = "effect_06"
+path = "examples/custom/shader/effect_06.rs"

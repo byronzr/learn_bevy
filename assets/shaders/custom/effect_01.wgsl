@@ -41,12 +41,6 @@
 
 
 
-// @fragment
-// fn fragment(mesh: VertexOutput) -> @location(0) vec4f {
-
-// }
-
-
 // 伪随机（哈希）
 fn random2d(p: vec2f) -> f32 {
     return fract(sin(dot(p, vec2f(127.1, 311.7))) * 43758.5453123);
