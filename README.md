@@ -16,6 +16,7 @@
 	* intro
 	* examples/ecs
     * examples/2d
+    * examples/state
 
 	
 	
